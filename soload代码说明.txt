@@ -1,0 +1,76 @@
+教程说明（代码使用的是dnf鬼剑士）
+（推荐使用vscode阅读代码）
+代码地址：https://gitee.com/Moqi01/dnf-sword
+source
+1:main.c
+(1)int main()方法
+    utils-init.c
+      soloader_init_all()；初始化配置
+      loadConfig();读取配置
+      gl_init();gl初始化
+重点：
+    int (* OnNativeInitializeJNI)(void *) = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_ItarosActivity_OnNativeInitializeJNI");
+    int (* NativePath)(void *,int,char *) = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativePath");
+    int (* NativeInitialize)(void *) = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativeInitialize");
+    int (* NativeSize)(int,int,int,int) = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativeSize");
+    //int (* OnNativeCreateRenderer)() = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativeCreateRenderer");
+   
+    int (* VFSInitialize)(void *,int,int,int,int,int,int) = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnVFSInitialize");
+
+   调用so_symbol方法获取so里的游戏运行主逻辑的方法，游戏运行主逻辑的方法要在apk里的Java代码里查看，推荐工具jadxgui直接打开apk；在AndroidManifest.xml里找
+到入口com.Nexon.DnFSwordR.MainActivity，分析代码找到游戏的com.Nexon.DnFSwordR.ItarosActivity。这类Activity代码都是从onCreate方法进行分析的，
+com.Nexon.DnFSwordR.ItarosActivity代码里分析得到有调用原生方法OnNativeInitializeJNI和OnNativePath、OnVFSInitialize由此分析最开始调用这三个方法。之后有创建BNVGLView类型
+的GLSurfaceView类，该类用于创建游戏画面和更新画面。分析BNVGLView里的Renderer对象里的onSurfaceCreated方法可以看到调用OnNativeInitialize原生方法，然后在onSurfaceChanged
+方法里有调用OnNativeSize方法，在onDrawFrame方法里有调用OnNativeFrame。
+
+   OnNativeInitializeJNI(&jni);
+   NativePath(&jni,0,"ux0:data/DnfSword");
+   VFSInitialize(&jni,0,1,0,0,0,52108710);
+   NativeInitialize(&jni);
+   NativeSize(0,0,SCREEN_W,SCREEN_H);
+   主方法里依次调用一次即可，参数要根据java代码里分析，具体的参数个数要结合so文件进行分析。onDrawFrame方法是每帧执行，所有创建一个  
+SceUID thid = sceKernelCreateThread("main_thread", (SceKernelThreadEntry)main_thread, 0x40,2* 128 * 1024, 0, 0, NULL);
+线程来循环调用。 
+(2) int main_thread()
+  int (* NativeFrame)(void) = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativeFrame");
+由java代码里的 NativeClass设置的33帧，设置游戏更新帧数fpsLock为33；之后再调用NativeFrame进行so的更新。
+ controls_poll();用于控制逻辑，需要每帧调用
+
+2.java.c
+这个代码里就so调用java代码的逻辑了，需要分析java代码，然后重新写入这里面
+jlong GetCurrentTime(jmethodID id, va_list args) {
+    return (int64_t) current_timestamp_ms();
+}
+
+jlong Native_GetHeapTotalMemory(jmethodID id, va_list args) {
+
+    debugPrintf("Native_GetHeapTotalMemory(12000000)");
+    return 12000000;
+}
+等等......（一些so调用的java的方法）
+ 这些方法要分析so文件得出。分析so文件推荐使用Ida工具。一般分析so里的JNI的方法，里面一般会把要调用java的方法进行编号设置，之后so是通过这些id来获取
+调用java方法。
+
+nameToMethodId就是java方法的id对应表，原模版需要对后面的各个类型方法进行填写，我修改了一下，可以通过id直接获取到nameToMethodId对应的方法，
+就可以不用在下面填写了，（注意现在methodsLong方法还不行，必须在methodsLong数组里填写）；
+
+nameToFieldId 这个就是一些java变量了，so会获取一些java变量；
+
+3.dynlib.c
+这个就是一些标准库和第三方库的方法的对接代码，模板里有大部分的一些标准库的代码，可直接使用，需要注意的就是文件读取fopen、fdopen等方法，因为安卓的文件路径和
+psv的不用一样，就要对路径进行修改；
+
+CMakeLists.txt
+说明
+cmake可以对一些宏进行定义，比如DATA_PATH、SO_PATH；
+cmake文件里的USE_SCELIBC_IO对文件的读取进行设置，如果文件读取有问题可以试试这种这个
+之后就是SHADER_FORMAT这个的设置
+有三个选项
+GLSL
+CG
+GXP
+由于这个模板是用的vitaGL，使用的CG，所以安卓游戏的glsl代码需要修改为CG代码，具体语法可以看vitaGl的例子
+DUMP_COMPILED_SHADERS这个可以设置shader是否导出
+
+
+
