@@ -6,7 +6,7 @@ endif ()
 
 set(CMAKE_TOOLCHAIN_FILE "$ENV{VITASDK}/share/vita.toolchain.cmake" CACHE PATH "Toolchain file")
 
-project(DnfSword C CXX)
+project(Acrodea C CXX)
 
 include("${VITASDK}/share/vita.cmake" REQUIRED)
 

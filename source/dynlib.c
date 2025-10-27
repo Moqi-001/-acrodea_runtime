@@ -129,16 +129,17 @@ extern const short *BIONIC_tolower_tab_;
 extern const short *BIONIC_toupper_tab_;
 
 static FILE __sF_fake[3];
-
+so_default_dynlib* default_dynlib_m;
 void *dlsym_soloader(void * handle, const char * symbol) {
     // Usage example:
     // if (strcmp("AMotionEvent_getAxisValue", symbol) == 0)
     //    return &AMotionEvent_getAxisValue;
-    int size_default_dynlib=sizeof(default_dynlib);
+    
+    int size_default_dynlib=sizeof(default_dynlib_m);
     void * result=NULL;
      for (int j = 0; j < size_default_dynlib / sizeof(so_default_dynlib); j++) {
-        if (strcmp(symbol, default_dynlib[j].symbol) == 0) {
-             result = default_dynlib[j].func;      
+        if (strcmp(symbol, default_dynlib_m[j].symbol) == 0) {
+             result = default_dynlib_m[j].func;      
             break;
         }
      }
@@ -1026,6 +1027,6 @@ void resolve_imports(so_module* mod) {
     __sF_fake[0] = *stdin;
     __sF_fake[1] = *stdout;
     __sF_fake[2] = *stderr;
-
+    default_dynlib_m=default_dynlib;
     so_resolve(mod, default_dynlib, sizeof(default_dynlib), 0);
 }

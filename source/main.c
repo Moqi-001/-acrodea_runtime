@@ -109,11 +109,11 @@ int main() {
 
     eglSwapInterval(0, 2);
 
-    NativeSize(0,0,SCREEN_W,SCREEN_H);
+    // NativeSize(0,0,SCREEN_W,SCREEN_H);
 
-    debugPrintf("NativeSize over \n");
-    OnNativeCreateRenderer();
-    debugPrintf("OnNativeCreateRenderer over \n");
+    // debugPrintf("NativeSize over \n");
+    // OnNativeCreateRenderer();
+    // debugPrintf("OnNativeCreateRenderer over \n");
 
     // ... do some initialization
 
