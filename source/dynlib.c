@@ -251,6 +251,7 @@ void _ZN7android6ThreadD2Ev(void* self) {
 
 int _ZN7android6Thread10readyToRunEv(void* self) {
     l_debug("[Thread] readyToRun (EMPTY): %p", self);
+    return 1;
 }
 
 void _ZN7android6Thread11requestExitEv(void* self) {
@@ -260,6 +261,7 @@ void _ZN7android6Thread11requestExitEv(void* self) {
 int _ZN7android6Thread3runEPKcij(void* self, const char* name, int priority, size_t stack) {
     l_debug("[Thread] run (EMPTY): %p, name: %s, priority: %d, stack: %zu",
                 self, name ? name : "NULL", priority, stack);
+                return 1;
 }
 
 typedef struct {

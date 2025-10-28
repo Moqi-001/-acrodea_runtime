@@ -16,172 +16,119 @@ jlong GetCurrentTime(jmethodID id, va_list args) {
     return (int64_t) current_timestamp_ms();
 }
 
-jlong Native_GetHeapTotalMemory(jmethodID id, va_list args) {
-
-    debugPrintf("Native_GetHeapTotalMemory(12000000)");
-    return 12000000;
-}
-
-jlong Native_GetHeapFreeMemory(jmethodID id, va_list args) {
-
-    debugPrintf("Native_GetHeapFreeMemory(12000000)");
-    return 12000000;
-}
-
-jlong Native_GetExternalMemorySize(jmethodID id, va_list args) {
-
-    debugPrintf("Native_GetExternalMemorySize(12000000000)");
-    return 12000000000;
-}
-
-jlong Native_GetInternalMemorySize(jmethodID id, va_list args) {
-
-    debugPrintf("Native_GetInternalMemorySize(12000000)");
-    return 12000000;
-}
-
 void Native_Exit(jmethodID id, va_list args) {
     debugPrintf("Native_Exit() requested via JNI.");
     exit(0);
 }
 
-jobject Native_GetDeviceModel(jmethodID id, va_list args) {
-   
-    debugPrintf("Native_GetDeviceModel");
-    return "PSV";
+void vibrate(jmethodID id, va_list args) {
+
+    debugPrintf("vibrate()");
 }
 
-jobject Native_GetPhoneNumber(jmethodID id, va_list args) {
-   
-    debugPrintf("Native_GetPhoneNumber");
-    return "110";
+jobject getLocale(jmethodID id, va_list args) {
+
+    debugPrintf("getLocale()");
+    return "";
 }
 
-void Native_tryBuyItem(jmethodID id, va_list args) {
-
-    debugPrintf("Native_tryBuyItem()");
-}
-
-void Native_InvalidData(jmethodID id, va_list args) {
-
-    debugPrintf("Native_InvalidData()");
-}
-
-jint GetTextHeight(jmethodID id, va_list args) {
-    debugPrintf("GetTextHeight(20)");
-    return 20;
-}
-
-jint GetTextWidth(jmethodID id, va_list args) {
-    const char * value = va_arg(args, char*);
-    //debugPrintf("GetTextWidth(%s)",value);
-    return 20*strlen(value);
-}
-
-jobject GetTextTexture(jmethodID id, va_list args) {
-    const char* value = va_arg(args, char*);
-    int style = va_arg(args, int);
-    int color1 = va_arg(args, int);
-    int color2 = va_arg(args, int);
+jobject getCommonDir(jmethodID id, va_list args) {
     
-    debugPrintf("GetTextTexture(%s,%d,%d,%d)",value,style,color1,color2);
-    return NULL;
+    debugPrintf("getCommonDir()");
+    return DATA_PATH;
 }
 
-jint GetAppTypeVersion()
+void appFinish(jmethodID id, va_list args) {
+    debugPrintf("appFinish()");
+}
+
+void updateResourceCheck(jmethodID id, va_list args) {
+    const char* value = va_arg(args, char*);
+    debugPrintf("updateResourceCheck(%s)",value);
+}
+
+void invisibleRuntimeLogo(jmethodID id, va_list args) {
+    debugPrintf("invisibleRuntimeLogo()");
+}
+
+jint stereoIsAvailability(jmethodID id, va_list args) {
+    debugPrintf("stereoIsAvailability()");
+    return 1;
+}
+
+void stereoSetView(jmethodID id, va_list args) {
+    debugPrintf("stereoSetView()");
+}
+
+jint isUseRecord(jmethodID id, va_list args) {
+    debugPrintf("isUseRecord()");
+    return 0;
+}
+
+jfloat stereoGetDepth(jmethodID id, va_list args) {
+    debugPrintf("stereoGetDepth()");
+    return 1;
+}
+
+jobject getCommonAppDir(jmethodID id, va_list args) {
+    const char* value = va_arg(args, char*);
+    debugPrintf("getCommonAppDir(%s)",value);
+    return DATA_PATH;
+}
+
+void launchRuntime(jmethodID id, va_list args) {
+    const char* value = va_arg(args, char*);
+    debugPrintf("launchRuntime(%s)",value);
+}
+
+jobject getEnv(jmethodID id, va_list args) {
+    const char* value = va_arg(args, char*);
+    debugPrintf("getEnv(%s)",value);
+    if (strcmp(value, "DEVICE_VERSION") == 0) {
+
+    }else if (strcmp(value, "OS") == 0)
+    {
+        return "Android";
+    }
+    
+    return "";
+}
+
+void trialSetTime(jmethodID id, va_list args) {
+    int time = va_arg(args, int);
+
+    debugPrintf("trialSetTime(%d)",time);
+}
+
+void jniTrackerRemoveAttribute(jmethodID id, va_list args) {
+    int value = va_arg(args, int);
+
+    debugPrintf("jniTrackerRemoveAttribute(%d)",value);
+}
+
+void jniTrackerSetPage(jmethodID id, va_list args)
 {
-    debugPrintf("GetAppTypeVersion(3)");
-    return 3;
+      const char* value = va_arg(args, char*);
+    debugPrintf("jniTrackerSetPage(%s)",value);
 }
 
-int fps=0;
-void Native_SetFps(jmethodID id, va_list args) {
-    fps = va_arg(args, int);
-    debugPrintf("Native_SetFps(%d)",fps);
-}
-
-void BGMVolume(jmethodID id, va_list args) {
-     
-    debugPrintf("BGMVolume()");
-}
-
-void SoundPlay(jmethodID id, va_list args) {
-    debugPrintf("SoundPlay()");
-}
-
-void SoundRelease(jmethodID id, va_list args) {
-    debugPrintf("SoundRelease()");
-}
-
-void SoundStop(jmethodID id, va_list args) {
-    debugPrintf("SoundStop()");
-}
-void SoundLoad(jmethodID id, va_list args) {
-    debugPrintf("SoundLoad()");
-}
-
-void SoundVolume(jmethodID id, va_list args) {
-    debugPrintf("SoundVolume()");
-}
-
-void Native_RunInKeyPad(jmethodID id, va_list args) {
-    debugPrintf("Native_RunInKeyPad()");
-}
-void Native_StartAdBanner(jmethodID id, va_list args) {
-    debugPrintf("Native_StartAdBanner()");
-}
-void Native_StopAdBanner(jmethodID id, va_list args) {
-    debugPrintf("Native_StopAdBanner()");
-}
-void BGMLoad(jmethodID id, va_list args) {
-    debugPrintf("BGMLoad()");
-}
-void BGMRelease(jmethodID id, va_list args) {
-    debugPrintf("BGMRelease()");
-}
-
-void BGMPlay(jmethodID id, va_list args) {
-    debugPrintf("BGMPlay()");
-}
-
-void Native_ExitPopup(jmethodID id, va_list args) {
-    debugPrintf("Native_ExitPopup()");
-}
-
-jobject GetRealDeviceMacAddress(jmethodID id, va_list args) {
-    debugPrintf("GetRealDeviceMacAddress(02:00:00:00:00:00)");
-    return "02:00:00:00:00:00";
-}
-
-void BGMStop(jmethodID id, va_list args) {
-    debugPrintf("BGMStop()");
-}
-
-void Native_DrawTip(jmethodID id, va_list args) {
-    debugPrintf("Native_DrawTip()");
-}
-
-void Native_SetPauseBar(jmethodID id, va_list args) {
-    int state = va_arg(args, int);
-
-    debugPrintf("Native_SetPauseBar(%d)",state);
-}
-
-void OnVibrator(jmethodID id, va_list args)
+void jniTrackerSetAttribute(jmethodID id, va_list args)
 {
-    debugPrintf("OnVibrator()");
+      const char* value = va_arg(args, char*);
+    debugPrintf("jniTrackerSetAttribute(%s)",value);
 }
 
-void Native_ShowOffer(jmethodID id, va_list args)
+void jniTrackerEvent(jmethodID id, va_list args)
 {
-    debugPrintf("Native_ShowOffer()");
+      const char* value = va_arg(args, char*);
+      const char* value2 = va_arg(args, char*);
+    debugPrintf("jniTrackerEvent(%s,%s)",value,value2);
 }
 
-void Native_callNxPlay(jmethodID id, va_list args)
+void jniTrackerAssignAttribute(jmethodID id, va_list args)
 {
-    int type = va_arg(args, int);
-    Login();
-    debugPrintf("Native_callNxPlay(%d)",type);
+      const char* value = va_arg(args, char*);
+    debugPrintf("jniTrackerAssignAttribute(%s)",value);
 }
 
 void surfaceChanged(jmethodID id, va_list args)
@@ -191,38 +138,26 @@ void surfaceChanged(jmethodID id, va_list args)
 
 NameToMethodID nameToMethodId[] = {
     { 1, "Native_Exit", METHOD_TYPE_VOID ,Native_Exit}, // ()V
-    { 2, "Native_tryBuyItem", METHOD_TYPE_VOID ,Native_tryBuyItem}, // ()V
-    { 3, "BGMPlay", METHOD_TYPE_VOID ,BGMPlay}, // (I)V
-    { 4, "SoundPlay", METHOD_TYPE_VOID ,SoundPlay}, // (I)V
-    { 5, "SoundRelease", METHOD_TYPE_LONG ,SoundRelease}, // ()J
-    { 6, "SoundStop", METHOD_TYPE_INT,SoundStop }, // ()I
-    { 7, "SoundLoad", METHOD_TYPE_VOID ,SoundLoad}, // (Ljava/lang/String;)V
-    { 8, "SoundVolume", METHOD_TYPE_OBJECT ,SoundVolume}, // ()Ljava/lang/String;
-    { 9, "Native_StartAdBanner", METHOD_TYPE_OBJECT,Native_StartAdBanner }, // ()Ljava/lang/String;
-    { 10, "Native_RunInKeyPad", METHOD_TYPE_OBJECT ,Native_RunInKeyPad}, // ()Ljava/lang/String;
-    { 11, "Native_StopAdBanner", METHOD_TYPE_FLOAT ,Native_StopAdBanner}, // ()F
-    { 12, "BGMVolume", METHOD_TYPE_OBJECT ,BGMVolume}, // ()Ljava/lang/String;
-    { 13, "BGMStop", METHOD_TYPE_VOID,BGMStop }, // (I)V
-    { 14, "Native_ExitPopup", METHOD_TYPE_INT,Native_ExitPopup }, // ()I
-    { 15, "OnVibrator", METHOD_TYPE_INT ,OnVibrator}, // ([BII)I
-    { 16, "GetRealDeviceMacAddress", METHOD_TYPE_INT,GetRealDeviceMacAddress }, // ([BII)I
-    { 17, "BGMRelease", METHOD_TYPE_INT ,BGMRelease}, // ([BII)I
-    { 18, "GetTextTexture", METHOD_TYPE_INT ,GetTextTexture}, // ([BII)I
-    { 19, "GetTextHeight", METHOD_TYPE_INT ,GetTextHeight}, // ([BII)I
-    { 20, "GetTextWidth", METHOD_TYPE_INT ,GetTextWidth}, // ([BII)I
-    { 21, "Native_SetFps", METHOD_TYPE_INT ,Native_SetFps}, // ([BII)I
-    { 22, "GetCurrentTime", METHOD_TYPE_LONG ,NULL}, // ([BII)I
-    { 23, "BGMLoad", METHOD_TYPE_INT ,BGMLoad}, // ([BII)I
-    { 24, "GetAppTypeVersion", METHOD_TYPE_INT ,GetAppTypeVersion}, // ([BII)I
-    { 25, "Native_GetHeapTotalMemory", METHOD_TYPE_INT ,NULL}, // ([BII)I
-    { 26, "Native_GetHeapFreeMemory", METHOD_TYPE_INT ,Native_GetHeapFreeMemory}, // ([BII)I
-    { 27, "Native_InvalidData", METHOD_TYPE_INT ,Native_InvalidData}, // ([BII)I
-    { 28, "Native_ShowOffer", METHOD_TYPE_INT ,Native_ShowOffer}, // ([BII)I
-    { 29, "Native_callNxPlay", METHOD_TYPE_INT ,Native_callNxPlay}, // ([BII)I
-    { 30, "Native_DrawTip", METHOD_TYPE_INT ,Native_DrawTip}, // ([BII)I
-    { 31, "Native_GetPhoneNumber", METHOD_TYPE_INT ,Native_GetPhoneNumber}, // ([BII)I
-    { 32, "Native_SetPauseBar", METHOD_TYPE_INT ,Native_SetPauseBar}, // ([BII)I
-    { 33, "surfaceChanged", METHOD_TYPE_VOID ,surfaceChanged},
+    { 2, "vibrate", METHOD_TYPE_VOID ,vibrate}, // ()V
+    { 3, "launchRuntime", METHOD_TYPE_VOID ,launchRuntime}, // (I)V
+    { 4, "appFinish", METHOD_TYPE_VOID ,appFinish}, // (I)V
+    { 5, "updateResourceCheck", METHOD_TYPE_LONG ,updateResourceCheck}, // ()J
+    { 6, "invisibleRuntimeLogo", METHOD_TYPE_INT,invisibleRuntimeLogo }, // ()I
+    { 7, "isUseRecord", METHOD_TYPE_VOID ,isUseRecord}, // (Ljava/lang/String;)V
+    { 8, "getCommonAppDir", METHOD_TYPE_OBJECT ,getCommonAppDir}, // ()Ljava/lang/String;
+    { 9, "jniTrackerSetPage", METHOD_TYPE_INT ,jniTrackerSetPage}, // ([BII)I
+    { 10, "getEnv", METHOD_TYPE_INT,getEnv }, // ([BII)I
+    { 11, "getCommonDir", METHOD_TYPE_INT ,getCommonDir}, // ([BII)I
+    { 12, "jniTrackerEvent", METHOD_TYPE_INT ,jniTrackerEvent}, // ([BII)I
+    { 13, "jniTrackerAssignAttribute", METHOD_TYPE_INT ,jniTrackerAssignAttribute}, // ([BII)I
+    { 14, "jniTrackerRemoveAttribute", METHOD_TYPE_LONG ,jniTrackerRemoveAttribute}, // ([BII)I
+    { 15, "getLocale", METHOD_TYPE_INT ,getLocale}, // ([BII)I
+    { 16, "trialSetTime", METHOD_TYPE_INT ,trialSetTime}, // ([BII)I
+    { 17, "surfaceChanged", METHOD_TYPE_VOID ,surfaceChanged},
+    { 18, "jniTrackerSetAttribute", METHOD_TYPE_VOID ,jniTrackerSetAttribute},
+    { 19, "stereoIsAvailability", METHOD_TYPE_VOID ,stereoIsAvailability},
+    { 20, "stereoSetView", METHOD_TYPE_VOID ,stereoSetView},
+    { 21, "stereoGetDepth", METHOD_TYPE_VOID ,stereoGetDepth},
 };
 
 MethodsBoolean methodsBoolean[] = {};
@@ -232,12 +167,11 @@ MethodsDouble methodsDouble[] = {
 
 };
 MethodsFloat methodsFloat[] = {
-
+    {21,stereoGetDepth},
 };
 MethodsInt methodsInt[] = {};
 MethodsLong methodsLong[] = {
     {22,GetCurrentTime},
-    {25,Native_GetHeapTotalMemory}
 };
 MethodsObject methodsObject[] = {};
 MethodsShort methodsShort[] = {};

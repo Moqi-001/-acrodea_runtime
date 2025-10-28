@@ -82,7 +82,7 @@ int main() {
     gl_init();
     int (* kdMain)(void *,void *) = (void *)so_symbol(&so_mod, "kdMain");
     kdMain(NULL,NULL);
-    debugPrintf("JNI_OnLoad over \n");
+    debugPrintf("kdMain over \n");
     // int (* OnNativeInitializeJNI)(void *) = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_ItarosActivity_OnNativeInitializeJNI");
     // int (* NativePath)(void *,int,char *) = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativePath");
     // int (* NativeInitialize)(void *) = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativeInitialize");
