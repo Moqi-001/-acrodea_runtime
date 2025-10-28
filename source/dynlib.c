@@ -62,6 +62,222 @@
 
 const unsigned int __page_size = PAGE_SIZE;
 
+// String8 的 C 实现结构
+typedef struct {
+    char* data;
+    size_t length;
+    size_t capacity;
+} String8Impl;
+
+// 构造函数
+void* _ZN7android7String8C1Ev() {
+    l_debug("_ZN7android7String8C1Ev");
+    String8Impl* str = malloc(sizeof(String8Impl));
+    str->data = strdup("");
+    str->length = 0;
+    str->capacity = 1;
+    return str;
+}
+
+void* _ZN7android7String8C1EPKc(const char* other) {
+    l_debug("_ZN7android7String8C1EPKc");
+    String8Impl* str = malloc(sizeof(String8Impl));
+    if (other) {
+        str->length = strlen(other);
+        str->capacity = str->length + 1;
+        str->data = malloc(str->capacity);
+        strcpy(str->data, other);
+    } else {
+        str->data = strdup("");
+        str->length = 0;
+        str->capacity = 1;
+    }
+    return str;
+}
+
+void* _ZN7android7String8C1ERKS0_(void* other) {
+    l_debug("_ZN7android7String8C1ERKS0_");
+    String8Impl* other_str = (String8Impl*)other;
+    String8Impl* str = malloc(sizeof(String8Impl));
+    str->length = other_str->length;
+    str->capacity = other_str->capacity;
+    str->data = malloc(str->capacity);
+    strcpy(str->data, other_str->data);
+    return str;
+}
+
+// 析构函数
+void _ZN7android7String8D1Ev(void* self) {
+    l_debug("_ZN7android7String8D1Ev");
+    String8Impl* str = (String8Impl*)self;
+    if (str && str->data) {
+        free(str->data);
+    }
+    free(str);
+}
+
+// setTo 方法
+void* _ZN7android7String85setToEPKc(void* self, const char* other) {
+    l_debug("_ZN7android7String85setToEPKc");
+    String8Impl* str = (String8Impl*)self;
+    if (str->data) free(str->data);
+
+    if (other) {
+        str->length = strlen(other);
+        str->capacity = str->length + 1;
+        str->data = malloc(str->capacity);
+        strcpy(str->data, other);
+    } else {
+        str->data = strdup("");
+        str->length = 0;
+        str->capacity = 1;
+    }
+    return self;
+}
+
+// append 方法
+void* _ZN7android7String86appendEPKc(void* self, const char* other) {
+    l_debug("_ZN7android7String86appendEPKc");
+    String8Impl* str = (String8Impl*)self;
+    if (!other) return self;
+
+    size_t other_len = strlen(other);
+    size_t new_len = str->length + other_len;
+
+    if (new_len + 1 > str->capacity) {
+        str->capacity = new_len + 1;
+        str->data = realloc(str->data, str->capacity);
+    }
+
+    strcpy(str->data + str->length, other);
+    str->length = new_len;
+    return self;
+}
+
+void* _ZN7android7String86appendERKS0_(void* self, void* other) {
+    l_debug("_ZN7android7String86appendERKS0_");
+    String8Impl* str = (String8Impl*)self;
+    String8Impl* other_str = (String8Impl*)other;
+    return _ZN7android7String86appendEPKc(self, other_str->data);
+}
+
+// appendPath 方法
+void* _ZN7android7String810appendPathEPKc(void* self, const char* component) {
+    l_debug("_ZN7android7String810appendPathEPKc");
+    String8Impl* str = (String8Impl*)self;
+    if (!component) return self;
+
+    // 确保路径分隔符
+    if (str->length > 0 && str->data[str->length-1] != '/') {
+        _ZN7android7String86appendEPKc(self, "/");
+    }
+
+    // 添加组件
+    return _ZN7android7String86appendEPKc(self, component);
+}
+
+// string() 方法
+const char* _ZNK7android7String86stringEv(void* self) {
+    l_debug("_ZNK7android7String86stringEv");
+    String8Impl* str = (String8Impl*)self;
+    return str ? str->data : "";
+}
+
+// length() 方法
+size_t _ZNK7android7String86lengthEv(void* self) {
+    l_debug("_ZNK7android7String86lengthEv");
+    String8Impl* str = (String8Impl*)self;
+    return str ? str->length : 0;
+}
+
+// RefBase 的简化实现
+typedef struct {
+    int strong_refs;
+    int weak_refs;
+    void* extensions;
+} RefBaseImpl;
+
+// RefBase 构造函数
+void _ZN7android7RefBaseC2Ev(void* self) {
+    l_debug("_ZN7android7RefBaseC2Ev: %p", self);
+//    RefBaseImpl* ref = (RefBaseImpl*)self;
+//    ref->strong_refs = 0;
+//    ref->weak_refs = 0;
+//    ref->extensions = NULL;
+}
+
+// RefBase 析构函数
+void _ZN7android7RefBaseD2Ev(void* self) {
+    l_debug("_ZN7android7RefBaseD2Ev: %p", self);
+//    RefBaseImpl* ref = (RefBaseImpl*)self;
+//    if (ref->extensions) {
+//        free(ref->extensions);
+//    }
+}
+
+void _ZN7android7RefBase10onFirstRefEv(void* self) {
+    l_debug("_ZN7android7RefBase10onFirstRefEv: %p", self);
+}
+
+void _ZN7android7RefBase15onLastStrongRefEPKv(void* self, const void* id) {
+    l_debug("_ZN7android7RefBase15onLastStrongRefEPKv: %p, id = %d", self, id);
+}
+
+void _ZN7android7RefBase13onLastWeakRefEPKv(void* self, const void* id) {
+    l_debug("_ZN7android7RefBase13onLastWeakRefEPKv: %p, id = %d", self, id);
+}
+
+int _ZN7android7RefBase20onIncStrongAttemptedEjPKv(void* self, unsigned int flags, const void* id) {
+    l_debug("_ZN7android7RefBase20onIncStrongAttemptedEjPKv: %p, flags = %d, id = %d", self, flags, id);
+    return 1;
+}
+
+// Thread 类的完全空实现
+void _ZN7android6ThreadC2Eb(void* self, int canCallJava) {
+    l_debug("[Thread] Constructor (EMPTY): %p, canCallJava: %d", self, canCallJava);
+}
+
+void _ZN7android6ThreadD0Ev(void* self) {
+    l_debug("[Thread] D0 destructor (EMPTY): %p", self);
+}
+
+void _ZN7android6ThreadD1Ev(void* self) {
+    l_debug("[Thread] D1 destructor (EMPTY): %p", self);
+}
+
+void _ZN7android6ThreadD2Ev(void* self) {
+    l_debug("[Thread] D2 destructor (EMPTY): %p", self);
+}
+
+int _ZN7android6Thread10readyToRunEv(void* self) {
+    l_debug("[Thread] readyToRun (EMPTY): %p", self);
+}
+
+void _ZN7android6Thread11requestExitEv(void* self) {
+    l_debug("[Thread] requestExit (EMPTY): %p", self);
+}
+
+int _ZN7android6Thread3runEPKcij(void* self, const char* name, int priority, size_t stack) {
+    l_debug("[Thread] run (EMPTY): %p, name: %s, priority: %d, stack: %zu",
+                self, name ? name : "NULL", priority, stack);
+}
+
+typedef struct {
+    int ref_count;  // 简单的引用计数
+} SimpleRefBase;
+
+void _ZNK7android7RefBase9incStrongEPKv(void* self, const void* id) {
+    SimpleRefBase* ref = (SimpleRefBase*)self;
+    ref->ref_count++;
+    l_debug("[RefBase] incStrong: %p -> count=%d", self, ref->ref_count);
+}
+
+void _ZNK7android7RefBase9decStrongEPKv(void* self, const void* id) {
+    SimpleRefBase* ref = (SimpleRefBase*)self;
+    ref->ref_count--;
+    l_debug("[RefBase] decStrong: %p -> count=%d", self, ref->ref_count);
+}
+
 extern void * _ZNSt9exceptionD2Ev;
 extern void * _ZSt17__throw_bad_allocv;
 extern void * _ZSt9terminatev;
@@ -150,6 +366,40 @@ void *dlsym_soloader(void * handle, const char * symbol) {
 
 so_default_dynlib default_dynlib[] = {
         // Common C/C++ internals
+
+        // String8 impl
+        { "_ZN7android7String8C1Ev", (uintptr_t)&_ZN7android7String8C1Ev },
+        { "_ZN7android7String8C1EPKc", (uintptr_t)&_ZN7android7String8C1EPKc },
+        { "_ZN7android7String8C1ERKS0_", (uintptr_t)&_ZN7android7String8C1ERKS0_ },
+        { "_ZN7android7String8D1Ev", (uintptr_t)&_ZN7android7String8D1Ev },
+        { "_ZN7android7String85setToEPKc", (uintptr_t)&_ZN7android7String85setToEPKc },
+        { "_ZN7android7String86appendEPKc", (uintptr_t)&_ZN7android7String86appendEPKc },
+        { "_ZN7android7String86appendERKS0_", (uintptr_t)&_ZN7android7String86appendERKS0_ },
+        { "_ZN7android7String810appendPathEPKc", (uintptr_t)&_ZN7android7String810appendPathEPKc },
+        { "_ZNK7android7String86stringEv", (uintptr_t)&_ZNK7android7String86stringEv },
+        { "_ZNK7android7String86lengthEv", (uintptr_t)&_ZNK7android7String86lengthEv },
+
+        // RefBase Impl
+        { "_ZN7android7RefBaseC2Ev", (uintptr_t)&_ZN7android7RefBaseC2Ev },
+        { "_ZN7android7RefBaseD2Ev", (uintptr_t)&_ZN7android7RefBaseD2Ev },
+        { "_ZN7android7RefBase10onFirstRefEv", (uintptr_t)&_ZN7android7RefBase10onFirstRefEv },
+        { "_ZN7android7RefBase15onLastStrongRefEPKv", (uintptr_t)&_ZN7android7RefBase15onLastStrongRefEPKv },
+        { "_ZN7android7RefBase13onLastWeakRefEPKv", (uintptr_t)&_ZN7android7RefBase13onLastWeakRefEPKv },
+        { "_ZN7android7RefBase20onIncStrongAttemptedEjPKv", (uintptr_t)&_ZN7android7RefBase20onIncStrongAttemptedEjPKv },
+
+        // Android Thread Impl
+        { "_ZN7android6ThreadC2Eb", (uintptr_t)&_ZN7android6ThreadC2Eb },
+        { "_ZN7android6ThreadD0Ev", (uintptr_t)&_ZN7android6ThreadD0Ev },
+        { "_ZN7android6ThreadD1Ev", (uintptr_t)&_ZN7android6ThreadD1Ev },
+        { "_ZN7android6ThreadD2Ev", (uintptr_t)&_ZN7android6ThreadD2Ev },
+        { "_ZN7android6Thread10readyToRunEv", (uintptr_t)&_ZN7android6Thread10readyToRunEv },
+        { "_ZN7android6Thread11requestExitEv", (uintptr_t)&_ZN7android6Thread11requestExitEv },
+        { "_ZN7android6Thread3runEPKcij", (uintptr_t)&_ZN7android6Thread3runEPKcij },
+
+        // RefCount Impl
+        { "_ZNK7android7RefBase9decStrongEPKv", (uintptr_t)&_ZNK7android7RefBase9decStrongEPKv },
+        { "_ZNK7android7RefBase9incStrongEPKv", (uintptr_t)&_ZNK7android7RefBase9incStrongEPKv },
+
         { "_ZNSt8bad_castD1Ev", (uintptr_t)&_ZNSt8bad_castD1Ev },
         { "_ZNSt9exceptionD2Ev", (uintptr_t)&_ZNSt9exceptionD2Ev },
         { "_ZSt17__throw_bad_allocv", (uintptr_t)&_ZSt17__throw_bad_allocv },
