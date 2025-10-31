@@ -223,6 +223,7 @@ int pthread_mutex_destroy_soloader(pthread_mutex_t_bionic *mutex)
 
 int pthread_mutex_lock_soloader(pthread_mutex_t_bionic *mutex)
 {
+    debugPrintf("pthread_mutex_lock_soloader(%p)",mutex);
     if (!mutex) return EINVAL;
     _mutex_t_static_init(mutex, NULL);
     return pthread_mutex_lock(mutex->real_ptr);
@@ -237,9 +238,16 @@ int pthread_mutex_trylock_soloader(pthread_mutex_t_bionic *mutex)
 
 int pthread_mutex_unlock_soloader(pthread_mutex_t_bionic *mutex)
 {
+     debugPrintf("pthread_mutex_unlock_soloader(%p)",mutex);
     if (!mutex) return EINVAL;
     if (!mutex->real_ptr) return EINVAL;
     return pthread_mutex_unlock(mutex->real_ptr);
+}
+
+void* pthread_getspecific_soloader(pthread_key_t key)
+{
+    debugPrintf("pthread_getspecific_soloader(%p)",key);
+    return pthread_getspecific(key);
 }
 
 int pthread_join_soloader(pthread_t thread, void **value_ptr)

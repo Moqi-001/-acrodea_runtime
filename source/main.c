@@ -79,10 +79,25 @@ int main() {
     int (* JNI_OnLoad)(void *jvm,int reserved) = (void *)so_symbol(&so_mod, "JNI_OnLoad");
     JNI_OnLoad(&jvm,0);
     debugPrintf("JNI_OnLoad over \n");
+
+    void* (* Get)() = (void *) so_symbol(&so_mod, "_ZN14RuntimeContext3GetEv");
+    void * RuntimeContextInstance=Get();
+    debugPrintf("RuntimeContextInstance  %p \n",RuntimeContextInstance);
+
+    int (* threadLoop)(void *) = (void *)so_symbol(&so_mod, "_ZN13RuntimeThread10threadLoopEv");
+    int addr=*((int*)(RuntimeContextInstance+208));
+    void* RuntimeThreadInstance=(void*)(addr);
+    debugPrintf("RuntimeThreadInstance  %p \n",RuntimeThreadInstance);
+
+    threadLoop(RuntimeThreadInstance);
+    debugPrintf("threadLoop over \n");
+
     gl_init();
     int (* kdMain)(void *,void *) = (void *)so_symbol(&so_mod, "kdMain");
     kdMain(NULL,NULL);
     debugPrintf("kdMain over \n");
+
+
     // int (* OnNativeInitializeJNI)(void *) = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_ItarosActivity_OnNativeInitializeJNI");
     // int (* NativePath)(void *,int,char *) = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativePath");
     // int (* NativeInitialize)(void *) = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativeInitialize");

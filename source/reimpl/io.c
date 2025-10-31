@@ -74,7 +74,7 @@ size_t fread_soloader(void * data, size_t _size, size_t _n, FILE * fd)
 
 FILE * fdopen_soloader(int fd, const char * mode) {
  
-    char* filename="ux0:data/DnfSword/assets.mp3";
+    char* filename="ux0:data/Acrodea/app.exe";
     debugPrintf("fdopen_soloader:%s",filename);
 #ifdef USE_SCELIBC_IO
     FILE* ret = sceLibcBridge_fopen(filename, mode);
@@ -96,6 +96,7 @@ FILE * fdopen_soloader(int fd, const char * mode) {
 }
 
 int open_soloader(const char * path, int oflag, ...) {
+    debugPrintf("open_soloader:%s",path);
     if (strcmp(path, "/proc/cpuinfo") == 0) {
         return open_soloader("app0:/cpuinfo", oflag);
     } else if (strcmp(path, "/proc/meminfo") == 0) {
@@ -160,6 +161,7 @@ int close_soloader(int fd) {
 }
 
 DIR* opendir_soloader(char* _pathname) {
+    l_debug("opendir(\"%s\")", _pathname);
     DIR* ret = opendir(_pathname);
     l_debug("opendir(\"%s\"): %p", _pathname, ret);
     return ret;

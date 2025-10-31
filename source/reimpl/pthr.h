@@ -75,7 +75,7 @@ int pthread_mutex_destroy_soloader(pthread_mutex_t_bionic *mutex);
 int pthread_mutex_lock_soloader(pthread_mutex_t_bionic *mutex);
 int pthread_mutex_trylock_soloader(pthread_mutex_t_bionic *mutex);
 int pthread_mutex_unlock_soloader(pthread_mutex_t_bionic *mutex);
-
+void* pthread_getspecific_soloader(pthread_key_t key);
 int pthread_attr_init_soloader(pthread_attr_t_bionic *attr);
 int pthread_attr_destroy_soloader(pthread_attr_t_bionic *attr);
 int pthread_attr_setdetachstate_soloader(pthread_attr_t_bionic *attr, int state);

@@ -24,9 +24,16 @@ void MC_knlPrintk(char* name)
     debugPrintf(name);
 }
 
+int __addIOGroup()
+{
+    debugPrintf("__addIOGroup");
+    return 0;
+}
+
 void so_patch(void) {
     // Sample hook
-    // hook_addr((uintptr_t)so_symbol(&so_mod, "MC_knlPrintk"), (uintptr_t)&MC_knlPrintk);
+    // hook_addr((uintptr_t)so_symbol(&so_mod, "__addIOGroup"), (uintptr_t)&__addIOGroup);
+
     // int * UserConfirm = (int *) so_symbol(&so_mod, "_UserConfirm");
     // * UserConfirm = 1;
     

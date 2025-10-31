@@ -356,9 +356,11 @@ void *dlsym_soloader(void * handle, const char * symbol) {
 
     int size_default_dynlib_type=sizeof(so_default_dynlib);
     void * result=NULL;
+    uintptr_t val;
      for (int j = 0; j < size_default_dynlib / size_default_dynlib_type; j++) {
         if (strcmp(symbol, default_dynlib_m[j].symbol) == 0) {
-             result = default_dynlib_m[j].func;  
+             val = default_dynlib_m[j].func;  
+             result=&val;
              l_debug("find symbol \"%s\".  %p", symbol,result);   
             break;
         }
@@ -366,6 +368,12 @@ void *dlsym_soloader(void * handle, const char * symbol) {
      if(!result)
         l_error("dlsym: Unknown symbol \"%s\".", symbol);
     return result;
+}
+
+void* dlopen_soloader(const char *file, int mode) {
+    l_debug("dlopen_soloader \"%s\".  mode:%p", file,mode); 
+    
+    return default_dynlib_m;
 }
 
 so_default_dynlib default_dynlib[] = {
@@ -1046,7 +1054,7 @@ so_default_dynlib default_dynlib[] = {
         { "pthread_equal", (uintptr_t) &pthread_equal_soloader },
         { "pthread_exit", (uintptr_t)&pthread_exit },
         { "pthread_getschedparam", (uintptr_t) &pthread_getschedparam_soloader },
-        { "pthread_getspecific", (uintptr_t)&pthread_getspecific },
+        { "pthread_getspecific", (uintptr_t)&pthread_getspecific_soloader },
         { "pthread_join", (uintptr_t) &pthread_join_soloader },
         { "pthread_key_create", (uintptr_t)&pthread_key_create },
         { "pthread_key_delete", (uintptr_t)&pthread_key_delete },
@@ -1124,7 +1132,7 @@ so_default_dynlib default_dynlib[] = {
         // libdl
         { "dlclose", (uintptr_t)&ret0 },
         { "dlerror", (uintptr_t)&ret0 },
-        { "dlopen", (uintptr_t)&ret1 },
+        { "dlopen", (uintptr_t)&dlopen_soloader },
         { "dlsym", (uintptr_t)&dlsym_soloader },
 
 
