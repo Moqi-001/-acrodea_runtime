@@ -254,17 +254,20 @@ private:
 
 // 构造函数
 void *_ZN7android7String8C1Ev() {
-    l_debug("_ZN7android7String8C1Ev");
+    l_debug("String8() called.");
     return new String8();
 }
 
+// 单参数构造函数
 void *_ZN7android7String8C1EPKc(const char *other) {
-    l_debug("_ZN7android7String8C1EPKc");
+    l_debug("String8(const char*) called with: %s", other ? other : "NULL");
+
     return new String8(other);
 }
 
-void* _ZN7android7String8C1EPKc(const char* other, size_t len) {
-    l_debug("_ZN7android7String8C1EPKcj - with length: %zu", len);
+// 带长度的构造函数
+void *_ZN7android7String8C1EPKcj(const char* other, size_t len) {
+    l_debug("String8(const char*, size_t) called - with length: %zu", len);
 
     // 创建新的 String8 对象
     String8* str = new String8();
@@ -283,6 +286,24 @@ void* _ZN7android7String8C1EPKc(const char* other, size_t len) {
         }
     }
     return str;
+}
+
+// 双字符串构造函数
+void * _ZN7android7String8C1EPKcS1_(const char* other, const char* other2) {
+    // l_debug("String8(const char*, const char*) called");
+    l_debug("String8(const char*, const char*) called with: %s <=>", other ? other : "NULL", other2 ? other2 : "NULL");
+
+    // 简化实现：连接两个字符串
+    size_t len1 = other ? strlen(other) : 0;
+    size_t len2 = other2 ? strlen(other2) : 0;
+    char* combined = (char*)malloc(len1 + len2 + 1);
+    if (other) memcpy(combined, other, len1);
+    if (other2) memcpy(combined + len1, other2, len2);
+    combined[len1 + len2] = 0;
+
+    void* result = new String8(combined);
+    free(combined);
+    return result;
 }
 
 void *_ZN7android7String8C1ERKS0_(void *other) {
@@ -500,7 +521,7 @@ void* _ZNK7android7String88walkPathEPS0_(void* self, void* outRemains) {
     l_debug("Found separator at position %ld, component length: %zu",
             cp - strData, componentLen);
 
-    void* result = _ZN7android7String8C1EPKc(buf, componentLen);
+    void* result = _ZN7android7String8C1EPKcj(buf, componentLen);
 
     if (outRemains) {
         // 设置剩余部分（跳过分隔符）

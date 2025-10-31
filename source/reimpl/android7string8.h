@@ -15,6 +15,8 @@ extern "C" {
 
     void* _ZN7android7String8C1Ev();
     void* _ZN7android7String8C1EPKc(const char* other);
+    void*_ZN7android7String8C1EPKcj(const char* other, size_t len);
+    void* _ZN7android7String8C1EPKcS1_(const char* other, const char* other2);
     void* _ZN7android7String8C1ERKS0_(void* other);
     void _ZN7android7String8D1Ev(void* self);
     void* _ZN7android7String85setToEPKc(void* self, const char* other);
