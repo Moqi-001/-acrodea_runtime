@@ -264,6 +264,7 @@ so_default_dynlib default_dynlib[] = {
         { "_ZNK7android7String86stringEv", (uintptr_t)&_ZNK7android7String86stringEv },
         { "_ZNK7android7String86lengthEv", (uintptr_t)&_ZNK7android7String86lengthEv },
         { "_ZNK7android7String810getPathDirEv", (uintptr_t)&_ZNK7android7String810getPathDirEv },
+        { "_ZNK7android7String88walkPathEPS0_", (uintptr_t)&_ZNK7android7String88walkPathEPS0_ },
 
         // RefBase Impl
         { "_ZN7android7RefBaseC2Ev", (uintptr_t)&_ZN7android7RefBaseC2Ev },

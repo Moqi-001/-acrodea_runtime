@@ -7,6 +7,8 @@
 
 #endif //ANDROID7STRING8_H
 
+#include <stddef.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -22,6 +24,7 @@ extern "C" {
     const char* _ZNK7android7String86stringEv(void* self);
     size_t _ZNK7android7String86lengthEv(void* self);
     void* _ZNK7android7String810getPathDirEv(void* self);
+    void* _ZNK7android7String88walkPathEPS0_(void* self, void* outRemains);
 
 #ifdef __cplusplus
 }

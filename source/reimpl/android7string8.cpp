@@ -1,267 +1,562 @@
 //
 // Created by Lisen on 2025/10/31.
 //
-#include <string>
-#include <stdint.h>
-#include <cstring>
-#include <cstdlib>
-#include <stdio.h>
-#include <stdlib.h>
-#include <inttypes.h>
 #include "utils/logger.h"
 #include "reimpl/android7string8.h"
+#include <string.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
 
-// 使用std::string包装的完整实现
-struct String8Impl {
-    std::string data;
+class SharedBuffer
+{
+public:
+    enum {
+        eKeepStorage = 0x00000001
+    };
+
+    static SharedBuffer* alloc(size_t size) {
+        if (size >= (SIZE_MAX - sizeof(SharedBuffer))) {
+            return nullptr;
+        }
+        SharedBuffer* sb = static_cast<SharedBuffer*>(malloc(sizeof(SharedBuffer) + size));
+        if (sb) {
+            sb->mRefs = 1;
+            sb->mSize = size;
+        }
+        return sb;
+    }
+
+    static void dealloc(const SharedBuffer* released) {
+        free(const_cast<SharedBuffer*>(released));
+    }
+
+    const void* data() const { return this + 1; }
+    void* data() { return this + 1; }
+    size_t size() const { return mSize; }
+
+    static SharedBuffer* bufferFromData(void* data) {
+        return data ? static_cast<SharedBuffer*>(data) - 1 : nullptr;
+    }
+
+    static const SharedBuffer* bufferFromData(const void* data) {
+        return data ? static_cast<const SharedBuffer*>(data) - 1 : nullptr;
+    }
+
+    static size_t sizeFromData(const void* data) {
+        return data ? bufferFromData(data)->mSize : 0;
+    }
+
+    SharedBuffer* edit() const {
+        if (onlyOwner()) {
+            return const_cast<SharedBuffer*>(this);
+        }
+        SharedBuffer* sb = alloc(mSize);
+        if (sb) {
+            memcpy(sb->data(), data(), size());
+            release();
+        }
+        return sb;
+    }
+
+    SharedBuffer* editResize(size_t newSize) const {
+        if (onlyOwner()) {
+            SharedBuffer* buf = const_cast<SharedBuffer*>(this);
+            if (buf->mSize == newSize) return buf;
+            if ((newSize >= (SIZE_MAX - sizeof(SharedBuffer)))) {
+                return nullptr;
+            }
+            buf = (SharedBuffer*)realloc(buf, sizeof(SharedBuffer) + newSize);
+            if (buf != nullptr) {
+                buf->mSize = newSize;
+                return buf;
+            }
+        }
+        SharedBuffer* sb = alloc(newSize);
+        if (sb) {
+            const size_t mySize = mSize;
+            memcpy(sb->data(), data(), newSize < mySize ? newSize : mySize);
+            release();
+        }
+        return sb;
+    }
+
+    SharedBuffer* attemptEdit() const {
+        if (onlyOwner()) {
+            return const_cast<SharedBuffer*>(this);
+        }
+        return nullptr;
+    }
+
+    SharedBuffer* reset(size_t new_size) const {
+        SharedBuffer* sb = alloc(new_size);
+        if (sb) {
+            release();
+        }
+        return sb;
+    }
+
+    void acquire() const {
+        mRefs++;
+    }
+
+    int32_t release(uint32_t flags = 0) const {
+        const bool useDealloc = ((flags & eKeepStorage) == 0);
+        if (onlyOwner()) {
+            mRefs = 0;
+            if (useDealloc) {
+                dealloc(this);
+            }
+            return 1;
+        }
+        int32_t prevRefCount = mRefs--;
+        if (prevRefCount == 1) {
+            if (useDealloc) {
+                dealloc(this);
+            }
+        }
+        return prevRefCount;
+    }
+
+    bool onlyOwner() const { return (mRefs == 1); }
+
+private:
+    SharedBuffer() = default;
+    ~SharedBuffer() = default;
+
+    mutable int32_t mRefs;
+    size_t mSize;
+    uint32_t mReserved[2];
 };
 
+// String8 的简化版本，只包含必要的数据成员
+class String8 {
+private:
+    const char *mString;
+
+public:
+    String8() : mString(getEmptyString()) {}
+
+    String8(const char *other) : mString(allocFromUTF8(other, other ? strlen(other) : 0)) {}
+
+    String8(const char* other, size_t len) : mString(allocFromUTF8(other, len)) {}
+
+    String8(const String8 &other) : mString(other.mString) {
+        SharedBuffer::bufferFromData(mString)->acquire();
+    }
+
+    ~String8() {
+        SharedBuffer::bufferFromData(mString)->release();
+    }
+
+    const char *string() const { return mString; }
+
+    size_t length() const {
+        const SharedBuffer* buf = SharedBuffer::bufferFromData(mString);
+        return buf ? buf->size() - 1 : 0;
+    }
+
+    size_t size() const { return length(); }
+
+    bool isEmpty() const { return length() == 0; }
+
+    String8 &setTo(const char *other) {
+        const char *newString = allocFromUTF8(other, other ? strlen(other) : 0);
+        SharedBuffer::bufferFromData(mString)->release();
+        mString = newString ? newString : getEmptyString();
+        return *this;
+    }
+
+    String8 &setTo(const String8 &other) {
+        SharedBuffer::bufferFromData(other.mString)->acquire();
+        SharedBuffer::bufferFromData(mString)->release();
+        mString = other.mString;
+        return *this;
+    }
+
+    String8 &append(const char *other) {
+        if (!other || !*other) return *this;
+        return real_append(other, strlen(other));
+    }
+
+    String8 &append(const String8 &other) {
+        if (other.isEmpty()) return *this;
+        return real_append(other.string(), other.length());
+    }
+
+    String8 &appendPath(const char *component) {
+        if (!component || !*component) return *this;
+
+        // 简单的路径追加实现
+        if (isEmpty()) {
+            setTo(component);
+        } else {
+            size_t len = length();
+            if (mString[len - 1] != '/') {
+                append("/");
+            }
+            append(component);
+        }
+        return *this;
+    }
+
+    String8 getPathDir() const {
+        if (isEmpty()) return String8("");
+
+        const char *str = mString;
+        const char *lastSlash = strrchr(str, '/');
+        if (!lastSlash) return String8("");
+
+        return String8(str, lastSlash - str);
+    }
+
+private:
+    static char *getEmptyString() {
+        static SharedBuffer *gEmptyBuf = nullptr;
+        if (!gEmptyBuf) {
+            gEmptyBuf = SharedBuffer::alloc(1);
+            char *str = static_cast<char *>(gEmptyBuf->data());
+            *str = 0;
+        }
+        gEmptyBuf->acquire();
+        return static_cast<char *>(gEmptyBuf->data());
+    }
+
+    static char *allocFromUTF8(const char *in, size_t len) {
+        if (len == 0) return getEmptyString();
+
+        SharedBuffer *buf = SharedBuffer::alloc(len + 1);
+        if (!buf) return getEmptyString();
+
+        char *str = static_cast<char *>(buf->data());
+        if (in && len > 0) {
+            memcpy(str, in, len);
+        }
+        str[len] = 0;
+        return str;
+    }
+
+    String8 &real_append(const char *other, size_t otherLen) {
+        if (otherLen == 0) return *this;
+
+        size_t myLen = length();
+        SharedBuffer *buf = SharedBuffer::bufferFromData(mString)->editResize(myLen + otherLen + 1);
+        if (buf) {
+            char *str = static_cast<char *>(buf->data());
+            mString = str;
+            memcpy(str + myLen, other, otherLen);
+            str[myLen + otherLen] = 0;
+        }
+        return *this;
+    }
+};
 
 // 构造函数
-void* _ZN7android7String8C1Ev() {
+void *_ZN7android7String8C1Ev() {
     l_debug("_ZN7android7String8C1Ev");
-
-    return new String8Impl();
+    return new String8();
 }
 
-void* _ZN7android7String8C1EPKc(const char* other) {
+void *_ZN7android7String8C1EPKc(const char *other) {
     l_debug("_ZN7android7String8C1EPKc");
+    return new String8(other);
+}
 
-    String8Impl* str = new String8Impl();
-    if (other) {
-        str->data = other;
+void* _ZN7android7String8C1EPKc(const char* other, size_t len) {
+    l_debug("_ZN7android7String8C1EPKcj - with length: %zu", len);
+
+    // 创建新的 String8 对象
+    String8* str = new String8();
+    if (other && len > 0) {
+        // 手动设置内容
+        SharedBuffer* buf = SharedBuffer::alloc(len + 1);
+        if (buf) {
+            char* data = static_cast<char*>(buf->data());
+            memcpy(data, other, len);
+            data[len] = 0;
+
+            // 释放原有的空字符串
+            SharedBuffer::bufferFromData(str->string())->release();
+            // 设置新的字符串
+            *((const char**)str) = data;
+        }
     }
     return str;
 }
 
-void* _ZN7android7String8C1ERKS0_(void* other) {
+void *_ZN7android7String8C1ERKS0_(void *other) {
     l_debug("_ZN7android7String8C1ERKS0_");
-
-    String8Impl* other_str = static_cast<String8Impl*>(other);
-    String8Impl* str = new String8Impl();
-    str->data = other_str->data;  // 使用std::string的拷贝构造函数
-    return str;
+    return new String8(*static_cast<String8 *>(other));
 }
 
 // 析构函数
-void _ZN7android7String8D1Ev(void* self) {
+void _ZN7android7String8D1Ev(void *self) {
     l_debug("_ZN7android7String8D1Ev");
-
-    delete static_cast<String8Impl*>(self);
+    delete static_cast<String8 *>(self);
 }
 
-// setTo 方法
-void* _ZN7android7String85setToEPKc(void* self, const char* other) {
+// setTo 函数
+void *_ZN7android7String85setToEPKc(void *self, const char *other) {
     l_debug("_ZN7android7String85setToEPKc");
-
-    String8Impl* str = static_cast<String8Impl*>(self);
-    if (other) {
-        str->data = other;
-    } else {
-        str->data.clear();
-    }
-    return self;
+    String8 *str = static_cast<String8 *>(self);
+    return &str->setTo(other);
 }
 
-// append 方法
-void* _ZN7android7String86appendEPKc(void* self, const char* other) {
+// append 函数
+void *_ZN7android7String86appendEPKc(void *self, const char *other) {
     l_debug("_ZN7android7String86appendEPKc");
-
-    String8Impl* str = static_cast<String8Impl*>(self);
-    if (other) {
-        str->data.append(other);
-    }
-    return self;
+    String8 *str = static_cast<String8 *>(self);
+    return &str->append(other);
 }
 
-void* _ZN7android7String86appendERKS0_(void* self, void* other) {
+void *_ZN7android7String86appendERKS0_(void *self, void *other) {
     l_debug("_ZN7android7String86appendERKS0_");
-
-    String8Impl* str = static_cast<String8Impl*>(self);
-    String8Impl* other_str = static_cast<String8Impl*>(other);
-    str->data.append(other_str->data);
-    return self;
+    String8 *str = static_cast<String8 *>(self);
+    String8 *otherStr = static_cast<String8 *>(other);
+    return &str->append(*otherStr);
 }
 
-// appendPath 方法
-void* _ZN7android7String810appendPathEPKc(void* self, const char* component) {
+// appendPath 函数
+void *_ZN7android7String810appendPathEPKc(void *self, const char *component) {
     l_debug("_ZN7android7String810appendPathEPKc");
-
-    String8Impl* str = static_cast<String8Impl*>(self);
-    if (!component) return self;
-
-    // 确保路径分隔符
-    if (!str->data.empty() && str->data.back() != '/') {
-        str->data.append("/");
-    }
-
-    // 添加组件
-    str->data.append(component);
-    return self;
+    String8 *str = static_cast<String8 *>(self);
+    return &str->appendPath(component);
 }
 
-// string() 方法
-const char* _ZNK7android7String86stringEv(void* self) {
+// 获取函数
+const char *_ZNK7android7String86stringEv(void *self) {
     l_debug("_ZNK7android7String86stringEv");
-
-    String8Impl* str = static_cast<String8Impl*>(self);
-    return str->data.c_str();
+    const String8 *str = static_cast<const String8 *>(self);
+    return str->string();
 }
 
-// length() 方法
-size_t _ZNK7android7String86lengthEv(void* self) {
+size_t _ZNK7android7String86lengthEv(void *self) {
     l_debug("_ZNK7android7String86lengthEv");
-
-    String8Impl* str = static_cast<String8Impl*>(self);
-    return str->data.length();
+    const String8 *str = static_cast<const String8 *>(self);
+    return str->length();
 }
 
-void* _ZN7android7String8pLEPKc(void* self, const char* other) {
-    l_debug("_ZN7android7String8pLEPKc");
+// 验证内存布局
+void debug_string8_layout() {
+    l_debug("=== String8 Memory Layout ===");
+    l_debug("sizeof(String8): %zu", sizeof(String8));
 
-    return _ZN7android7String86appendEPKc(self, other);
+    String8 test("test");
+    l_debug("test object at: %p", &test);
+    l_debug("test.mString at: %p", (void*)*((const char**)(&test)));
+    l_debug("test.string(): %p", test.string());
+    l_debug("=== End Memory Layout ===");
 }
 
-void* _ZN7android7String8pLERKS0_(void* self, void* other) {
-    l_debug("_ZN7android7String8pLERKS0_");
+// 辅助函数：检查指针是否可读
+bool isReadablePointer(const void* ptr) {
+    if (!ptr) return false;
 
-    return _ZN7android7String86appendERKS0_(self, other);
-}
-
-// clear 方法
-void _ZN7android7String85clearEv(void* self) {
-    l_debug("_ZN7android7String85clearEv");
-
-    String8Impl* str = static_cast<String8Impl*>(self);
-    str->data.clear();
-}
-
-// 赋值操作符
-void* _ZN7android7String8aSERKS0_(void* self, void* other) {
-    l_debug("_ZN7android7String8aSERKS0_");
-
-    String8Impl* str = static_cast<String8Impl*>(self);
-    String8Impl* other_str = static_cast<String8Impl*>(other);
-    str->data = other_str->data;
-    return self;
-}
-
-// 最大允许字符串长度
-static const size_t MAX_ALLOWED_STRING = 1 << 20; // 1MB
-
-// 检查地址是否落在可读映射区（/proc/self/maps）
-static bool addr_is_readable(const void* addr) {
-    if (!addr) return false;
-    uintptr_t a = (uintptr_t)addr;
-    FILE* f = fopen("/proc/self/maps", "r");
-    if (!f) return false;
-    char line[512];
-    bool ok = false;
-    while (fgets(line, sizeof(line), f)) {
-        uintptr_t start = 0, end = 0;
-        char perms[8] = {0};
-        // 解析如 "00400000-0040b000 r-xp ..."
-        if (sscanf(line, "%" PRIxPTR "-%" PRIxPTR " %7s", &start, &end, perms) >= 2) {
-            if (a >= start && a < end && perms[0] == 'r') { ok = true; break; }
-        }
+    // 1. 检查是否为常见的错误指针值
+    uintptr_t addr = (uintptr_t)ptr;
+    if (addr == 0xdeadbeef || addr == 0xbaadf00d ||
+        addr == 0xffffffff || addr < 0x1000) {
+        return false;
     }
-    fclose(f);
-    return ok;
-}
 
-static bool safe_read(void* out, const void* src, size_t len) {
-    if (!out || !src || len == 0) return false;
-    if (!addr_is_readable(src)) return false;
-    memcpy(out, src, len);
+    // 2. 检查是否在合理的用户空间地址范围内
+    if (addr < 0x08000000 || addr > 0x7FFFFFFF) {
+        return false;
+    }
+
     return true;
 }
 
-// 获取目录
-// ex: /home/user/document.txt => /home/user/
-void* _ZNK7android7String810getPathDirEv(void* self) {
-    l_debug("_ZNK7android7String810getPathDirEv self=%p", self);
+// 辅助函数：安全提取字符串
+void extractSafeString(const char* src, char* dest, size_t destSize) {
+    if (!src || !dest || destSize == 0) {
+        if (dest && destSize > 0) dest[0] = 0;
+        return;
+    }
+
+    size_t i;
+    for (i = 0; i < destSize - 1; i++) {
+        // 检查字符是否可打印或常见控制字符
+        if (src[i] == 0) break;
+        if (src[i] < 0 || src[i] > 127) break; // 简单ASCII检查
+
+        dest[i] = src[i];
+    }
+    dest[i] = 0;
+}
+
+// getPathDir 函数
+void *_ZNK7android7String810getPathDirEv(void *self) {
+    l_debug("_ZNK7android7String810getPathDirEv");
 
     if (!self) {
-        l_debug("self is NULL -> return '.'");
-        return _ZN7android7String8C1EPKc(".");
+        l_debug("ERROR: self is null!");
+        return nullptr;
     }
 
-    // 先安全读取 self 中的第一个指针 (mBuffer)
-    void* mBuffer = nullptr;
-    if (!safe_read(&mBuffer, self, sizeof(void*))) {
-        l_debug("failed to read mBuffer from self -> return '.'");
-        return _ZN7android7String8C1EPKc(".");
-    }
-    if (!mBuffer) {
-        l_debug("mBuffer is NULL -> return '.'");
-        return _ZN7android7String8C1EPKc(".");
-    }
+    // 直接检查内存内容，不依赖 String8 类
+    const char** mStringPtr = (const char**)((uintptr_t)self);
+    const char* strData = *mStringPtr;
 
-    // 验证 mBuffer 可读
-    if (!addr_is_readable(mBuffer)) {
-        l_debug("mBuffer %p not readable -> return '.'", mBuffer);
-        return _ZN7android7String8C1EPKc(".");
+    l_debug("Raw mString value: %p", strData);
+
+    // 检查是否是有效的指针（不是 0xdeadbeef 等标记值）
+    if ((uintptr_t)strData == 0xdeadbeef ||
+        (uintptr_t)strData == 0xbaadf00d ||
+        (uintptr_t)strData < 0x1000) {
+        l_debug("ERROR: mString contains invalid pointer: %p", strData);
+        // 返回一个空的 String8 对象而不是崩溃
+        return new String8("");
     }
 
-    // SharedBuffer 前两个字段通常是 size_t mRefs, size_t mSize
-    // 先读取这两个 size_t，注意 32/64 位差异由 sizeof(size_t) 自动处理
-    size_t header_vals[2] = {0, 0};
-    if (!safe_read(&header_vals, mBuffer, sizeof(header_vals))) {
-        l_debug("cannot read SharedBuffer header -> return '.'");
-        return _ZN7android7String8C1EPKc(".");
-    }
-    size_t mRefs = header_vals[0];
-    size_t mSize = header_vals[1];
-
-    // 合理性检查
-    if (mRefs > 1000000000) { // 非常大的引用计数不合理
-        l_debug("weird mRefs=%zu -> abort", mRefs);
-        return _ZN7android7String8C1EPKc(".");
-    }
-    if (mSize == 0 || mSize > MAX_ALLOWED_STRING) {
-        l_debug("weird mSize=%zu -> abort", mSize);
-        return _ZN7android7String8C1EPKc(".");
+    // 检查指针是否可读
+    if (!isReadablePointer(strData)) {
+        l_debug("ERROR: mString points to unreadable memory: %p", strData);
+        return new String8("");
     }
 
-    // 计算字符串数据起始地址: mBuffer + sizeof(size_t)*2
-    size_t header_bytes = sizeof(size_t) * 2;
-    const char* data_ptr = reinterpret_cast<const char*>((uintptr_t)mBuffer + header_bytes);
+    // 安全地提取字符串内容
+    char safeBuffer[256] = {0};
+    extractSafeString(strData, safeBuffer, sizeof(safeBuffer));
+    l_debug("Path string: '%s'", safeBuffer);
 
-    // 确保 data_ptr 在可读映射中
-    if (!addr_is_readable(data_ptr)) {
-        l_debug("data_ptr %p not readable -> return '.'", data_ptr);
-        return _ZN7android7String8C1EPKc(".");
+    // 手动实现 getPathDir 逻辑，不依赖 String8 的方法
+    const char* lastSlash = strrchr(safeBuffer, '/');
+    if (!lastSlash) {
+        l_debug("No directory separator found, returning empty");
+        return new String8("");
     }
 
-    // 读取字符串（受限于 mSize）
-    size_t to_read = (mSize < MAX_ALLOWED_STRING) ? mSize : MAX_ALLOWED_STRING;
-    // 临时缓冲，多分配一字节以保证以 '\0' 结束
-    char* tmp = (char*)malloc(to_read + 1);
-    if (!tmp) {
-        l_debug("malloc fail -> return '.'");
-        return _ZN7android7String8C1EPKc(".");
+    // 提取目录部分
+    size_t dirLen = lastSlash - safeBuffer;
+    char* dirPath = (char*)malloc(dirLen + 1);
+    if (!dirPath) {
+        l_debug("ERROR: malloc failed");
+        return new String8("");
     }
-    if (!safe_read(tmp, data_ptr, to_read)) {
-        l_debug("failed to read string bytes -> free & return '.'");
-        free(tmp);
-        return _ZN7android7String8C1EPKc(".");
+
+    memcpy(dirPath, safeBuffer, dirLen);
+    dirPath[dirLen] = 0;
+
+    l_debug("Directory: '%s'", dirPath);
+
+    String8* result = new String8(dirPath);
+    free(dirPath);
+
+    return result;
+}
+
+// walkPath
+void* _ZNK7android7String88walkPathEPS0_(void* self, void* outRemains) {
+    l_debug("_ZNK7android7String88walkPathEPS0_");
+
+    if (!self) {
+        l_debug("ERROR: self is null!");
+        return _ZN7android7String8C1Ev(); // 返回空字符串
     }
-    tmp[to_read] = '\0';
 
-    size_t actual_len = strnlen(tmp, to_read);
+    // 直接访问内存获取字符串
+    const char** mStringPtr = (const char**)((uintptr_t)self);
+    const char* strData = *mStringPtr;
 
-    std::string input(tmp, actual_len);
-    free(tmp);
+    l_debug("Input path: %p -> '%s'", strData, strData ? strData : "NULL");
 
-    l_debug("got string (len=%zu): %s", input.length(), input.c_str());
+    if (!strData || !strData[0]) {
+        l_debug("Empty path string");
+        if (outRemains) {
+            *(void**)outRemains = _ZN7android7String8C1Ev(); // 设置空的剩余部分
+        }
+        return _ZN7android7String8C1Ev(); // 返回空字符串
+    }
 
-    size_t last_slash = input.find_last_of('/');
-    std::string output;
-    if (last_slash == std::string::npos) output = ".";
-    else if (last_slash == 0) output = "/";
-    else output = input.substr(0, last_slash);
+    const char* buf = strData;
 
-    l_debug("getPathDir -> '%s'", output.c_str());
-    // 返回一个新构造的 String8
-    return _ZN7android7String8C1EPKc(output.c_str());
+    // 跳过开头的路径分隔符
+    if (*buf == '/') {
+        buf++;
+    }
+
+    // 找到第一个路径分隔符
+    const char* cp = strchr(buf, '/');
+
+    if (cp == nullptr) {
+        // 没有找到分隔符，返回整个字符串作为结果
+        l_debug("No path separator found, returning entire path");
+        void* result = _ZN7android7String8C1EPKc(buf);
+
+        if (outRemains) {
+            // 剩余部分为空
+            *(void**)outRemains = _ZN7android7String8C1Ev();
+        }
+
+        l_debug("Result: '%s', Remains: ''",
+                _ZNK7android7String86stringEv(result));
+        return result;
+    }
+
+    // 提取第一个路径组件
+    size_t componentLen = cp - buf;
+    l_debug("Found separator at position %ld, component length: %zu",
+            cp - strData, componentLen);
+
+    void* result = _ZN7android7String8C1EPKc(buf, componentLen);
+
+    if (outRemains) {
+        // 设置剩余部分（跳过分隔符）
+        *(void**)outRemains = _ZN7android7String8C1EPKc(cp + 1);
+    }
+
+    l_debug("Result: '%s', Remains: '%s'",
+            _ZNK7android7String86stringEv(result),
+            outRemains ? _ZNK7android7String86stringEv(*(void**)outRemains) : "NULL");
+
+    return result;
+}
+
+// operator= 赋值操作符
+void *_ZN7android7String8aSERKS0_(void *self, void *other) {
+    l_debug("_ZN7android7String8aSERKS0_");
+    String8 *str = static_cast<String8 *>(self);
+    String8 *otherStr = static_cast<String8 *>(other);
+    return &str->setTo(*otherStr);
+}
+
+// clear 函数
+void _ZN7android7String85clearEv(void *self) {
+    l_debug("_ZN7android7String85clearEv");
+    String8 *str = static_cast<String8 *>(self);
+    str->setTo("");
+}
+
+// isEmpty 函数
+int _ZNK7android7String87isEmptyEv(void *self) {
+    l_debug("_ZNK7android7String87isEmptyEv");
+    const String8 *str = static_cast<const String8 *>(self);
+    return str->isEmpty() ? 1 : 0;
+}
+
+// size 函数 (通常与 length 相同)
+size_t _ZNK7android7String84sizeEv(void *self) {
+    l_debug("_ZNK7android7String84sizeEv");
+    const String8 *str = static_cast<const String8 *>(self);
+    return str->size();
+}
+
+// format 函数
+void *_ZN7android7String86formatEPKcz(const char *fmt, ...) {
+    l_debug("_ZN7android7String86formatEPKcz");
+    va_list args;
+    va_start(args, fmt);
+    char buffer[1024];
+    vsnprintf(buffer, sizeof(buffer), fmt, args);
+    va_end(args);
+    return new String8(buffer);
+}
+
+// 获取共享缓冲区
+const void* _ZNK7android7String812sharedBufferEv(void* self) {
+    l_debug("_ZNK7android7String812sharedBufferEv");
+    const String8* str = static_cast<const String8*>(self);
+    return SharedBuffer::bufferFromData(str->string());
 }
