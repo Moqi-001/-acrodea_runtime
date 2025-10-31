@@ -25,6 +25,7 @@
 #include <falso_jni/FalsoJNI.h>
 #include <so_util/so_util.h>
 #include <fios/fios.h>
+#include "reimpl/android7string8.h"
 
 // Base address for the Android .so to be loaded at
 #define LOAD_ADDRESS 0x98000000
@@ -71,6 +72,13 @@ void soloader_init_all() {
         l_fatal("SO could not be loaded.");
         fatal_error("Error: could not load %s.", SO_PATH);
     }
+
+    l_debug("SO text base: %p", so_mod.text_base);
+    l_debug("SO text size: %zu", so_mod.text_size);
+
+    l_debug("Our getPathDir: %p", (void*)_ZNK7android7String810getPathDirEv);
+    l_debug("Our String8 constructor: %p", (void*)_ZN7android7String8C1Ev);
+
     settings_load();
     l_success("Settings loaded.");
     so_relocate(&so_mod);
