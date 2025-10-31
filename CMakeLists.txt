@@ -84,6 +84,7 @@ add_executable(${CMAKE_PROJECT_NAME}
                source/reimpl/time64.c
                source/reimpl/controls.c
                source/reimpl/asset_manager.cpp
+               source/reimpl/android7string8.cpp
                source/utils/dialog.c
                source/utils/glutil.c
                source/utils/init.c

@@ -59,136 +59,9 @@
 #include "reimpl/egl.h"
 #include "reimpl/time64.h"
 #include "reimpl/asset_manager.h"
+#include "reimpl/android7string8.h"
 
 const unsigned int __page_size = PAGE_SIZE;
-
-// String8 的 C 实现结构
-typedef struct {
-    char* data;
-    size_t length;
-    size_t capacity;
-} String8Impl;
-
-// 构造函数
-void* _ZN7android7String8C1Ev() {
-    l_debug("_ZN7android7String8C1Ev");
-    String8Impl* str = malloc(sizeof(String8Impl));
-    str->data = strdup("");
-    str->length = 0;
-    str->capacity = 1;
-    return str;
-}
-
-void* _ZN7android7String8C1EPKc(const char* other) {
-    l_debug("_ZN7android7String8C1EPKc");
-    String8Impl* str = malloc(sizeof(String8Impl));
-    if (other) {
-        str->length = strlen(other);
-        str->capacity = str->length + 1;
-        str->data = malloc(str->capacity);
-        strcpy(str->data, other);
-    } else {
-        str->data = strdup("");
-        str->length = 0;
-        str->capacity = 1;
-    }
-    return str;
-}
-
-void* _ZN7android7String8C1ERKS0_(void* other) {
-    l_debug("_ZN7android7String8C1ERKS0_");
-    String8Impl* other_str = (String8Impl*)other;
-    String8Impl* str = malloc(sizeof(String8Impl));
-    str->length = other_str->length;
-    str->capacity = other_str->capacity;
-    str->data = malloc(str->capacity);
-    strcpy(str->data, other_str->data);
-    return str;
-}
-
-// 析构函数
-void _ZN7android7String8D1Ev(void* self) {
-    l_debug("_ZN7android7String8D1Ev");
-    String8Impl* str = (String8Impl*)self;
-    if (str && str->data) {
-        free(str->data);
-    }
-    free(str);
-}
-
-// setTo 方法
-void* _ZN7android7String85setToEPKc(void* self, const char* other) {
-    l_debug("_ZN7android7String85setToEPKc");
-    String8Impl* str = (String8Impl*)self;
-    if (str->data) free(str->data);
-
-    if (other) {
-        str->length = strlen(other);
-        str->capacity = str->length + 1;
-        str->data = malloc(str->capacity);
-        strcpy(str->data, other);
-    } else {
-        str->data = strdup("");
-        str->length = 0;
-        str->capacity = 1;
-    }
-    return self;
-}
-
-// append 方法
-void* _ZN7android7String86appendEPKc(void* self, const char* other) {
-    l_debug("_ZN7android7String86appendEPKc");
-    String8Impl* str = (String8Impl*)self;
-    if (!other) return self;
-
-    size_t other_len = strlen(other);
-    size_t new_len = str->length + other_len;
-
-    if (new_len + 1 > str->capacity) {
-        str->capacity = new_len + 1;
-        str->data = realloc(str->data, str->capacity);
-    }
-
-    strcpy(str->data + str->length, other);
-    str->length = new_len;
-    return self;
-}
-
-void* _ZN7android7String86appendERKS0_(void* self, void* other) {
-    l_debug("_ZN7android7String86appendERKS0_");
-    String8Impl* str = (String8Impl*)self;
-    String8Impl* other_str = (String8Impl*)other;
-    return _ZN7android7String86appendEPKc(self, other_str->data);
-}
-
-// appendPath 方法
-void* _ZN7android7String810appendPathEPKc(void* self, const char* component) {
-    l_debug("_ZN7android7String810appendPathEPKc");
-    String8Impl* str = (String8Impl*)self;
-    if (!component) return self;
-
-    // 确保路径分隔符
-    if (str->length > 0 && str->data[str->length-1] != '/') {
-        _ZN7android7String86appendEPKc(self, "/");
-    }
-
-    // 添加组件
-    return _ZN7android7String86appendEPKc(self, component);
-}
-
-// string() 方法
-const char* _ZNK7android7String86stringEv(void* self) {
-    l_debug("_ZNK7android7String86stringEv");
-    String8Impl* str = (String8Impl*)self;
-    return str ? str->data : "";
-}
-
-// length() 方法
-size_t _ZNK7android7String86lengthEv(void* self) {
-    l_debug("_ZNK7android7String86lengthEv");
-    String8Impl* str = (String8Impl*)self;
-    return str ? str->length : 0;
-}
 
 // RefBase 的简化实现
 typedef struct {
@@ -390,6 +263,7 @@ so_default_dynlib default_dynlib[] = {
         { "_ZN7android7String810appendPathEPKc", (uintptr_t)&_ZN7android7String810appendPathEPKc },
         { "_ZNK7android7String86stringEv", (uintptr_t)&_ZNK7android7String86stringEv },
         { "_ZNK7android7String86lengthEv", (uintptr_t)&_ZNK7android7String86lengthEv },
+        { "_ZNK7android7String810getPathDirEv", (uintptr_t)&_ZNK7android7String810getPathDirEv },
 
         // RefBase Impl
         { "_ZN7android7RefBaseC2Ev", (uintptr_t)&_ZN7android7RefBaseC2Ev },
