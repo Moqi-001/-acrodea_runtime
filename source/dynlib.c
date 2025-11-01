@@ -153,6 +153,11 @@ void _ZNK7android7RefBase9decStrongEPKv(void* self, const void* id) {
     l_debug("[RefBase] decStrong: %p -> count=%d", self, ref->ref_count);
 }
 
+int chdir_wrap (const char *__path) {
+    l_debug("chdir invoke");
+    return 0;
+}
+
 extern void * _ZNSt9exceptionD2Ev;
 extern void * _ZSt17__throw_bad_allocv;
 extern void * _ZSt9terminatev;
@@ -587,7 +592,8 @@ so_default_dynlib default_dynlib[] = {
 
         { "access", (uintptr_t)&access },
         { "basename", (uintptr_t)&basename },
-        { "chdir", (uintptr_t)&chdir },
+        { "chdir", (uintptr_t)&chdir_wrap },
+        // { "chdir", (uintptr_t)&chdir },
         { "chmod", (uintptr_t)&chmod },
         { "dup", (uintptr_t)&dup_soloader },
         { "fseeko", (uintptr_t)&fseeko }, // TODO: wrap normal fseek for SceLibc version?

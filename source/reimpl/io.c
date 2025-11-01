@@ -42,6 +42,7 @@ for (size_t i = 0; i < count; i++)
 }
 FILE * fopen_soloader(const char * filename, const char * mode) {
     debugPrintf("fopen_soloader:%s",filename);
+    // TODO: 判断文件名称, 帮他引导到 DATA_PATH/filename 下去 open
 #ifdef USE_SCELIBC_IO
     FILE* ret = sceLibcBridge_fopen(filename, mode);
 #else
