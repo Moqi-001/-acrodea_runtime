@@ -254,20 +254,31 @@ private:
 
 // 构造函数
 void *_ZN7android7String8C1Ev() {
-    l_debug("String8() called.");
+    l_debug("_ZN7android7String8C1Ev");
     return new String8();
 }
 
-// 单参数构造函数
-void *_ZN7android7String8C1EPKc(const char *other) {
-    l_debug("String8(const char*) called with: %s", other ? other : "NULL");
+void *_ZN7android7String8C1Ev0(char *self) {
+    l_debug("_ZN7android7String8C1Ev0(%s)",((String8*)self)->string());
+    memset(self,0,strlen(self));
+    return self;
+}
 
+void *_ZN7android7String8C1EPKc0(const void **self,const char *other2) {
+    l_debug("_ZN7android7String8C1EPKc0(%s)",other2);
+    String8* path=new String8(DATA_PATH);
+    //path->append(other2) ;
+    *self=path;
+    return self;
+}
+
+void *_ZN7android7String8C1EPKc(const char *other) {
+    l_debug("_ZN7android7String8C1EPKc");
     return new String8(other);
 }
 
-// 带长度的构造函数
-void *_ZN7android7String8C1EPKcj(const char* other, size_t len) {
-    l_debug("String8(const char*, size_t) called - with length: %zu", len);
+void* _ZN7android7String8C1EPKc(const char* other, size_t len) {
+    l_debug("_ZN7android7String8C1EPKcj - with length: %zu", len);
 
     // 创建新的 String8 对象
     String8* str = new String8();
@@ -288,24 +299,6 @@ void *_ZN7android7String8C1EPKcj(const char* other, size_t len) {
     return str;
 }
 
-// 双字符串构造函数
-void * _ZN7android7String8C1EPKcS1_(const char* other, const char* other2) {
-    // l_debug("String8(const char*, const char*) called");
-    l_debug("String8(const char*, const char*) called with: %s <=>", other ? other : "NULL", other2 ? other2 : "NULL");
-
-    // 简化实现：连接两个字符串
-    size_t len1 = other ? strlen(other) : 0;
-    size_t len2 = other2 ? strlen(other2) : 0;
-    char* combined = (char*)malloc(len1 + len2 + 1);
-    if (other) memcpy(combined, other, len1);
-    if (other2) memcpy(combined + len1, other2, len2);
-    combined[len1 + len2] = 0;
-
-    void* result = new String8(combined);
-    free(combined);
-    return result;
-}
-
 void *_ZN7android7String8C1ERKS0_(void *other) {
     l_debug("_ZN7android7String8C1ERKS0_");
     return new String8(*static_cast<String8 *>(other));
@@ -314,7 +307,7 @@ void *_ZN7android7String8C1ERKS0_(void *other) {
 // 析构函数
 void _ZN7android7String8D1Ev(void *self) {
     l_debug("_ZN7android7String8D1Ev");
-    delete static_cast<String8 *>(self);
+    //delete static_cast<String8 *>(self);
 }
 
 // setTo 函数
@@ -326,21 +319,25 @@ void *_ZN7android7String85setToEPKc(void *self, const char *other) {
 
 // append 函数
 void *_ZN7android7String86appendEPKc(void *self, const char *other) {
-    l_debug("_ZN7android7String86appendEPKc");
+    l_debug("_ZN7android7String86appendEPKc(%s,%s)",self,other);
     String8 *str = static_cast<String8 *>(self);
     return &str->append(other);
 }
 
-void *_ZN7android7String86appendERKS0_(void *self, void *other) {
-    l_debug("_ZN7android7String86appendERKS0_");
-    String8 *str = static_cast<String8 *>(self);
-    String8 *otherStr = static_cast<String8 *>(other);
-    return &str->append(*otherStr);
+void *_ZN7android7String86appendERKS0_(void **self,const char *other) {
+   
+    String8 *str = static_cast<String8 *>(*self);
+    l_debug("_ZN7android7String86appendERKS0_(%s)",str->string());
+    String8 *otherStr = new String8(other);
+    if(!otherStr->isEmpty())
+       str->append(other);
+    l_debug("_ZN7android7String86appendERKS0_end(%s)",str->string());
+    return str;
 }
 
 // appendPath 函数
 void *_ZN7android7String810appendPathEPKc(void *self, const char *component) {
-    l_debug("_ZN7android7String810appendPathEPKc");
+    l_debug("_ZN7android7String810appendPathEPKc(%s,%s)",self,component);
     String8 *str = static_cast<String8 *>(self);
     return &str->appendPath(component);
 }
@@ -409,8 +406,9 @@ void extractSafeString(const char* src, char* dest, size_t destSize) {
 
 // getPathDir 函数
 void *_ZNK7android7String810getPathDirEv(void *self) {
-    l_debug("_ZNK7android7String810getPathDirEv");
-
+    l_debug("_ZNK7android7String810getPathDirEv()");
+    
+    return NULL;
     if (!self) {
         l_debug("ERROR: self is null!");
         return nullptr;
@@ -470,8 +468,8 @@ void *_ZNK7android7String810getPathDirEv(void *self) {
 
 // walkPath
 void* _ZNK7android7String88walkPathEPS0_(void* self, void* outRemains) {
-    l_debug("_ZNK7android7String88walkPathEPS0_");
-
+    l_debug("_ZNK7android7String88walkPathEPS0_()");
+    return NULL;
     if (!self) {
         l_debug("ERROR: self is null!");
         return _ZN7android7String8C1Ev(); // 返回空字符串
@@ -521,7 +519,7 @@ void* _ZNK7android7String88walkPathEPS0_(void* self, void* outRemains) {
     l_debug("Found separator at position %ld, component length: %zu",
             cp - strData, componentLen);
 
-    void* result = _ZN7android7String8C1EPKcj(buf, componentLen);
+    void* result = _ZN7android7String8C1EPKc(buf, componentLen);
 
     if (outRemains) {
         // 设置剩余部分（跳过分隔符）
