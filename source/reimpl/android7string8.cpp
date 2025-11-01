@@ -258,6 +258,20 @@ void *_ZN7android7String8C1Ev() {
     return new String8();
 }
 
+void *_ZN7android7String8C1Ev0(char *self) {
+    l_debug("_ZN7android7String8C1Ev0(%s)",((String8*)self)->string());
+    memset(self,0,strlen(self));
+    return self;
+}
+
+void *_ZN7android7String8C1EPKc0(const void **self,const char *other2) {
+    l_debug("_ZN7android7String8C1EPKc0(%s)",other2);
+    String8* path=new String8(DATA_PATH);
+    //path->append(other2) ;
+    *self=path;
+    return self;
+}
+
 void *_ZN7android7String8C1EPKc(const char *other) {
     l_debug("_ZN7android7String8C1EPKc");
     return new String8(other);
@@ -293,7 +307,7 @@ void *_ZN7android7String8C1ERKS0_(void *other) {
 // 析构函数
 void _ZN7android7String8D1Ev(void *self) {
     l_debug("_ZN7android7String8D1Ev");
-    delete static_cast<String8 *>(self);
+    //delete static_cast<String8 *>(self);
 }
 
 // setTo 函数
@@ -305,21 +319,25 @@ void *_ZN7android7String85setToEPKc(void *self, const char *other) {
 
 // append 函数
 void *_ZN7android7String86appendEPKc(void *self, const char *other) {
-    l_debug("_ZN7android7String86appendEPKc");
+    l_debug("_ZN7android7String86appendEPKc(%s,%s)",self,other);
     String8 *str = static_cast<String8 *>(self);
     return &str->append(other);
 }
 
-void *_ZN7android7String86appendERKS0_(void *self, void *other) {
-    l_debug("_ZN7android7String86appendERKS0_");
-    String8 *str = static_cast<String8 *>(self);
-    String8 *otherStr = static_cast<String8 *>(other);
-    return &str->append(*otherStr);
+void *_ZN7android7String86appendERKS0_(void **self,const char *other) {
+   
+    String8 *str = static_cast<String8 *>(*self);
+    l_debug("_ZN7android7String86appendERKS0_(%s)",str->string());
+    String8 *otherStr = new String8(other);
+    if(!otherStr->isEmpty())
+       str->append(other);
+    l_debug("_ZN7android7String86appendERKS0_end(%s)",str->string());
+    return str;
 }
 
 // appendPath 函数
 void *_ZN7android7String810appendPathEPKc(void *self, const char *component) {
-    l_debug("_ZN7android7String810appendPathEPKc");
+    l_debug("_ZN7android7String810appendPathEPKc(%s,%s)",self,component);
     String8 *str = static_cast<String8 *>(self);
     return &str->appendPath(component);
 }
@@ -388,8 +406,9 @@ void extractSafeString(const char* src, char* dest, size_t destSize) {
 
 // getPathDir 函数
 void *_ZNK7android7String810getPathDirEv(void *self) {
-    l_debug("_ZNK7android7String810getPathDirEv");
-
+    l_debug("_ZNK7android7String810getPathDirEv()");
+    
+    return NULL;
     if (!self) {
         l_debug("ERROR: self is null!");
         return nullptr;
@@ -449,8 +468,8 @@ void *_ZNK7android7String810getPathDirEv(void *self) {
 
 // walkPath
 void* _ZNK7android7String88walkPathEPS0_(void* self, void* outRemains) {
-    l_debug("_ZNK7android7String88walkPathEPS0_");
-
+    l_debug("_ZNK7android7String88walkPathEPS0_()");
+    return NULL;
     if (!self) {
         l_debug("ERROR: self is null!");
         return _ZN7android7String8C1Ev(); // 返回空字符串

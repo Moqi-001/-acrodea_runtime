@@ -253,8 +253,8 @@ so_default_dynlib default_dynlib[] = {
         // Common C/C++ internals
 
         // String8 impl
-        { "_ZN7android7String8C1Ev", (uintptr_t)&_ZN7android7String8C1Ev },
-        { "_ZN7android7String8C1EPKc", (uintptr_t)&_ZN7android7String8C1EPKc },
+        { "_ZN7android7String8C1Ev", (uintptr_t)&_ZN7android7String8C1Ev0 },
+        { "_ZN7android7String8C1EPKc", (uintptr_t)&_ZN7android7String8C1EPKc0 },
         { "_ZN7android7String8C1ERKS0_", (uintptr_t)&_ZN7android7String8C1ERKS0_ },
         { "_ZN7android7String8D1Ev", (uintptr_t)&_ZN7android7String8D1Ev },
         { "_ZN7android7String85setToEPKc", (uintptr_t)&_ZN7android7String85setToEPKc },
