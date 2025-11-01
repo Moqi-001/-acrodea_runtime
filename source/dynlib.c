@@ -1164,6 +1164,8 @@ so_default_dynlib default_dynlib[] = {
 
         { "systemTime", (uintptr_t)&ret0 },
         { "jniRegisterNativeMethods", (uintptr_t)&ret0 },
+        { "epoll_create", (uintptr_t)&ret0 },
+        
 };
 
 void resolve_imports(so_module* mod) {
