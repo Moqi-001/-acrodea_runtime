@@ -154,8 +154,8 @@ void _ZNK7android7RefBase9decStrongEPKv(void* self, const void* id) {
 }
 
 int chdir_wrap (const char *__path) {
-    l_debug("chdir invoke");
-    return 0;
+    l_debug("chdir invoke %s",__path);
+    return chdir(__path);
 }
 
 extern void * _ZNSt9exceptionD2Ev;

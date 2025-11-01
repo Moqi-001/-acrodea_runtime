@@ -93,9 +93,9 @@ int main() {
     debugPrintf("threadLoop over \n");
 
     gl_init();
-    int (* kdMain)(void *,void *) = (void *)so_symbol(&so_mod, "kdMain");
-    kdMain(NULL,NULL);
-    debugPrintf("kdMain over \n");
+    // int (* kdMain)(void *,void *) = (void *)so_symbol(&so_mod, "kdMain");
+    // kdMain(NULL,NULL);
+    // debugPrintf("kdMain over \n");
 
 
     // int (* OnNativeInitializeJNI)(void *) = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_ItarosActivity_OnNativeInitializeJNI");
