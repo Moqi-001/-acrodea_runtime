@@ -60,6 +60,7 @@
 #include "reimpl/time64.h"
 #include "reimpl/asset_manager.h"
 #include "reimpl/android7string8.h"
+#include "reimpl/md5.h"
 
 const unsigned int __page_size = PAGE_SIZE;
 
@@ -260,6 +261,11 @@ void* dlopen_soloader(const char *file, int mode) {
 }
 
 so_default_dynlib default_dynlib[] = {
+        // MD5 Impl
+        { "MD5_Init", (uintptr_t)&MD5_Init },
+        { "MD5_Update", (uintptr_t)&MD5_Update },
+        { "MD5_Final", (uintptr_t)&MD5_Final },
+
         // additional aeabi hook
         { "__aeabi_i2f", (uintptr_t)&__aeabi_i2f },
         { "__aeabi_fmul", (uintptr_t)&__aeabi_fmul },
