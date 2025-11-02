@@ -226,6 +226,8 @@ extern void *__srget;
 extern void *__stack_chk_guard;
 extern void *__swbuf;
 
+extern void *__aeabi_llsl;
+
 extern const char *BIONIC_ctype_;
 extern const short *BIONIC_tolower_tab_;
 extern const short *BIONIC_toupper_tab_;
@@ -244,7 +246,7 @@ void *dlsym_soloader(void * handle, const char * symbol) {
      for (int j = 0; j < size_default_dynlib / size_default_dynlib_type; j++) {
         if (strcmp(symbol, default_dynlib_m[j].symbol) == 0) {
              val = default_dynlib_m[j].func;  
-             result=&val;
+             result=val;
              l_debug("find symbol \"%s\".  %p", symbol,result);   
             break;
         }
@@ -337,6 +339,7 @@ so_default_dynlib default_dynlib[] = {
         { "__aeabi_l2d", (uintptr_t)&__aeabi_l2d },
         { "__aeabi_l2f", (uintptr_t)&__aeabi_l2f },
         { "__aeabi_ldivmod", (uintptr_t)&__aeabi_ldivmod },
+        { "__aeabi_llsl", (uintptr_t)&__aeabi_llsl },
         { "__aeabi_memclr", (uintptr_t)&__aeabi_memclr },
         { "__aeabi_memclr4", (uintptr_t)&__aeabi_memclr },
         { "__aeabi_memclr8", (uintptr_t)&__aeabi_memclr },

@@ -48,8 +48,8 @@ int main_thread(SceSize args, void *argp)
         uint32_t delta = (1000000 / (fpsLock+1));
 
         while (1) {
-            controls_poll();
-            NativeFrame();
+            //controls_poll();
+            //NativeFrame();
 
             while (sceKernelGetProcessTimeLow() - last_render_time < delta) {
                 sched_yield();
@@ -89,50 +89,34 @@ int main() {
     void* RuntimeThreadInstance=(void*)(addr);
     debugPrintf("RuntimeThreadInstance  %p \n",RuntimeThreadInstance);
 
-    threadLoop(RuntimeThreadInstance);
-    debugPrintf("threadLoop over \n");
+    //uintptr_t a1=*((uintptr_t*)(RuntimeThreadInstance)+9);
+    // void* a1=RuntimeContextInstance;
+    // debugPrintf("a1(%u)",a1);
+    // debugPrintf("a1p(%p)",(void*)a1);
+    // void* a22=a1+1144;
+    // debugPrintf("a22(%u)",a22);
+    // debugPrintf("a22s(%s)",(char*)a22);
+    // void* a33=a1+148;
+    // debugPrintf("a33(%u)",a33);
+    // debugPrintf("a33s(%s)",(char*)a33);
+    // void* a44=a1+164;
+    // debugPrintf("a44(%u)",a44);
+    // debugPrintf("a44s(%s)",(char*)a44);
+
+    int value = threadLoop(RuntimeThreadInstance);
+    debugPrintf("threadLoop over %d\n",value);
 
     gl_init();
     // int (* kdMain)(void *,void *) = (void *)so_symbol(&so_mod, "kdMain");
-    // kdMain(NULL,NULL);
-    // debugPrintf("kdMain over \n");
-
-
-    // int (* OnNativeInitializeJNI)(void *) = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_ItarosActivity_OnNativeInitializeJNI");
-    // int (* NativePath)(void *,int,char *) = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativePath");
-    // int (* NativeInitialize)(void *) = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativeInitialize");
-    // int (* NativeSize)(int,int,int,int) = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativeSize");
-    // int (* OnNativeCreateRenderer)() = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativeCreateRenderer");
-   
-	// int (* VFSInitialize)(void *,int,int,int,int,int,int) = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnVFSInitialize");
-
-    // OnNativeInitializeJNI(&jni);
-    // debugPrintf("OnNativeInitializeJNI over \n");
-
-    // NativePath(&jni,0,"ux0:data/DnfSword");
-    // debugPrintf("NativePath over \n");
-    
-    // VFSInitialize(&jni,0,1,0,0,0,52108710);
-    // debugPrintf("VFSInitialize over \n");
-
-    // NativeInitialize(&jni);
-    // debugPrintf("NativeInitialize over \n");
-
-    // int (* setMiliSecond)(int) = (void *)so_symbol(&so_mod, "setMiliSecond");
-    // setMiliSecond(31);
-    // debugPrintf("setMiliSecond(31) over \n");
+    // value= kdMain(NULL,NULL);
+    // debugPrintf("kdMain over %d \n",value);
 
     eglSwapInterval(0, 2);
 
-    // NativeSize(0,0,SCREEN_W,SCREEN_H);
-
-    // debugPrintf("NativeSize over \n");
-    // OnNativeCreateRenderer();
-    // debugPrintf("OnNativeCreateRenderer over \n");
-
     // ... do some initialization
+    return 0;
 
-    SceUID thid = sceKernelCreateThread("main_thread", (SceKernelThreadEntry)main_thread, 0x40,2* 128 * 1024, 0, 0, NULL);
-	sceKernelStartThread(thid, 0, NULL);
+    //SceUID thid = sceKernelCreateThread("main_thread", (SceKernelThreadEntry)main_thread, 0x40,2* 128 * 1024, 0, 0, NULL);
+	//sceKernelStartThread(thid, 0, NULL);
 	return sceKernelExitDeleteThread(0);
 }

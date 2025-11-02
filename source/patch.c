@@ -24,15 +24,15 @@ void MC_knlPrintk(char* name)
     debugPrintf(name);
 }
 
-int __addIOGroup()
+int ldDestroyContext(void* Context)
 {
-    debugPrintf("__addIOGroup");
+    debugPrintf("ldDestroyContext(%p)",Context);
     return 0;
 }
 
 void so_patch(void) {
     // Sample hook
-    // hook_addr((uintptr_t)so_symbol(&so_mod, "__addIOGroup"), (uintptr_t)&__addIOGroup);
+     hook_addr((uintptr_t)so_symbol(&so_mod, "ldDestroyContext"), (uintptr_t)&ldDestroyContext);
 
     // int * UserConfirm = (int *) so_symbol(&so_mod, "_UserConfirm");
     // * UserConfirm = 1;
