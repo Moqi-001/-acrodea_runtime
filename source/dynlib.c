@@ -158,6 +158,11 @@ int chdir_wrap (const char *__path) {
     return chdir(__path);
 }
 
+// additional aeabi extern
+extern void *__aeabi_i2f;
+extern void *__aeabi_fmul;
+extern void *__aeabi_f2iz;
+
 extern void * _ZNSt9exceptionD2Ev;
 extern void * _ZSt17__throw_bad_allocv;
 extern void * _ZSt9terminatev;
@@ -255,6 +260,11 @@ void* dlopen_soloader(const char *file, int mode) {
 }
 
 so_default_dynlib default_dynlib[] = {
+        // additional aeabi hook
+        { "__aeabi_i2f", (uintptr_t)&__aeabi_i2f },
+        { "__aeabi_fmul", (uintptr_t)&__aeabi_fmul },
+        { "__aeabi_f2iz", (uintptr_t)&__aeabi_f2iz },
+
         // Common C/C++ internals
 
         // String8 impl
@@ -917,6 +927,9 @@ so_default_dynlib default_dynlib[] = {
 
 
         // Pthread
+        { "__pthread_cleanup_push", (uintptr_t)&ret0 },
+        { "__pthread_cleanup_pop", (uintptr_t)&ret0 },
+
         { "pthread_attr_destroy", (uintptr_t)&pthread_attr_destroy_soloader },
         { "pthread_attr_init", (uintptr_t) &pthread_attr_init_soloader },
         { "pthread_attr_setdetachstate", (uintptr_t) &pthread_attr_setdetachstate_soloader },
