@@ -19,20 +19,23 @@
 
 extern so_module so_mod;
 
-void MC_knlPrintk(char* name)
+int ldGetErrorMessage(char* a1)
 {
-    debugPrintf(name);
+    char* s=a1 != 0 ? a1 + 64 : 0;
+    debugPrintf("ErrorMessage:%s",s);
+    return s;
 }
 
-int ldDestroyContext(void* Context)
+int kdExit(int Context)
 {
-    debugPrintf("ldDestroyContext(%p)",Context);
+    debugPrintf("kdExit(%d)",Context);
     return 0;
 }
 
 void so_patch(void) {
     // Sample hook
-     hook_addr((uintptr_t)so_symbol(&so_mod, "ldDestroyContext"), (uintptr_t)&ldDestroyContext);
+     hook_addr((uintptr_t)so_symbol(&so_mod, "kdExit"), (uintptr_t)&kdExit);
+     hook_addr((uintptr_t)so_symbol(&so_mod, "ldGetErrorMessage"), (uintptr_t)&ldGetErrorMessage);
 
     // int * UserConfirm = (int *) so_symbol(&so_mod, "_UserConfirm");
     // * UserConfirm = 1;

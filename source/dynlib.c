@@ -262,6 +262,31 @@ void* dlopen_soloader(const char *file, int mode) {
     return default_dynlib_m;
 }
 
+int fprintf0(FILE *stream, const char *format, char* a1,int a3,char*a2)
+{
+    l_debug("fprintf"); 
+    l_debug(format,a1,a3,a2); 
+    return 0;
+}
+
+int libandroidfw(void)
+{
+   l_debug("libandroidfw"); 
+   return 0;
+}
+
+int libutils(void)
+{
+   l_debug("libutils"); 
+   return 0;
+}
+
+int libmedia(void)
+{
+   l_debug("libmedia"); 
+   return 0;
+}
+
 so_default_dynlib default_dynlib[] = {
         // MD5 Impl
         { "MD5_Init", (uintptr_t)&MD5_Init },
@@ -652,7 +677,7 @@ so_default_dynlib default_dynlib[] = {
             { "sscanf", (uintptr_t)&sceLibcBridge_sscanf },
             { "vfprintf", (uintptr_t)&sceLibcBridge_vfprintf },
         #else
-            { "fprintf", (uintptr_t)&fprintf },
+            { "fprintf", (uintptr_t)&fprintf0 },
             { "fscanf", (uintptr_t)&fscanf },
             { "sscanf", (uintptr_t)&sscanf },
             { "vfprintf", (uintptr_t)&vfprintf },
@@ -933,7 +958,25 @@ so_default_dynlib default_dynlib[] = {
         { "glVertexPointer", (uintptr_t)&glVertexPointer },
         { "glViewport", (uintptr_t)&glViewport },
         { "glWeightPointerOES", (uintptr_t)&ret0 },
+        { "glWeightPointerOES", (uintptr_t)&ret0 },
 
+        //add gl
+        { "glGetRenderbufferParameteriv", (uintptr_t)&ret0 },
+        { "glStencilMaskSeparate", (uintptr_t)&glStencilMaskSeparate },
+        { "glStencilMaskSeparate", (uintptr_t)&glStencilMaskSeparate },
+        { "glGetUniformfv", (uintptr_t)&ret0 },
+        { "glVertexAttrib1f", (uintptr_t)&glVertexAttrib1f},
+        { "glVertexAttrib1fv", (uintptr_t)&glVertexAttrib1fv},
+        { "glVertexAttrib2f", (uintptr_t)&glVertexAttrib2f},
+        { "glVertexAttrib2fv", (uintptr_t)&glVertexAttrib2fv},
+        { "glVertexAttrib3f", (uintptr_t)&glVertexAttrib3f},
+        { "glVertexAttrib3fv", (uintptr_t)&glVertexAttrib3fv},
+        { "glVertexAttrib4f", (uintptr_t)&glVertexAttrib4f},
+        { "glVertexAttrib4fv", (uintptr_t)&glVertexAttrib4fv},
+        { "eglReleaseThread", (uintptr_t)&ret0 },
+        { "glGetAttachedShaders", (uintptr_t)&glGetAttachedShaders },
+        { "glGetVertexAttribiv", (uintptr_t)&glGetVertexAttribiv },
+        { "glUniform2i", (uintptr_t)&glUniform2i },
 
         // Pthread
         { "__pthread_cleanup_push", (uintptr_t)&ret0 },
@@ -1187,7 +1230,27 @@ so_default_dynlib default_dynlib[] = {
         { "systemTime", (uintptr_t)&ret0 },
         { "jniRegisterNativeMethods", (uintptr_t)&ret0 },
         { "epoll_create", (uintptr_t)&ret0 },
-        
+
+        { "_ZN7android10AudioTrack3setE19audio_stream_type_tj14audio_format_tji20audio_output_flags_tPFviPvS4_ES4_iRKNS_2spINS_7IMemoryEEEbi", (uintptr_t)&libmedia },
+        { "_ZN7android10AudioTrack3setE19audio_stream_type_tj14audio_format_tii20audio_output_flags_tPFviPvS4_ES4_iRKNS_2spINS_7IMemoryEEEbi", (uintptr_t)&libmedia },
+        { "_ZN7android10AudioTrack3setEijiiijPFviPvS1_ES1_iRKNS_2spINS_7IMemoryEEEbi", (uintptr_t)&libmedia },
+        { "_ZN7android10AudioTrack3setEijiiijPFviPvS1_ES1_iRKNS_2spINS_7IMemoryEEEb", (uintptr_t)&libmedia },
+        { "_ZN7android10AudioTrack3setE19audio_stream_type_tj14audio_format_tji20audio_output_flags_tPFviPvS4_ES4_iRKNS_2spINS_7IMemoryEEEbiNS0_13transfer_typeEPK20audio_offload_info_t", (uintptr_t)&libmedia },
+        { "_ZN7android10AudioTrack3setE19audio_stream_type_tj14audio_format_tji20audio_output_flags_tPFviPvS4_ES4_iRKNS_2spINS_7IMemoryEEEbiNS0_13transfer_typeEPK20audio_offload_info_ti", (uintptr_t)&libmedia },
+        { "_ZNK7android10AudioTrack9initCheckEv", (uintptr_t)&libmedia },
+        { "_ZN7android10AudioTrack5startEv", (uintptr_t)&libmedia },
+        { "_ZN7android11AudioRecord3setE14audio_source_tj14audio_format_tjiNS0_12record_flagsEPFviPvS4_ES4_ibi", (uintptr_t)&libmedia },
+        { "_ZN7android11AudioRecord3setEijijijPFviPvS1_ES1_ibi", (uintptr_t)&libmedia },
+        { "_ZN7android11AudioRecord3setEijijijPFviPvS1_ES1_ib", (uintptr_t)&libmedia },
+        { "_ZN7android11AudioRecord5startEv", (uintptr_t)&libmedia },
+        { "_ZN7android11AudioRecord3setE14audio_source_tj14audio_format_tjiPFviPvS3_ES3_ibiNS0_13transfer_typeE19audio_input_flags_t", (uintptr_t)&libmedia },
+
+        { "_ZNK7android9ZipFileRO12getEntryInfoEPvPiPlS3_S3_S3_S3_", (uintptr_t)&libutils },
+        { "_ZNK7android9ZipFileRO12getEntryInfoEPvPiPjS3_PlS4_S4_", (uintptr_t)&libutils },
+        { "_ZNK7android9ZipFileRO12getEntryInfoEPvPiPjS3_PxPlS5_", (uintptr_t)&libutils },
+        { "_ZN7android9ZipFileRO4openEPKc", (uintptr_t)&libutils },
+        { "_ZNK7android9ZipFileRO15uncompressEntryEPvS1_", (uintptr_t)&libutils },
+        { "_ZNK7android9ZipFileRO15findEntryByNameEPKc", (uintptr_t)&libutils },
 };
 
 void resolve_imports(so_module* mod) {
