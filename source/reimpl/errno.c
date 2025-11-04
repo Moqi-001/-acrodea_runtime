@@ -112,6 +112,7 @@ static newlib_errno_to_bionic_errno errno_translation[] = {
 };
 
 int * __errno_soloader(void) {
+	l_debug("__errno");
 	int e = errno;
 
 	for (int i = 0; i < sizeof(errno_translation) / sizeof(errno_translation[0]); ++i) {
@@ -124,6 +125,8 @@ int * __errno_soloader(void) {
 }
 
 char * strerror_soloader(int error_number) {
+	l_debug("strerror");
+
 	for (int i = 0; i < sizeof(errno_translation) / sizeof(errno_translation[0]); ++i) {
 		if (error_number == errno_translation[i].errno_bionic)
 			return (char *) errno_translation[i].strerror;
@@ -134,6 +137,7 @@ char * strerror_soloader(int error_number) {
 }
 
 int strerror_r_soloader(int error_number, char* buf, size_t buf_len) {
+	l_debug("strerror_r");
 	const char * err = NULL;
 
 	for (int i = 0; i < sizeof(errno_translation) / sizeof(errno_translation[0]); ++i) {
