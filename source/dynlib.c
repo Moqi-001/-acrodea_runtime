@@ -705,6 +705,24 @@ so_default_dynlib default_dynlib[] = {
         { "eglSwapBuffers", (uintptr_t)&eglSwapBuffers },
         { "eglTerminate", (uintptr_t)&eglTerminate },
 
+    	// additional EGL Hook
+        { "eglGetCurrentDisplay", (uintptr_t)&ret0 },
+        { "eglSwapInterval", (uintptr_t)&ret0 },
+        { "eglCreatePbufferSurface", (uintptr_t)&ret0 },
+        { "eglCreatePixmapSurface", (uintptr_t)&ret0 },
+        { "eglQueryAPI", (uintptr_t)&ret0 },
+        { "eglWaitClient", (uintptr_t)&ret0 },
+        { "eglCreatePbufferFromClientBuffer", (uintptr_t)&ret0 },
+        { "eglSurfaceAttrib", (uintptr_t)&ret0 },
+        { "eglBindTexImage", (uintptr_t)&ret0 },
+        { "eglReleaseTexImage", (uintptr_t)&ret0 },
+        { "eglGetCurrentSurface", (uintptr_t)&ret0 },
+        { "eglWaitGL", (uintptr_t)&ret0 },
+        { "eglWaitNative", (uintptr_t)&ret0 },
+        { "eglCopyBuffers", (uintptr_t)&ret0 },
+        { "eglLockSurfaceKHR", (uintptr_t)&ret0 },
+        { "eglUnlockSurfaceKHR", (uintptr_t)&ret0 },
+
 
         // OpenGL
         { "glActiveTexture", (uintptr_t)&glActiveTexture },
@@ -958,11 +976,9 @@ so_default_dynlib default_dynlib[] = {
         { "glVertexPointer", (uintptr_t)&glVertexPointer },
         { "glViewport", (uintptr_t)&glViewport },
         { "glWeightPointerOES", (uintptr_t)&ret0 },
-        { "glWeightPointerOES", (uintptr_t)&ret0 },
 
         //add gl
         { "glGetRenderbufferParameteriv", (uintptr_t)&ret0 },
-        { "glStencilMaskSeparate", (uintptr_t)&glStencilMaskSeparate },
         { "glStencilMaskSeparate", (uintptr_t)&glStencilMaskSeparate },
         { "glGetUniformfv", (uintptr_t)&ret0 },
         { "glVertexAttrib1f", (uintptr_t)&glVertexAttrib1f},
@@ -977,6 +993,20 @@ so_default_dynlib default_dynlib[] = {
         { "glGetAttachedShaders", (uintptr_t)&glGetAttachedShaders },
         { "glGetVertexAttribiv", (uintptr_t)&glGetVertexAttribiv },
         { "glUniform2i", (uintptr_t)&glUniform2i },
+    	{ "glIsRenderbuffer", (uintptr_t)&glIsRenderbuffer },
+        { "glGetVertexAttribPointerv", (uintptr_t)&glGetVertexAttribPointerv },
+        { "glIsFramebuffer", (uintptr_t)&glIsFramebuffer },
+        { "glGetFramebufferAttachmentParameteriv", (uintptr_t)&glGetFramebufferAttachmentParameteriv },
+        { "glGetVertexAttribfv", (uintptr_t)&glGetVertexAttribfv },
+        { "glGetShaderPrecisionFormat", (uintptr_t)&ret0 },
+        { "glGetUniformiv", (uintptr_t)&ret0 },
+        { "glIsProgram", (uintptr_t)&glIsProgram },
+        { "glIsShader", (uintptr_t)&ret0 },
+        { "glIsTexture", (uintptr_t)&glIsTexture },
+        { "glReleaseShaderCompiler", (uintptr_t)&glReleaseShaderCompiler },
+        { "glShaderBinary", (uintptr_t)&glShaderBinary },
+        { "glUniform3i", (uintptr_t)&glUniform3i },
+        { "glUniform4i", (uintptr_t)&glUniform4i },
 
         // Pthread
         { "__pthread_cleanup_push", (uintptr_t)&ret0 },
