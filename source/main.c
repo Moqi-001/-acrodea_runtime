@@ -22,22 +22,6 @@ jobjectArray JobjectArray;
 int StartOffset;
 char* dspUserID;
 
-void loadConfig() {
-    char buffer[30];
-    int value;
-    StartOffset=0;
-    FILE *config = fopen(CONFIG_FILE_PATH, "r");
-
-    if (config) {
-        while (EOF != fscanf(config, "%[^ ] %d\n", buffer, &value)) {
-            if (strcmp("StartOffset", buffer) == 0) 
-                 StartOffset = value;
-          
-        }
-        fclose(config);
-    }
-}
-
 int main_thread(SceSize args, void *argp)
 {
 
@@ -63,19 +47,9 @@ int main_thread(SceSize args, void *argp)
 	return 0;
 }
 
-void Login()
-{
-    int (* OnNativeNxLoginResult)(int,int,int,char *) = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativeNxLoginResult");
-    dspUserID="268435456";
-
-    OnNativeNxLoginResult(&jni,0,1,dspUserID);
-    // int (* OnNativeRepleRegist)() = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativeRepleRegist");
-    // OnNativeRepleRegist();
-}
-
 int main() {
     soloader_init_all();
-    loadConfig();
+
     int (* JNI_OnLoad)(void *jvm,int reserved) = (void *)so_symbol(&so_mod, "JNI_OnLoad");
     JNI_OnLoad(&jvm,0);
     debugPrintf("JNI_OnLoad over \n");

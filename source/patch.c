@@ -14,6 +14,7 @@
 #include <kubridge.h>
 // #include <string.h>
 // #include <stdlib.h>
+#include <stdio.h>
 #include <so_util/so_util.h>
 #include "utils/logger.h"
 #define _DWORD uintptr_t
@@ -35,13 +36,24 @@ int kdExit(int Context)
 int __kdFlushICache(char *a1, int a2)
 {
     debugPrintf("__kdFlushICache(%p,%d)",a1,a2);
+    kuKernelFlushCaches(a1,a2);
     return 0;
 }
 
-int ldModuleGetEntryPoint(void *a1)
+int ldModuleGetEntryPoint(_DWORD *a1)
 {
     debugPrintf("ldModuleGetEntryPoint(%p)",a1);
-    return 0;
+    int v1; // r3
+    int v2; // r3
+    int EntryPoint=0;
+    if ( a1 && (v1 = a1[17]) != 0 && (v2 = *(_DWORD *)(v1 + 24)) != 0 )
+    {
+
+       EntryPoint= v2 + a1[10] + a1[12];
+    }
+
+    debugPrintf("ldModuleGetEntryPoint return(%p)",EntryPoint);
+    return EntryPoint;
 }
 
 int ldModuleInitialize(_DWORD *a1)
@@ -111,7 +123,7 @@ int ldModuleInitialize(_DWORD *a1)
             int addr=v10 + a1[10] + a1[12];
             debugPrintf("ldModuleInitializev addr:(%p)",(void*)addr);
             ((void (*)(void))(addr))();
-            debugPrintf("ldModuleInitializev finish");
+            debugPrintf("ldModuleInitializev v10 finish");
           }
         }
         v6 += 2;
@@ -125,23 +137,87 @@ int ldModuleInitialize(_DWORD *a1)
         {
           debugPrintf("ldModuleInitialize v12(%p)",v12);
           v13 = *v12++;
+          debugPrintf("ldModuleInitialize v13(%p)",v13);
           v13();
+          debugPrintf("ldModuleInitialize v13 finish");
           ++v11;
         }
       }
       a1[4] = 2;
     }
   }
+  debugPrintf("ldModuleInitializev over");
+
   return 0;
+}
+
+int (*ggeeLibExpand)(void *compressed_data, uint32_t compressed_size, void *expanded_data, uint32_t expanded_size);
+
+int ggeeLibExpandFile(const char *srcpath, const char *dstpath) {
+    int      res             = 0;
+    FILE    *handle          = NULL;
+    void    *compressed_data = NULL;
+    uint32_t compressed_size;
+    void    *expanded_data = NULL;
+    ;
+    uint32_t expanded_size;
+
+    handle = fopen(srcpath, "rb");
+    if (!handle) {
+        debugPrintf("fopen srcpath failed: %s\n", srcpath);
+        goto FAILED;
+    }
+
+    fseek(handle, 0, SEEK_END);
+    compressed_size = ftell(handle);
+    fseek(handle, 0, SEEK_SET);
+
+    compressed_data = malloc(compressed_size);
+    if (!compressed_data) {
+        debugPrintf("malloc compressed_data failed!\n");
+        goto FAILED;
+    }
+
+    fread(compressed_data, 1, compressed_size, handle);
+    fclose(handle);
+
+    if (!ggeeLibExpand(compressed_data, compressed_size, &expanded_data, &expanded_size)) {
+        debugPrintf("ggeeLibExpand failed!\n");
+        goto FAILED;
+    }
+
+    handle = fopen(dstpath, "wb");
+    if (!handle) {
+        debugPrintf("fopen dstpath failed: %s\n", srcpath);
+        goto FAILED;
+    }
+    fwrite(expanded_data, 1, expanded_size, handle);
+
+END:
+    if (handle)
+        fclose(handle);
+    if (compressed_data)
+        free(compressed_data);
+    if (expanded_data)
+        free(expanded_data);
+    return res;
+
+FAILED:
+    res = -1;
+    goto END;
 }
 
 void so_patch(void) {
     // Sample hook
-     hook_addr((uintptr_t)so_symbol(&so_mod, "kdExit"), (uintptr_t)&kdExit);
-     hook_addr((uintptr_t)so_symbol(&so_mod, "ldGetErrorMessage"), (uintptr_t)&ldGetErrorMessage);
-     hook_addr((uintptr_t)so_symbol(&so_mod, "__kdFlushICache"), (uintptr_t)&__kdFlushICache);
-     hook_addr((uintptr_t)so_symbol(&so_mod, "ldModuleInitialize"), (uintptr_t)&ldModuleInitialize);
-
+    hook_addr((uintptr_t)so_symbol(&so_mod, "kdExit"), (uintptr_t)&kdExit);
+    hook_addr((uintptr_t)so_symbol(&so_mod, "ldGetErrorMessage"), (uintptr_t)&ldGetErrorMessage);
+    hook_addr((uintptr_t)so_symbol(&so_mod, "__kdFlushICache"), (uintptr_t)&__kdFlushICache);
+    hook_addr((uintptr_t)so_symbol(&so_mod, "ldModuleInitialize"), (uintptr_t)&ldModuleInitialize);
+    hook_addr((uintptr_t)so_symbol(&so_mod, "ldModuleGetEntryPoint"), (uintptr_t)&ldModuleGetEntryPoint);
+     
+    ggeeLibExpand = (void *)so_symbol(&so_mod, "ggeeLibExpand");
+    //ggeeLibExpandFile("ux0:data/Acrodea/lib4_5_0/bootstrap.exe", "ux0:data/Acrodea/lib4_5_0/libBootstrap.so");
+    
     // int * UserConfirm = (int *) so_symbol(&so_mod, "_UserConfirm");
     // * UserConfirm = 1;
     

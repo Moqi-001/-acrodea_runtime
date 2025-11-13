@@ -128,9 +128,9 @@ void controls_init() {
     sceTouchSetSamplingState(SCE_TOUCH_PORT_FRONT, 1);
     sceTouchEnableTouchForce(SCE_TOUCH_PORT_FRONT);
 
-    nativeOnTouchPress = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativeTouchPress");
-    nativeOnTouchMove = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativeTouchMove");
-    nativeOnTouchRelease = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativeTouchRelease");
+    //nativeOnTouchPress = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativeTouchPress");
+    //nativeOnTouchMove = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativeTouchMove");
+    //nativeOnTouchRelease = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativeTouchRelease");
 }
 
 int combo1_active = 0;

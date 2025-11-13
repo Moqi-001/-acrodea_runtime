@@ -74,7 +74,7 @@ void soloader_init_all() {
     }
 
     l_debug("SO text base: %p", so_mod.text_base);
-    l_debug("SO text size: %zu", so_mod.text_size);
+    l_debug("SO text size: %u", so_mod.text_size);
 
     l_debug("Our getPathDir: %p", (void*)_ZNK7android7String810getPathDirEv);
     l_debug("Our String8 constructor: %p", (void*)_ZN7android7String8C1Ev);
@@ -92,7 +92,7 @@ void soloader_init_all() {
 
     so_flush_caches(&so_mod);
     l_success("SO caches flushed.");
-
+    
     so_initialize(&so_mod);
     l_success("SO initialized.");
 
