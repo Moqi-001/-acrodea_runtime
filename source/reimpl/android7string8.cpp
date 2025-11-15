@@ -162,7 +162,9 @@ public:
     bool isEmpty() const { return length() == 0; }
 
     String8 &setTo(const char *other) {
+        l_debug("setTo(%s)",other);
         const char *newString = allocFromUTF8(other, other ? strlen(other) : 0);
+        l_debug("setTo newString(%s)",newString);
         SharedBuffer::bufferFromData(mString)->release();
         mString = newString ? newString : getEmptyString();
         return *this;

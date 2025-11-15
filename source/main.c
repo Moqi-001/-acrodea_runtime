@@ -86,11 +86,12 @@ int main() {
     marketlaunch=(void*)(LOAD_ADDRESS+0x416CD);
     debugPrintf("marketlaunch start %p\n",marketlaunch);
 
-    int v53=((int*)RuntimeContextInstance)[53];
+    int v53=((char*)RuntimeContextInstance)[53];
     debugPrintf("marketlaunch v53 %d",v53);
     if(v53)
     {
-        ((int*)RuntimeContextInstance)[53]=0;
+        ((char*)RuntimeContextInstance)[53]=0;
+        debugPrintf("marketlaunch v53=0");
     }
 
     char* appId="com.acrodea.gamecenter";
@@ -105,7 +106,7 @@ int main() {
     int a13=1;
     char* a14="from_manager:log_print";
     char* a15[1]={"boot_from=com.acrodea.gamecenter"};
-    marketlaunch(RuntimeContextInstance,appId,18,-1,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15);
+    marketlaunch(RuntimeContextInstance,appId,10,-1,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15);
     debugPrintf("marketlaunch over %p\n",marketlaunch);
     gl_init();
     // int (* kdMain)(void *,void *) = (void *)so_symbol(&so_mod, "kdMain");

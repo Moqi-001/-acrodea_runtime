@@ -1,4 +1,4 @@
-#include <android7string8_.h>
+#include "reimpl/android7string8_.h"
 
 int android_String8_init(String8 **pstr8) {
     if (!pstr8)
@@ -93,7 +93,7 @@ int android_String8_appendPathCstring(String8 **pstr8, const char *s) {
 int android_String8_setToByCstring(String8 **pstr8, const char *s) {
 if (!pstr8 || !*pstr8 || !s)
         return -1;
-
+    l_debug("android_String8_setToByCstring(,%s)",s);
     size_t len = strlen(s);
     if (len > STRING8_MAX_DATA_SIZE - 1)
         len = STRING8_MAX_DATA_SIZE - 1;
@@ -112,6 +112,8 @@ void android_String8_empty(String8 *str8) {
 }
 
 const char *android_String8_string(String8 *str8) {
+    if(str8)
+    l_debug("android_String8_string(%s)",str8->data);
     return str8 ? str8->data : NULL;
 }
 
