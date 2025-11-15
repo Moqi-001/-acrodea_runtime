@@ -40,6 +40,17 @@ int __kdFlushICache(char *a1, int a2)
     return 0;
 }
 
+int (*EP)(int, int, _DWORD);
+
+int start(int a1, int a2, _DWORD a3)
+{
+     debugPrintf("start(%d,%d,%d)",a1,a2,a3);
+     //char* s[2]={"com.acrodea.vividruntime.launcher","launch"};
+     int ret=EP(a1,a2,a3);
+     debugPrintf("start return %d",ret);
+     return ret;
+}
+
 int ldModuleGetEntryPoint(_DWORD *a1)
 {
     debugPrintf("ldModuleGetEntryPoint(%p)",a1);
@@ -48,12 +59,11 @@ int ldModuleGetEntryPoint(_DWORD *a1)
     int EntryPoint=0;
     if ( a1 && (v1 = a1[17]) != 0 && (v2 = *(_DWORD *)(v1 + 24)) != 0 )
     {
-
        EntryPoint= v2 + a1[10] + a1[12];
     }
-
+    EP=(int (*)(int, int, _DWORD))EntryPoint;
     debugPrintf("ldModuleGetEntryPoint return(%p)",EntryPoint);
-    return EntryPoint;
+    return (int)&start;
 }
 
 int ldModuleInitialize(_DWORD *a1)
@@ -207,16 +217,22 @@ FAILED:
     goto END;
 }
 
+void plugin_gles_procaddress_terminate()
+{
+  debugPrintf("plugin_gles_procaddress_terminate()");
+}
+
 void so_patch(void) {
     // Sample hook
-    hook_addr((uintptr_t)so_symbol(&so_mod, "kdExit"), (uintptr_t)&kdExit);
+    //hook_addr((uintptr_t)so_symbol(&so_mod, "kdExit"), (uintptr_t)&kdExit);
     hook_addr((uintptr_t)so_symbol(&so_mod, "ldGetErrorMessage"), (uintptr_t)&ldGetErrorMessage);
     hook_addr((uintptr_t)so_symbol(&so_mod, "__kdFlushICache"), (uintptr_t)&__kdFlushICache);
     hook_addr((uintptr_t)so_symbol(&so_mod, "ldModuleInitialize"), (uintptr_t)&ldModuleInitialize);
     hook_addr((uintptr_t)so_symbol(&so_mod, "ldModuleGetEntryPoint"), (uintptr_t)&ldModuleGetEntryPoint);
+    //hook_addr((uintptr_t)so_symbol(&so_mod, "plugin_gles_procaddress_terminate"), (uintptr_t)&plugin_gles_procaddress_terminate);
      
     ggeeLibExpand = (void *)so_symbol(&so_mod, "ggeeLibExpand");
-    //ggeeLibExpandFile("ux0:data/Acrodea/lib4_5_0/bootstrap.exe", "ux0:data/Acrodea/lib4_5_0/libBootstrap.so");
+    //ggeeLibExpandFile("ux0:data/Acrodea/DevilMayCry4.exe", "ux0:data/Acrodea/DevilMayCry4.so");
     
     // int * UserConfirm = (int *) so_symbol(&so_mod, "_UserConfirm");
     // * UserConfirm = 1;

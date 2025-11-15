@@ -41,6 +41,8 @@
         "utils.h": "c",
         "libc_bridge.h": "c",
         "io.h": "c",
-        "cstdlib": "c"
+        "cstdlib": "c",
+        "egl.h": "c",
+        "dialog.h": "c"
     }
 }

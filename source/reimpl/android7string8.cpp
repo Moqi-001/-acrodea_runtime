@@ -259,8 +259,9 @@ void *_ZN7android7String8C1Ev() {
 }
 
 void *_ZN7android7String8C1Ev0(char *self) {
-    l_debug("_ZN7android7String8C1Ev0(%s)",((String8*)self)->string());
-    memset(self,0,strlen(self));
+    //l_debug("_ZN7android7String8C1Ev0(%s)",((String8*)self)->string());
+    l_debug("_ZN7android7String8C1Ev0(%s)",self);
+    //memset(self,0,strlen(self));
     return self;
 }
 

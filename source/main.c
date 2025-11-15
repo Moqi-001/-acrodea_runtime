@@ -16,7 +16,8 @@ int sceLibcHeapSize = 4 * 1024 * 1024;
 #define SCREEN_H 544
 //#define SCREEN_H 640
 so_module so_mod;
-#define CONFIG_FILE_PATH DATA_PATH "config.txt"
+
+#define LOAD_ADDRESS 0x98000000
 
 jobjectArray JobjectArray;
 int StartOffset;
@@ -46,6 +47,8 @@ int main_thread(SceSize args, void *argp)
     debugPrintf("RenderUpdate over \n");
 	return 0;
 }
+
+int (*marketlaunch)(void*, int, int,int,int,int,int,int,int,int,int,int,int,int,int);
 
 int main() {
     soloader_init_all();
@@ -77,9 +80,33 @@ int main() {
     // debugPrintf("a44(%u)",a44);
     // debugPrintf("a44s(%s)",(char*)a44);
 
-    int value = threadLoop(RuntimeThreadInstance);
-    debugPrintf("threadLoop over %d\n",value);
+    //int value = threadLoop(RuntimeThreadInstance);
+    //debugPrintf("threadLoop over %d\n",value);
 
+    marketlaunch=(void*)(LOAD_ADDRESS+0x416CD);
+    debugPrintf("marketlaunch start %p\n",marketlaunch);
+
+    int v53=((int*)RuntimeContextInstance)[53];
+    debugPrintf("marketlaunch v53 %d",v53);
+    if(v53)
+    {
+        ((int*)RuntimeContextInstance)[53]=0;
+    }
+
+    char* appId="com.acrodea.gamecenter";
+    char* a5="./runtime/";
+    char* a6=DATA_PATH;
+    char* a7="com.acrodea.gamecenter";
+    char* a8="com.acrodea.gamecenter";
+    char* a9="./com.acrodea.gamecenter/app.exe";
+    char* a10="./RuntimeApps";
+    char* a11="./com.acrodea.gamecenter/res";
+    char* a12="./.tmp";
+    int a13=1;
+    char* a14="from_manager:log_print";
+    char* a15[1]={"boot_from=com.acrodea.gamecenter"};
+    marketlaunch(RuntimeContextInstance,appId,18,-1,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15);
+    debugPrintf("marketlaunch over %p\n",marketlaunch);
     gl_init();
     // int (* kdMain)(void *,void *) = (void *)so_symbol(&so_mod, "kdMain");
     // value= kdMain(NULL,NULL);

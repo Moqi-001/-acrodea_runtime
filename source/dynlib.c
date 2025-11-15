@@ -287,6 +287,12 @@ int libmedia(void)
    return 0;
 }
 
+int setjmp0(jmp_buf v)
+{
+   l_debug("setjmp0"); 
+    return setjmp(v);
+}
+
 so_default_dynlib default_dynlib[] = {
         // MD5 Impl
         { "MD5_Init", (uintptr_t)&MD5_Init },
@@ -1223,7 +1229,7 @@ so_default_dynlib default_dynlib[] = {
 
 
         // Jmp
-        { "setjmp", (uintptr_t)&setjmp }, // TODO: May have different struct size?
+        { "setjmp", (uintptr_t)&setjmp0 }, // TODO: May have different struct size?
         { "longjmp", (uintptr_t)&longjmp }, // TODO: May have different struct size?
 
 
