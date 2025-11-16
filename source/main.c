@@ -49,6 +49,7 @@ int main_thread(SceSize args, void *argp)
 }
 
 int (*marketlaunch)(void*, int, int,int,int,int,int,int,int,int,int,int,int,int,int);
+int (*launch)(void*, int, int,int,int,int,int,int,char,int,int,int);
 
 int main() {
     soloader_init_all();
@@ -57,8 +58,8 @@ int main() {
     JNI_OnLoad(&jvm,0);
     debugPrintf("JNI_OnLoad over \n");
 
-    void* (* Get)() = (void *) so_symbol(&so_mod, "_ZN14RuntimeContext3GetEv");
-    void * RuntimeContextInstance=Get();
+    void* (* Get)(void *) = (void *) so_symbol(&so_mod, "_ZN14RuntimeContext3GetEv");
+    void * RuntimeContextInstance=Get(NULL);
     debugPrintf("RuntimeContextInstance  %p \n",RuntimeContextInstance);
 
     int (* threadLoop)(void *) = (void *)so_symbol(&so_mod, "_ZN13RuntimeThread10threadLoopEv");
@@ -84,17 +85,12 @@ int main() {
     //debugPrintf("threadLoop over %d\n",value);
 
     marketlaunch=(void*)(LOAD_ADDRESS+0x416CD);
+    launch=(void*)(LOAD_ADDRESS+0x413F9);
+    
     debugPrintf("marketlaunch start %p\n",marketlaunch);
-
-    int v53=((char*)RuntimeContextInstance)[53];
-    debugPrintf("marketlaunch v53 %d",v53);
-    if(v53)
-    {
-        ((char*)RuntimeContextInstance)[53]=0;
-        debugPrintf("marketlaunch v53=0");
-    }
-
     char* appId="com.acrodea.gamecenter";
+    int SDK_INT=10;
+    int Surface=-1;
     char* a5="./runtime/";
     char* a6=DATA_PATH;
     char* a7="com.acrodea.gamecenter";
@@ -106,8 +102,12 @@ int main() {
     int a13=1;
     char* a14="from_manager:log_print";
     char* a15[1]={"boot_from=com.acrodea.gamecenter"};
-    marketlaunch(RuntimeContextInstance,appId,10,-1,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15);
+    marketlaunch(&jni,appId,SDK_INT,Surface,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15);
     debugPrintf("marketlaunch over %p\n",marketlaunch);
+
+    //launch(&jni,appId,SDK_INT,Surface,a5,a6,a7,a8,a13,a14,a15,0);
+    //debugPrintf("marketlaunch over %p\n",marketlaunch);
+    
     gl_init();
     // int (* kdMain)(void *,void *) = (void *)so_symbol(&so_mod, "kdMain");
     // value= kdMain(NULL,NULL);

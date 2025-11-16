@@ -190,10 +190,18 @@ char WINDOW_SERVICE[] = "window";
 // Possible values: https://developer.android.com/reference/android/os/Build.VERSION_CODES
 const int SDK_INT = 19; // Android 4.4 / KitKat
 const int descriptor = 110; // Android 4.4 / KitKat
+
+const int mSurface = 0; // Android 4.4 / KitKat
+const int mNativeSurface = 0; // Android 4.4 / KitKat
+const int mNativeObject = 0; // Android 4.4 / KitKat
+
 NameToFieldID nameToFieldId[] = {
 		{ 0, "WINDOW_SERVICE", FIELD_TYPE_OBJECT }, 
 		{ 1, "SDK_INT", FIELD_TYPE_INT },
         { 2, "descriptor", FIELD_TYPE_INT },
+        { 3, "mSurface", FIELD_TYPE_INT },
+        { 4, "mNativeSurface", FIELD_TYPE_INT },
+        { 5, "mNativeObject", FIELD_TYPE_INT },
 };
 
 FieldsBoolean fieldsBoolean[] = {};
@@ -204,6 +212,9 @@ FieldsFloat fieldsFloat[] = {};
 FieldsInt fieldsInt[] = {
 		{ 1, SDK_INT },
         { 2, descriptor },
+        { 3, mSurface },
+        { 4, mNativeSurface },
+        { 5, mNativeObject },
 };
 FieldsObject fieldsObject[] = {
 		{ 0, WINDOW_SERVICE },

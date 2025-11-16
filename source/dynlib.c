@@ -291,7 +291,16 @@ int libmedia(void)
 int setjmp0(jmp_buf v)
 {
    l_debug("setjmp0"); 
-    return setjmp(v);
+   return setjmp(v);
+}
+
+int jniRegisterNativeMethods(int a1, int a2, int a3, int a4)
+{
+   l_debug("jniRegisterNativeMethods(%p,%s,%p,%d)",a1,a2,a3,a4); 
+   char** a=(char**)a3;
+   l_debug("jniRegisterNativeMethods a3(%s,%s)",a[1],a[2]); 
+   
+   return 0;
 }
 
 so_default_dynlib default_dynlib[] = {
@@ -1277,7 +1286,7 @@ so_default_dynlib default_dynlib[] = {
         // { "uncompress", (uintptr_t)&uncompress },
 
         { "systemTime", (uintptr_t)&ret0 },
-        { "jniRegisterNativeMethods", (uintptr_t)&ret0 },
+        { "jniRegisterNativeMethods", (uintptr_t)&jniRegisterNativeMethods },
         { "epoll_create", (uintptr_t)&ret0 },
 
         { "_ZN7android10AudioTrack3setE19audio_stream_type_tj14audio_format_tji20audio_output_flags_tPFviPvS4_ES4_iRKNS_2spINS_7IMemoryEEEbi", (uintptr_t)&libmedia },
