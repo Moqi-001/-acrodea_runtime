@@ -270,7 +270,7 @@ void *_ZN7android7String8C1Ev0(char *self) {
 void *_ZN7android7String8C1EPKc0(const void **self,const char *other2) {
     l_debug("_ZN7android7String8C1EPKc0(%s)",other2);
     String8* path=new String8(DATA_PATH);
-    //path->append(other2);
+    path->append(other2);
     *self=path->string();
     return self;
 }
@@ -322,8 +322,9 @@ void *_ZN7android7String85setToEPKc(void *self, const char *other) {
 
 // append 函数
 void *_ZN7android7String86appendEPKc(void *self, const char *other) {
-    l_debug("_ZN7android7String86appendEPKc(%s,%s)",self,other);
+    
     String8 *str = static_cast<String8 *>(self);
+    l_debug("_ZN7android7String86appendEPKc(%s,%s)",str->string(),other);
     return &str->append(other);
 }
 
@@ -583,4 +584,50 @@ const void* _ZNK7android7String812sharedBufferEv(void* self) {
     l_debug("_ZNK7android7String812sharedBufferEv");
     const String8* str = static_cast<const String8*>(self);
     return SharedBuffer::bufferFromData(str->string());
+}
+
+void* _ZN7android12SharedBuffer5allocEj(void* self,size_t size)
+{
+    l_debug("_ZN7android12SharedBuffer5allocEj(%p,%d)",self,size);
+    SharedBuffer* s=static_cast<SharedBuffer*>(self);
+    return s->alloc(size);
+}
+
+void* _ZNK7android12SharedBuffer10editResizeEj(void* self,size_t size)
+{
+    l_debug("_ZNK7android12SharedBuffer10editResizeEj(%p,%d)",self,size);
+    SharedBuffer* s=static_cast<SharedBuffer*>(self);
+    return s->editResize(size);
+}
+
+int _ZNK7android12SharedBuffer7releaseEj(void* self,size_t flags)
+{
+    l_debug("_ZNK7android12SharedBuffer7releaseEj(%p,%d)",self,flags);
+    SharedBuffer* s=static_cast<SharedBuffer*>(self);
+    return s->release(flags);
+}
+
+int _ZN7android12SharedBuffer7deallocEPKS0_(void* self,void* a2)
+{
+    l_debug("_ZN7android12SharedBuffer7deallocEPKS0_(%p,%p)",self,a2);
+    SharedBuffer* s=static_cast<SharedBuffer*>(self);
+
+    s->dealloc(static_cast<SharedBuffer*>(a2));
+    return 0;
+}
+
+int _ZNK7android12SharedBuffer7acquireEv(void* self)
+{
+    l_debug("_ZNK7android12SharedBuffer7acquireEv(%p)",self);
+    SharedBuffer* s=static_cast<SharedBuffer*>(self);
+    s->acquire();
+    return 0;
+}
+
+void* _ZNK7android12SharedBuffer11attemptEditEv(void* self)
+{
+    l_debug("_ZNK7android12SharedBuffer11attemptEditEv(%p)",self);
+    SharedBuffer* s=static_cast<SharedBuffer*>(self);
+
+    return s->attemptEdit();
 }

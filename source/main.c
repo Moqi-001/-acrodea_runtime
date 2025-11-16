@@ -86,13 +86,13 @@ int main() {
 
     marketlaunch=(void*)(LOAD_ADDRESS+0x416CD);
     launch=(void*)(LOAD_ADDRESS+0x413F9);
-    
+
     debugPrintf("marketlaunch start %p\n",marketlaunch);
     char* appId="com.acrodea.gamecenter";
     int SDK_INT=10;
     int Surface=-1;
-    char* a5="./runtime/";
-    char* a6=DATA_PATH;
+    char* a5="/runtime/";
+    char* a6="";
     char* a7="com.acrodea.gamecenter";
     char* a8="com.acrodea.gamecenter";
     char* a9="./com.acrodea.gamecenter/app.exe";

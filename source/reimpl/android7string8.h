@@ -28,6 +28,12 @@ extern "C" {
     void* _ZNK7android7String810getPathDirEv(void* self);
     void* _ZNK7android7String88walkPathEPS0_(void* self, void* outRemains);
 
+void* _ZN7android12SharedBuffer5allocEj(void* self,size_t size);
+void* _ZNK7android12SharedBuffer10editResizeEj(void* self,size_t size);
+int _ZNK7android12SharedBuffer7releaseEj(void* self,size_t flags);
+int _ZN7android12SharedBuffer7deallocEPKS0_(void* self,void* a2);
+int _ZNK7android12SharedBuffer7acquireEv(void* self);
+void* _ZNK7android12SharedBuffer11attemptEditEv(void* self);
 #ifdef __cplusplus
 }
 #endif

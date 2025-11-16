@@ -61,7 +61,7 @@
 #include "reimpl/asset_manager.h"
 #include "reimpl/android7string8.h"
 #include "reimpl/md5.h"
-#include "reimpl/android7string8_.h""
+#include "reimpl/android7string8_.h"
 
 const unsigned int __page_size = PAGE_SIZE;
 
@@ -341,6 +341,14 @@ so_default_dynlib default_dynlib[] = {
         // { "_ZN7android7String810appendPathEPKc", (uintptr_t)&android_String8_appendPathCstring },
         // { "_ZNK7android7String86stringEv", (uintptr_t)&android_String8_string },
         // { "_ZNK7android7String86lengthEv", (uintptr_t)&android_String8_length },
+
+        //SharedBuffer Impl
+        { "_ZN7android12SharedBuffer5allocEj", (uintptr_t)&_ZN7android12SharedBuffer5allocEj },
+        { "_ZNK7android12SharedBuffer10editResizeEj", (uintptr_t)&_ZNK7android12SharedBuffer10editResizeEj },
+        { "_ZNK7android12SharedBuffer7releaseEj", (uintptr_t)&_ZNK7android12SharedBuffer7releaseEj },
+        { "_ZN7android12SharedBuffer7deallocEPKS0_", (uintptr_t)&_ZN7android12SharedBuffer7deallocEPKS0_ },
+        { "_ZNK7android12SharedBuffer7acquireEv", (uintptr_t)&_ZNK7android12SharedBuffer7acquireEv },
+        { "_ZNK7android12SharedBuffer11attemptEditEv", (uintptr_t)&_ZNK7android12SharedBuffer11attemptEditEv },
         
         // RefBase Impl
         { "_ZN7android7RefBaseC2Ev", (uintptr_t)&_ZN7android7RefBaseC2Ev },
