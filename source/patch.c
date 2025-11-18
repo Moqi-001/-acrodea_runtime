@@ -44,7 +44,8 @@ int (*EP)(int, int, _DWORD);
 
 int start(int a1, int a2, _DWORD a3)
 {
-     debugPrintf("start(%d,%d,%d)",a1,a2,a3);
+     debugPrintf("start(%d,%p,%d)",a1,a2,a3);
+     debugPrintf("start a2(%s)",((char*)a2));
      //char* s[2]={"com.acrodea.vividruntime.launcher","launch"};
      int ret=EP(a1,a2,a3);
      debugPrintf("start return %d",ret);
@@ -232,7 +233,7 @@ void so_patch(void) {
     //hook_addr((uintptr_t)so_symbol(&so_mod, "plugin_gles_procaddress_terminate"), (uintptr_t)&plugin_gles_procaddress_terminate);
      
     ggeeLibExpand = (void *)so_symbol(&so_mod, "ggeeLibExpand");
-    //ggeeLibExpandFile("ux0:data/Acrodea/DevilMayCry4.exe", "ux0:data/Acrodea/DevilMayCry4.so");
+    //ggeeLibExpandFile("ux0:data/Acrodea/lib4_5_0/libc.so", "ux0:data/Acrodea/libc.so");
     
     // int * UserConfirm = (int *) so_symbol(&so_mod, "_UserConfirm");
     // * UserConfirm = 1;

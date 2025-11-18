@@ -17,3 +17,6 @@ int android_String8_setToByCstring(String8 **pstr8, const char *s);
 void android_String8_empty(String8 *str8);
 size_t android_String8_length(String8 *str8);
 int android_String8_isEmpty(String8 *str8);
+int android_String8_walkPath(String8 **pstr8, String8 **d, String8 **outRemains);
+int android_String8_getPathDir(String8 **pstr8, String8 **s);
+int android_String8_append(String8 **pstr8, String8 **psrc);

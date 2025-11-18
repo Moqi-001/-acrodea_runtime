@@ -174,7 +174,8 @@ void _ZNK7android7RefBase9decStrongEPKv(void *self, const void *id)
 int chdir_wrap(const char *__path)
 {
     l_debug("chdir invoke %s", __path);
-    return chdir(__path);
+    //return chdir(__path);
+    return chdir(DATA_PATH);
 }
 
 // additional aeabi extern
@@ -338,31 +339,31 @@ so_default_dynlib default_dynlib[] = {
     // Common C/C++ internals
 
     // String8 impl
-    {"_ZN7android7String8C1Ev", (uintptr_t)&_ZN7android7String8C1Ev0},
-    {"_ZN7android7String8C1EPKc", (uintptr_t)&_ZN7android7String8C1EPKc0},
-    {"_ZN7android7String8C1ERKS0_", (uintptr_t)&_ZN7android7String8C1ERKS0_},
-    {"_ZN7android7String8D1Ev", (uintptr_t)&_ZN7android7String8D1Ev},
-    //{"_ZN7android7String85setToEPKc", (uintptr_t)&_ZN7android7String85setToEPKc },
-    {"_ZN7android7String86appendEPKc", (uintptr_t)&_ZN7android7String86appendEPKc},
-    {"_ZN7android7String86appendERKS0_", (uintptr_t)&_ZN7android7String86appendERKS0_},
-    {"_ZN7android7String810appendPathEPKc", (uintptr_t)&_ZN7android7String810appendPathEPKc},
-    {"_ZNK7android7String86stringEv", (uintptr_t)&_ZNK7android7String86stringEv},
-    {"_ZNK7android7String86lengthEv", (uintptr_t)&_ZNK7android7String86lengthEv},
-    {"_ZNK7android7String810getPathDirEv", (uintptr_t)&_ZNK7android7String810getPathDirEv},
-    {"_ZNK7android7String88walkPathEPS0_", (uintptr_t)&_ZNK7android7String88walkPathEPS0_},
+    // {"_ZN7android7String8C1Ev", (uintptr_t)&_ZN7android7String8C1Ev0},
+    // {"_ZN7android7String8C1EPKc", (uintptr_t)&_ZN7android7String8C1EPKc0},
+    // {"_ZN7android7String8C1ERKS0_", (uintptr_t)&_ZN7android7String8C1ERKS0_},
+    // {"_ZN7android7String8D1Ev", (uintptr_t)&_ZN7android7String8D1Ev},
+    // //{"_ZN7android7String85setToEPKc", (uintptr_t)&_ZN7android7String85setToEPKc },
+    // {"_ZN7android7String86appendEPKc", (uintptr_t)&_ZN7android7String86appendEPKc},
+    // {"_ZN7android7String86appendERKS0_", (uintptr_t)&_ZN7android7String86appendERKS0_},
+    // {"_ZN7android7String810appendPathEPKc", (uintptr_t)&_ZN7android7String810appendPathEPKc},
+    // {"_ZNK7android7String86stringEv", (uintptr_t)&_ZNK7android7String86stringEv},
+    // {"_ZNK7android7String86lengthEv", (uintptr_t)&_ZNK7android7String86lengthEv},
+    // {"_ZNK7android7String810getPathDirEv", (uintptr_t)&_ZNK7android7String810getPathDirEv},
+    // {"_ZNK7android7String88walkPathEPS0_", (uintptr_t)&_ZNK7android7String88walkPathEPS0_},
 
-    // {"_ZN7android7String8C1Ev", (uintptr_t)&android_String8_init},
-    // {"_ZN7android7String8C1EPKc", (uintptr_t)&android_String8_initFromCstring},
-    // {"_ZN7android7String8C1ERKS0_", (uintptr_t)&ret0},
-    // {"_ZN7android7String8D1Ev", (uintptr_t)&android_String8_term},
+    {"_ZN7android7String8C1Ev", (uintptr_t)&android_String8_init},
+    {"_ZN7android7String8C1EPKc", (uintptr_t)&android_String8_initFromCstring},
+    {"_ZN7android7String8C1ERKS0_", (uintptr_t)&ret0},
+    {"_ZN7android7String8D1Ev", (uintptr_t)&android_String8_term},
     {"_ZN7android7String85setToEPKc", (uintptr_t)&android_String8_setToByCstring},
-    // {"_ZN7android7String86appendEPKc", (uintptr_t)&android_String8_appendCstring},
-    // {"_ZN7android7String86appendERKS0_", (uintptr_t)&ret0},
-    // {"_ZN7android7String810appendPathEPKc", (uintptr_t)&android_String8_appendPathCstring},
-    // {"_ZNK7android7String86stringEv", (uintptr_t)&android_String8_string},
-    // {"_ZNK7android7String86lengthEv", (uintptr_t)&android_String8_length},
-    // {"_ZNK7android7String810getPathDirEv", (uintptr_t)&ret0},
-    // {"_ZNK7android7String88walkPathEPS0_", (uintptr_t)&ret0},
+    {"_ZN7android7String86appendEPKc", (uintptr_t)&android_String8_appendCstring},
+    {"_ZN7android7String86appendERKS0_", (uintptr_t)&android_String8_append},
+    {"_ZN7android7String810appendPathEPKc", (uintptr_t)&android_String8_appendPathCstring},
+    {"_ZNK7android7String86stringEv", (uintptr_t)&android_String8_string},
+    {"_ZNK7android7String86lengthEv", (uintptr_t)&android_String8_length},
+    {"_ZNK7android7String810getPathDirEv", (uintptr_t)&android_String8_getPathDir},
+    {"_ZNK7android7String88walkPathEPS0_", (uintptr_t)&android_String8_walkPath},
 
     // SharedBuffer Impl
     {"_ZN7android12SharedBuffer5allocEj", (uintptr_t)&_ZN7android12SharedBuffer5allocEj},

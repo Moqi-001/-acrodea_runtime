@@ -11,7 +11,7 @@
  * @brief Common helper utilities.
  */
 #define AndriodPath "/data/data/"
-#define PACKAGE_NAME "com.Nexon.DnFSwordR"
+#define PACKAGE_NAME "com.acrodea.gamecenter"
 #define AndriodFullPath AndriodPath PACKAGE_NAME "/files/"
 #define AndriodFullAddPath AndriodPath PACKAGE_NAME "/app_assets_ADD/"
 

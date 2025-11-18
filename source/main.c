@@ -19,6 +19,7 @@ so_module so_mod;
 
 #define LOAD_ADDRESS 0x98000000
 #define RES_PATH DATA_PATH "com.acrodea.gamecenter/res"
+#define LOG_PATH DATA_PATH "log.txt"
 
 jobjectArray JobjectArray;
 int StartOffset;
@@ -54,15 +55,8 @@ int main_thread(SceSize args, void *argp)
 int (*marketlaunch)(void *, int, int, int, int, int, int, int, int, int, int, int, int, int, int);
 int (*launch)(void *, int, int, int, int, int, int, int, char, int, int, int);
 jobjectArray JobjectArray;
-
-int main()
+int Launch(void *this, int a2)
 {
-    soloader_init_all();
-
-    int (*JNI_OnLoad)(void *jvm, int reserved) = (void *)so_symbol(&so_mod, "JNI_OnLoad");
-    JNI_OnLoad(&jvm, 0);
-    debugPrintf("JNI_OnLoad over \n");
-
     void *(*Get)(void *) = (void *)so_symbol(&so_mod, "_ZN14RuntimeContext3GetEv");
     void *RuntimeContextInstance = Get(NULL);
     debugPrintf("RuntimeContextInstance  %p \n", RuntimeContextInstance);
@@ -71,6 +65,19 @@ int main()
     int addr = *((int *)(RuntimeContextInstance + 208));
     void *RuntimeThreadInstance = (void *)(addr);
     debugPrintf("RuntimeThreadInstance  %p \n", RuntimeThreadInstance);
+
+    int value = threadLoop(RuntimeThreadInstance);
+    debugPrintf("threadLoop over %d\n", value);
+}
+int main()
+{
+    soloader_init_all();
+    remove(LOG_PATH);
+    int (*JNI_OnLoad)(void *jvm, int reserved) = (void *)so_symbol(&so_mod, "JNI_OnLoad");
+    JNI_OnLoad(&jvm, 0);
+    debugPrintf("JNI_OnLoad over \n");
+
+    hook_addr((uintptr_t)so_symbol(&so_mod, "_ZN18RuntimeContextBase6LaunchEb"), (uintptr_t)&Launch);
 
     // uintptr_t a1=*((uintptr_t*)(RuntimeThreadInstance)+9);
     // void* a1=RuntimeContextInstance;
@@ -86,15 +93,12 @@ int main()
     // debugPrintf("a44(%u)",a44);
     // debugPrintf("a44s(%s)",(char*)a44);
 
-    //int value = threadLoop(RuntimeThreadInstance);
-    //debugPrintf("threadLoop over %d\n",value);
-
     marketlaunch = (void *)(LOAD_ADDRESS + 0x416CD);
     launch = (void *)(LOAD_ADDRESS + 0x413F9);
 
     debugPrintf("marketlaunch start %p\n", marketlaunch);
     char *appId = "com.acrodea.gamecenter";
-    int SDK_INT = 10;
+    int SDK_INT = 18;
     int Surface = -1;
     char *a5 = "/runtime/";
     char *a6 = "/a6";
