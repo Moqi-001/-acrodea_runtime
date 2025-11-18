@@ -60,7 +60,7 @@
 #include "reimpl/asset_manager.h"
 #include "reimpl/android7string8.h"
 #include "reimpl/md5.h"
-#include "reimpl/android7string8_.h"
+#include "reimpl/android/String8.h"
 
 const unsigned int __page_size = PAGE_SIZE;
 
@@ -336,36 +336,19 @@ so_default_dynlib default_dynlib[] = {
     {"__aeabi_fmul", (uintptr_t)&__aeabi_fmul},
     {"__aeabi_f2iz", (uintptr_t)&__aeabi_f2iz},
 
-    // Common C/C++ internals
-
-    // String8 impl
-    // {"_ZN7android7String8C1Ev", (uintptr_t)&_ZN7android7String8C1Ev0},
-    // {"_ZN7android7String8C1EPKc", (uintptr_t)&_ZN7android7String8C1EPKc0},
-    // {"_ZN7android7String8C1ERKS0_", (uintptr_t)&_ZN7android7String8C1ERKS0_},
-    // {"_ZN7android7String8D1Ev", (uintptr_t)&_ZN7android7String8D1Ev},
-    // //{"_ZN7android7String85setToEPKc", (uintptr_t)&_ZN7android7String85setToEPKc },
-    // {"_ZN7android7String86appendEPKc", (uintptr_t)&_ZN7android7String86appendEPKc},
-    // {"_ZN7android7String86appendERKS0_", (uintptr_t)&_ZN7android7String86appendERKS0_},
-    // {"_ZN7android7String810appendPathEPKc", (uintptr_t)&_ZN7android7String810appendPathEPKc},
-    // {"_ZNK7android7String86stringEv", (uintptr_t)&_ZNK7android7String86stringEv},
-    // {"_ZNK7android7String86lengthEv", (uintptr_t)&_ZNK7android7String86lengthEv},
-    // {"_ZNK7android7String810getPathDirEv", (uintptr_t)&_ZNK7android7String810getPathDirEv},
-    // {"_ZNK7android7String88walkPathEPS0_", (uintptr_t)&_ZNK7android7String88walkPathEPS0_},
-
+    // Android String8
     {"_ZN7android7String8C1Ev", (uintptr_t)&android_String8_init},
     {"_ZN7android7String8C1EPKc", (uintptr_t)&android_String8_initFromCstring},
-    {"_ZN7android7String8C1ERKS0_", (uintptr_t)&_ZN7android7String8C1ERKS0_},
+    {"_ZN7android7String8C1ERKS0_", (uintptr_t)&android_String8_initFromString8},
     {"_ZN7android7String8D1Ev", (uintptr_t)&android_String8_term},
-    {"_ZN7android7String85setToEPKc", (uintptr_t)&android_String8_setToByCstring},
+    {"_ZN7android7String85setToEPKc", (uintptr_t)&android_String8_setToCstring},
     {"_ZN7android7String86appendEPKc", (uintptr_t)&android_String8_appendCstring},
     {"_ZN7android7String86appendERKS0_", (uintptr_t)&android_String8_append},
     {"_ZN7android7String810appendPathEPKc", (uintptr_t)&android_String8_appendPathCstring},
-    {"_ZNK7android7String86stringEv", (uintptr_t)&android_String8_string},
-    {"_ZNK7android7String86lengthEv", (uintptr_t)&android_String8_length},
     {"_ZNK7android7String810getPathDirEv", (uintptr_t)&android_String8_getPathDir},
     {"_ZNK7android7String88walkPathEPS0_", (uintptr_t)&android_String8_walkPath},
 
-    // SharedBuffer Impl
+    // Android SharedBuffer
     {"_ZN7android12SharedBuffer5allocEj", (uintptr_t)&_ZN7android12SharedBuffer5allocEj},
     {"_ZNK7android12SharedBuffer10editResizeEj", (uintptr_t)&_ZNK7android12SharedBuffer10editResizeEj},
     {"_ZNK7android12SharedBuffer7releaseEj", (uintptr_t)&_ZNK7android12SharedBuffer7releaseEj},
@@ -373,7 +356,7 @@ so_default_dynlib default_dynlib[] = {
     {"_ZNK7android12SharedBuffer7acquireEv", (uintptr_t)&_ZNK7android12SharedBuffer7acquireEv},
     {"_ZNK7android12SharedBuffer11attemptEditEv", (uintptr_t)&_ZNK7android12SharedBuffer11attemptEditEv},
 
-    // RefBase Impl
+    // Android RefBase
     {"_ZN7android7RefBaseC2Ev", (uintptr_t)&_ZN7android7RefBaseC2Ev},
     {"_ZN7android7RefBaseD2Ev", (uintptr_t)&_ZN7android7RefBaseD2Ev},
     {"_ZN7android7RefBase10onFirstRefEv", (uintptr_t)&_ZN7android7RefBase10onFirstRefEv},
@@ -381,7 +364,7 @@ so_default_dynlib default_dynlib[] = {
     {"_ZN7android7RefBase13onLastWeakRefEPKv", (uintptr_t)&_ZN7android7RefBase13onLastWeakRefEPKv},
     {"_ZN7android7RefBase20onIncStrongAttemptedEjPKv", (uintptr_t)&_ZN7android7RefBase20onIncStrongAttemptedEjPKv},
 
-    // Android Thread Impl
+    // Android Thread
     {"_ZN7android6ThreadC2Eb", (uintptr_t)&_ZN7android6ThreadC2Eb},
     {"_ZN7android6ThreadD0Ev", (uintptr_t)&_ZN7android6ThreadD0Ev},
     {"_ZN7android6ThreadD1Ev", (uintptr_t)&_ZN7android6ThreadD1Ev},
@@ -390,7 +373,7 @@ so_default_dynlib default_dynlib[] = {
     {"_ZN7android6Thread11requestExitEv", (uintptr_t)&_ZN7android6Thread11requestExitEv},
     {"_ZN7android6Thread3runEPKcij", (uintptr_t)&_ZN7android6Thread3runEPKcij},
 
-    // RefCount Impl
+    // Android RefBase
     {"_ZNK7android7RefBase9decStrongEPKv", (uintptr_t)&_ZNK7android7RefBase9decStrongEPKv},
     {"_ZNK7android7RefBase9incStrongEPKv", (uintptr_t)&_ZNK7android7RefBase9incStrongEPKv},
 
@@ -1026,7 +1009,7 @@ so_default_dynlib default_dynlib[] = {
     {"glViewport", (uintptr_t)&glViewport},
     {"glWeightPointerOES", (uintptr_t)&ret0},
 
-    //add gl
+    // add gl
     {"glGetRenderbufferParameteriv", (uintptr_t)&ret0},
     {"glStencilMaskSeparate", (uintptr_t)&glStencilMaskSeparate},
     {"glGetUniformfv", (uintptr_t)&ret0},

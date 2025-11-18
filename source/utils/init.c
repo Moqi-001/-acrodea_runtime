@@ -76,9 +76,6 @@ void soloader_init_all() {
     l_debug("SO text base: %p", so_mod.text_base);
     l_debug("SO text size: %u", so_mod.text_size);
 
-    l_debug("Our getPathDir: %p", (void*)_ZNK7android7String810getPathDirEv);
-    l_debug("Our String8 constructor: %p", (void*)_ZN7android7String8C1Ev);
-
     settings_load();
     l_success("Settings loaded.");
     so_relocate(&so_mod);

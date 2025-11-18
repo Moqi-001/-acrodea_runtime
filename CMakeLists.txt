@@ -73,6 +73,9 @@ add_executable(${CMAKE_PROJECT_NAME}
                source/dynlib.c
                source/java.c
                source/patch.c
+
+               source/reimpl/android/SharedBuffer.c
+               source/reimpl/android/String8.c
                source/reimpl/bits/_ctype.c
                source/reimpl/egl.c
                source/reimpl/errno.c
@@ -85,14 +88,15 @@ add_executable(${CMAKE_PROJECT_NAME}
                source/reimpl/controls.c
                source/reimpl/asset_manager.cpp
                source/reimpl/android7string8.cpp
-               source/reimpl/android7string8_.c
                source/reimpl/md5.cpp
+
                source/utils/dialog.c
                source/utils/glutil.c
                source/utils/init.c
                source/utils/logger.c
                source/utils/settings.c
                source/utils/utils.c
+
                lib/falso_jni/FalsoJNI.c
                lib/falso_jni/FalsoJNI_ImplBridge.c
                lib/falso_jni/FalsoJNI_Logger.c
