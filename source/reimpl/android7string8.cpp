@@ -698,8 +698,9 @@ const void *_ZNK7android7String812sharedBufferEv(void *self)
 void *_ZN7android12SharedBuffer5allocEj(void *self, size_t size)
 {
     l_debug("_ZN7android12SharedBuffer5allocEj(%p,%d)", self, size);
-    SharedBuffer *s = static_cast<SharedBuffer *>(self);
-    SharedBuffer *ret = s->alloc(size);
+    //SharedBuffer *s = static_cast<SharedBuffer *>(self);
+
+    SharedBuffer *ret = SharedBuffer::alloc(size);
     l_debug("_ZN7android12SharedBuffer5allocEj ret(%p)", ret);
 
     return ret;

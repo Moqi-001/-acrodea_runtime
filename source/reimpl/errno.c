@@ -112,12 +112,14 @@ static newlib_errno_to_bionic_errno errno_translation[] = {
 };
 
 int * __errno_soloader(void) {
-	l_debug("__errno");
 	int e = errno;
 
 	for (int i = 0; i < sizeof(errno_translation) / sizeof(errno_translation[0]); ++i) {
 		if (e == errno_translation[i].errno_newlib)
+		{
+	        l_debug("__errno(%s)",errno_translation[i].strerror);
 			return (int *) &errno_translation[i].errno_bionic;
+		}
 	}
 
 	l_error("Unexpected newlib errno %i, will return 0 instead of translation", e);

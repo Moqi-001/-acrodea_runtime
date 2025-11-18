@@ -354,7 +354,7 @@ so_default_dynlib default_dynlib[] = {
 
     {"_ZN7android7String8C1Ev", (uintptr_t)&android_String8_init},
     {"_ZN7android7String8C1EPKc", (uintptr_t)&android_String8_initFromCstring},
-    {"_ZN7android7String8C1ERKS0_", (uintptr_t)&ret0},
+    {"_ZN7android7String8C1ERKS0_", (uintptr_t)&_ZN7android7String8C1ERKS0_},
     {"_ZN7android7String8D1Ev", (uintptr_t)&android_String8_term},
     {"_ZN7android7String85setToEPKc", (uintptr_t)&android_String8_setToByCstring},
     {"_ZN7android7String86appendEPKc", (uintptr_t)&android_String8_appendCstring},

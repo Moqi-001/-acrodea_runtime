@@ -18,7 +18,7 @@ int sceLibcHeapSize = 4 * 1024 * 1024;
 so_module so_mod;
 
 #define LOAD_ADDRESS 0x98000000
-#define RES_PATH DATA_PATH "com.acrodea.gamecenter/res"
+#define RES_PATH "/com.acrodea.gamecenter/res"
 #define LOG_PATH DATA_PATH "log.txt"
 
 jobjectArray JobjectArray;
@@ -71,8 +71,8 @@ int Launch(void *this, int a2)
 }
 int main()
 {
-    soloader_init_all();
     remove(LOG_PATH);
+    soloader_init_all();
     int (*JNI_OnLoad)(void *jvm, int reserved) = (void *)so_symbol(&so_mod, "JNI_OnLoad");
     JNI_OnLoad(&jvm, 0);
     debugPrintf("JNI_OnLoad over \n");
@@ -98,21 +98,22 @@ int main()
 
     debugPrintf("marketlaunch start %p\n", marketlaunch);
     char *appId = "com.acrodea.gamecenter";
-    int SDK_INT = 18;
-    int Surface = -1;
+    int SDK_INT = 10;
+    int Surface = 0;
     char *a5 = "/runtime/";
     char *a6 = "/a6";
     char *a7 = "/a7";
-    char *a8 = "/a8";
-    char *a9 = "./com.acrodea.gamecenter/app.exe";
-    char *a10 = "./RuntimeApps";
+    char *a8 = "com.acrodea.gamecenter";
+    char *a9 = "/lib/com.acrodea.gamecenter/app.exe";
+    char *a10 = "/RuntimeApps";
     char *a11 = RES_PATH;
-    char *a12 = "./.tmp";
+    char *a12 = "/.tmp";
     int a13 = 1;
     char *a14 = "from_manager:log_print";
-    char *a15[1] = {"boot_from=com.acrodea.gamecenter"};
-    JobjectArray = NewObjectArray(&jni, 1, "DeviceInfo", NULL);
-    for (size_t i = 0; i < 1; i++)
+    int len = 1;
+    char *a15[] = {"boot_from="};
+    JobjectArray = NewObjectArray(&jni, len, "a15", NULL);
+    for (size_t i = 0; i < len; i++)
     {
         SetObjectArrayElement(&jni, JobjectArray, i, a15[i]);
     }
