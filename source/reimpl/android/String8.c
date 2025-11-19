@@ -29,7 +29,7 @@ int android_String8_init(String8 **pstr8)
     (*pstr8)->data[0] = '\0';
     (*pstr8)->length = 0;
 
-    l_debug("android_String8_init ok: %p", *pstr8);
+    l_debug("android_String8_init over: %p", *pstr8);
     return 0;
 }
 
@@ -51,7 +51,7 @@ int android_String8_initFromCstring(String8 **pstr8, const char *s)
     (*pstr8)->length = len;
     (*pstr8)->data[len] = '\0';
 
-    l_debug("android_String8_initFromCstring ok: \"%s\"", (*pstr8)->data);
+    l_debug("android_String8_initFromCstring over: \"%s\"", (*pstr8)->data);
     return 0;
 }
 
@@ -74,7 +74,7 @@ int android_String8_initFromString8(String8 **pstr8, const String8 **psrc)
     (*pstr8)->length = len;
     (*pstr8)->data[len] = '\0';
 
-    l_debug("android_String8_initFromString8 ok: \"%s\"", (*pstr8)->data);
+    l_debug("android_String8_initFromString8 over: \"%s\"", (*pstr8)->data);
     return 0;
 }
 
@@ -109,7 +109,7 @@ int android_String8_setToCstring(String8 **pstr8, const char *s)
     (*pstr8)->length = len;
     (*pstr8)->data[len] = '\0';
 
-    l_debug("android_String8_setToCstring ok: \"%s\"", (*pstr8)->data);
+    l_debug("android_String8_setToCstring over: \"%s\"", (*pstr8)->data);
     return 0;
 }
 
@@ -136,7 +136,7 @@ int android_String8_appendCstring(String8 **pstr8, const char *s)
     (*pstr8)->length += len;
     (*pstr8)->data[(*pstr8)->length] = '\0';
 
-    l_debug("android_String8_appendCstring ok: \"%s\"", (*pstr8)->data);
+    l_debug("android_String8_appendCstring over: \"%s\"", (*pstr8)->data);
 }
 
 int android_String8_append(String8 **pstr8, const String8 **psrc)
@@ -163,7 +163,7 @@ int android_String8_append(String8 **pstr8, const String8 **psrc)
     (*pstr8)->length += len;
     (*pstr8)->data[(*pstr8)->length] = '\0';
 
-    l_debug("android_String8_append ok: \"%s\"", (*pstr8)->data);
+    l_debug("android_String8_append over: \"%s\"", (*pstr8)->data);
     return 0;
 }
 
@@ -210,7 +210,7 @@ int android_String8_appendPathCstring(String8 **pstr8, const char *s)
     (*pstr8)->length += len;
     (*pstr8)->data[(*pstr8)->length] = '\0';
 
-    l_debug("android_String8_appendPathCstring ok: \"%s\"", (*pstr8)->data);
+    l_debug("android_String8_appendPathCstring over: \"%s\"", (*pstr8)->data);
     return 0;
 }
 
@@ -239,7 +239,7 @@ int android_String8_getPathDir(String8 **pstr8, const String8 **psrc)
     (*pstr8)->length = len;
     (*pstr8)->data[len] = '\0';
 
-    l_debug("android_String8_getPathDir ok: \"%s\"\n", (*pstr8)->data);
+    l_debug("android_String8_getPathDir over: \"%s\"\n", (*pstr8)->data);
     return 0;
 }
 
@@ -293,10 +293,10 @@ int android_String8_walkPath(String8 **pstr8, const String8 **psrc, String8 **ou
         (*outRemains)->length = len;
         (*outRemains)->data[len] = '\0';
 
-        l_debug("android_String8_walkPath ok: remains=\"%s\"\n", (*outRemains)->data);
+        l_debug("android_String8_walkPath over: remains=\"%s\"\n", (*outRemains)->data);
     }
 
-    l_debug("android_String8_walkPath ok: walk=\"%s\"\n", (*pstr8)->data);
+    l_debug("android_String8_walkPath over: walk=\"%s\"\n", (*pstr8)->data);
     return 0;
 }
 

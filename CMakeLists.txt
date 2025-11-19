@@ -74,6 +74,7 @@ add_executable(${CMAKE_PROJECT_NAME}
                source/java.c
                source/patch.c
 
+               source/reimpl/android/atomic.c
                source/reimpl/android/SharedBuffer.c
                source/reimpl/android/String8.c
                source/reimpl/bits/_ctype.c
@@ -87,7 +88,6 @@ add_executable(${CMAKE_PROJECT_NAME}
                source/reimpl/time64.c
                source/reimpl/controls.c
                source/reimpl/asset_manager.cpp
-               source/reimpl/android7string8.cpp
                source/reimpl/md5.cpp
 
                source/utils/dialog.c

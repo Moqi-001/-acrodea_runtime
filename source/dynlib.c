@@ -58,9 +58,9 @@
 #include "reimpl/egl.h"
 #include "reimpl/time64.h"
 #include "reimpl/asset_manager.h"
-#include "reimpl/android7string8.h"
 #include "reimpl/md5.h"
 #include "reimpl/android/String8.h"
+#include "reimpl/android/SharedBuffer.h"
 
 const unsigned int __page_size = PAGE_SIZE;
 
@@ -174,7 +174,7 @@ void _ZNK7android7RefBase9decStrongEPKv(void *self, const void *id)
 int chdir_wrap(const char *__path)
 {
     l_debug("chdir invoke %s", __path);
-    //return chdir(__path);
+    // return chdir(__path);
     return chdir(DATA_PATH);
 }
 
@@ -349,12 +349,12 @@ so_default_dynlib default_dynlib[] = {
     {"_ZNK7android7String88walkPathEPS0_", (uintptr_t)&android_String8_walkPath},
 
     // Android SharedBuffer
-    {"_ZN7android12SharedBuffer5allocEj", (uintptr_t)&_ZN7android12SharedBuffer5allocEj},
-    {"_ZNK7android12SharedBuffer10editResizeEj", (uintptr_t)&_ZNK7android12SharedBuffer10editResizeEj},
-    {"_ZNK7android12SharedBuffer7releaseEj", (uintptr_t)&_ZNK7android12SharedBuffer7releaseEj},
-    {"_ZN7android12SharedBuffer7deallocEPKS0_", (uintptr_t)&_ZN7android12SharedBuffer7deallocEPKS0_},
-    {"_ZNK7android12SharedBuffer7acquireEv", (uintptr_t)&_ZNK7android12SharedBuffer7acquireEv},
-    {"_ZNK7android12SharedBuffer11attemptEditEv", (uintptr_t)&_ZNK7android12SharedBuffer11attemptEditEv},
+    {"_ZNK7android12SharedBuffer7acquireEv", (uintptr_t)&android_SharedBuffer_acquire},
+    {"_ZN7android12SharedBuffer5allocEj", (uintptr_t)&android_SharedBuffer_alloc},
+    {"_ZNK7android12SharedBuffer11attemptEditEv", (uintptr_t)&android_SharedBuffer_acquire},
+    {"_ZN7android12SharedBuffer7deallocEPKS0_", (uintptr_t)&android_SharedBuffer_dealloc},
+    {"_ZNK7android12SharedBuffer10editResizeEj", (uintptr_t)&android_SharedBuffer_editResize},
+    {"_ZNK7android12SharedBuffer7releaseEj", (uintptr_t)&android_SharedBuffer_release},
 
     // Android RefBase
     {"_ZN7android7RefBaseC2Ev", (uintptr_t)&_ZN7android7RefBaseC2Ev},
@@ -374,8 +374,14 @@ so_default_dynlib default_dynlib[] = {
     {"_ZN7android6Thread3runEPKcij", (uintptr_t)&_ZN7android6Thread3runEPKcij},
 
     // Android RefBase
-    {"_ZNK7android7RefBase9decStrongEPKv", (uintptr_t)&_ZNK7android7RefBase9decStrongEPKv},
+    {"_ZN7android7RefBaseC2Ev", (uintptr_t)&ret0},
+    {"_ZNK7android7RefBase9decStrongEPKv", (uintptr_t)&_ZNK7android7RefBase9incStrongEPKv},
     {"_ZNK7android7RefBase9incStrongEPKv", (uintptr_t)&_ZNK7android7RefBase9incStrongEPKv},
+    {"_ZN7android7RefBase10onFirstRefEv", (uintptr_t)&ret0},
+    {"_ZN7android7RefBase20onIncStrongAttemptedEjPKv", (uintptr_t)&ret0},
+    {"_ZN7android7RefBase15onLastStrongRefEPKv", (uintptr_t)&ret0},
+    {"_ZN7android7RefBase13onLastWeakRefEPKv", (uintptr_t)&ret0},
+    {"_ZN7android7RefBaseD2Ev", (uintptr_t)&ret0},
 
     {"_ZNSt8bad_castD1Ev", (uintptr_t)&_ZNSt8bad_castD1Ev},
     {"_ZNSt9exceptionD2Ev", (uintptr_t)&_ZNSt9exceptionD2Ev},
