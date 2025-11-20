@@ -5,8 +5,6 @@
 #include "utils/logger.h"
 #include "reimpl/android/String8.h"
 
-#define STRING8_MAX_DATA_SIZE 1024
-
 typedef struct String8Base
 {
     size_t length;
@@ -196,14 +194,14 @@ void android_String8_term(String8 *str8)
 
 int android_String8_setTo(String8 *str8, const String8 *src)
 {
-    l_debug("android_String8_setToCstring(%p,%p): \"%s\"", str8, src, src ? src->string : NULL);
+    l_debug("android_String8_setTo(%p,%p): \"%s\"", str8, src, src ? src->string : NULL);
 
     const char *s = src ? src->string : NULL;
     size_t len = s ? strlen(s) : 0;
     int res = real_setTo(str8, s, len);
 
-    l_debug("android_String8_setToCstring over: \"%s\"", str8 ? str8->string : NULL);
-    return 0;
+    l_debug("android_String8_setTo over: \"%s\"", str8 ? str8->string : NULL);
+    return res;
 }
 
 int android_String8_setToCstring(String8 *str8, const char *s)
@@ -214,7 +212,7 @@ int android_String8_setToCstring(String8 *str8, const char *s)
     int res = real_setTo(str8, s, len);
 
     l_debug("android_String8_setToCstring over: \"%s\"", str8 ? str8->string : NULL);
-    return 0;
+    return res;
 }
 
 int android_String8_append(String8 *str8, const String8 *src)
@@ -303,7 +301,7 @@ int android_String8_walkPath(String8 *str8, const String8 *src, String8 *out_rem
     else
     {
         const char *s = src->string;
-        const char *tail = s + strlen(s);
+        const char *tail = s + getBase(s)->length;
         const char *buf = s;
         const char *cp = strchr(buf, '/');
         if (cp == buf)
@@ -320,9 +318,9 @@ int android_String8_walkPath(String8 *str8, const String8 *src, String8 *out_rem
         res = real_init(str8, buf, len);
         if (out_remains && out_remains->string)
         {
-            buf = cp < tail ? cp + 1 : tail;
+            buf = (cp < tail) ? (cp + 1) : tail;
             len = tail - buf;
-            real_setTo(str8, buf, len);
+            real_setTo(out_remains, buf, len);
         }
     }
 
@@ -342,10 +340,10 @@ const char *android_String8_string(String8 *str8)
 
 size_t android_String8_length(String8 *str8)
 {
-    return str8 && str8->string ? getBase(str8->string)->length : 0;
+    return (str8 && str8->string) ? getBase(str8->string)->length : 0;
 }
 
 int android_String8_isEmpty(String8 *str8)
 {
-    return str8 && str8->string ? getBase(str8->string)->length == 1 : 0;
+    return (str8 && str8->string) ? (getBase(str8->string)->length == 1) : 0;
 }
