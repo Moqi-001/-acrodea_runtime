@@ -160,13 +160,12 @@ void android_SharedBuffer_acquire(SharedBuffer *sb)
     if (!sb)
     {
         l_debug("android_SharedBuffer_acquire failed: null ptr");
-        return -1;
+        return;
     }
 
     android_atomic_inc(&sb->refs);
 
     l_debug("android_SharedBuffer_dealloc over: %d", sb->refs);
-    return 0;
 }
 
 int32_t android_SharedBuffer_release(SharedBuffer *sb, uint32_t flags)
