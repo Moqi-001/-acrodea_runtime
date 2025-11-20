@@ -76,7 +76,7 @@ SharedBuffer *android_SharedBuffer_attemptEdit(SharedBuffer *sb)
 
 SharedBuffer *android_SharedBuffer_edit(SharedBuffer *sb)
 {
-    l_debug("android_SharedBuffer_attemptEdit(%p)", sb);
+    l_debug("android_SharedBuffer_edit(%p)", sb);
 
     if (!sb)
     {
@@ -106,11 +106,11 @@ SharedBuffer *android_SharedBuffer_edit(SharedBuffer *sb)
 
 SharedBuffer *android_SharedBuffer_editResize(SharedBuffer *sb, size_t new_size)
 {
-    l_debug("android_SharedBuffer_attemptEdit(%p,%u)", sb, new_size);
+    l_debug("android_SharedBuffer_editResize(%p,%u)", sb, new_size);
 
     if (!sb)
     {
-        l_debug("android_SharedBuffer_attemptEdit failed: null ptr");
+        l_debug("android_SharedBuffer_editResize failed: null ptr");
         return NULL;
     }
 
@@ -136,7 +136,7 @@ SharedBuffer *android_SharedBuffer_editResize(SharedBuffer *sb, size_t new_size)
         }
     }
 
-    l_debug("android_SharedBuffer_attemptEdit over: %p", buf);
+    l_debug("android_SharedBuffer_editResize over: %p", buf);
     return buf;
 }
 
@@ -165,7 +165,7 @@ void android_SharedBuffer_acquire(SharedBuffer *sb)
 
     android_atomic_inc(&sb->refs);
 
-    l_debug("android_SharedBuffer_dealloc over: %d", sb->refs);
+    l_debug("android_SharedBuffer_acquire over: %d", sb->refs);
 }
 
 int32_t android_SharedBuffer_release(SharedBuffer *sb, uint32_t flags)
