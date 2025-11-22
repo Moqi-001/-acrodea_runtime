@@ -45,26 +45,15 @@ int (*EntryPoint)(int, int, _DWORD);
 int start(int a1, int a2, _DWORD a3)
 {
   debugPrintf("EntryPoint(%d,%p,%d)", a1, a2, a3);
-  debugPrintf("EntryPoint a2(%s)", ((char *)a2));
+
   char **argv = (char **)a2;
-  for (size_t i = 0; argv[i]; i++)
+  for (size_t i = 0; i < a1 && argv[i]; i++)
   {
     debugPrintf("EntryPoint argv[%d]:(%s)", i, argv[i]);
   }
 
-  char *test[] = {
-      "/native/a6",
-      "marketlaunch",
-      "/native/a7",
-      "com.acrodea.gamecenter",
-      "/lib/com.acrodea.gamecenter/app.exe",
-      "/native/RuntimeApps",
-      "/native/com.acrodea.gamecenter/res",
-      "/native/.tmp",
-      "from_manager:log_print",
-  };
-
-  int ret = EntryPoint(9, test, a3);
+  debugPrintf("EntryPoint start");
+  int ret = EntryPoint(a1, a2, a3);
   debugPrintf("EntryPoint return %p", ret);
   return ret;
 }

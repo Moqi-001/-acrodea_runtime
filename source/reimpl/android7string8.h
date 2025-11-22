@@ -14,11 +14,9 @@ extern "C"
 {
 #endif
 
-    void *_ZN7android7String8C1Ev();
-    void *_ZN7android7String8C1Ev0(char *self);
-    void *_ZN7android7String8C1EPKc(const char *other);
-    void *_ZN7android7String8C1EPKc0(const void **self, const char *other2);
-    void *_ZN7android7String8C1ERKS0_(void *other);
+    void *_ZN7android7String8C1Ev(void **self);
+    void *_ZN7android7String8C1EPKc(const void **self, const char *other2);
+    void *_ZN7android7String8C1ERKS0_(const void **other, void **src);
     void _ZN7android7String8D1Ev(void *self);
     void *_ZN7android7String85setToEPKc(void *self, const char *other);
     void *_ZN7android7String86appendEPKc(void *self, const char *other);
@@ -26,7 +24,7 @@ extern "C"
     void *_ZN7android7String810appendPathEPKc(void *self, const char *component);
     const char *_ZNK7android7String86stringEv(void *self);
     size_t _ZNK7android7String86lengthEv(void *self);
-    void *_ZNK7android7String810getPathDirEv(void *self);
+    void *_ZNK7android7String810getPathDirEv(const void **other, void **src);
     void *_ZNK7android7String88walkPathEPS0_(void *self, void *outRemains);
 
     void *_ZN7android12SharedBuffer5allocEj(void *self, size_t size);

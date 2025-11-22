@@ -60,6 +60,7 @@
 #include "reimpl/asset_manager.h"
 #include "reimpl/md5.h"
 #include "reimpl/android/String8.h"
+#include "reimpl/android7string8.h"
 #include "reimpl/android/SharedBuffer.h"
 
 const unsigned int __page_size = PAGE_SIZE;
@@ -351,7 +352,7 @@ so_default_dynlib default_dynlib[] = {
     // Android SharedBuffer
     {"_ZNK7android12SharedBuffer7acquireEv", (uintptr_t)&android_SharedBuffer_acquire},
     {"_ZN7android12SharedBuffer5allocEj", (uintptr_t)&android_SharedBuffer_alloc},
-    {"_ZNK7android12SharedBuffer11attemptEditEv", (uintptr_t)&android_SharedBuffer_acquire},
+    {"_ZNK7android12SharedBuffer11attemptEditEv", (uintptr_t)&android_SharedBuffer_attemptEdit},
     {"_ZN7android12SharedBuffer7deallocEPKS0_", (uintptr_t)&android_SharedBuffer_dealloc},
     {"_ZNK7android12SharedBuffer10editResizeEj", (uintptr_t)&android_SharedBuffer_editResize},
     {"_ZNK7android12SharedBuffer7releaseEj", (uintptr_t)&android_SharedBuffer_release},

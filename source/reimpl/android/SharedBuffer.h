@@ -25,11 +25,12 @@ extern "C"
     SharedBuffer *android_SharedBuffer_reset(SharedBuffer *sb, size_t new_size);
     void android_SharedBuffer_acquire(SharedBuffer *sb);
     int32_t android_SharedBuffer_release(SharedBuffer *sb, uint32_t flags);
+    SharedBuffer *getEmptySharedBuffer();
+    void android_SharedBuffer_initRefs(SharedBuffer *sb);
 
     /*
     size_t android_SharedBuffer_size(SharedBuffer *sb);
     void *android_SharedBuffer_data(SharedBuffer *sb);
-    SharedBuffer *android_SharedBuffer_bufferFromData(void *data);
     size_t android_SharedBuffer_sizeFromData(const void *data);
     bool android_SharedBuffer_onlyOwner(SharedBuffer *sb);
     */

@@ -36,6 +36,17 @@ SharedBuffer *android_SharedBuffer_alloc(size_t size)
     return sb;
 }
 
+SharedBuffer *getEmptySharedBuffer()
+{
+    SharedBuffer *gEmptyBuf = android_SharedBuffer_alloc(1);
+
+    char *str = getData(gEmptyBuf);
+    *str = 0;
+
+    //gEmptyBuf->refs++;
+    return gEmptyBuf;
+}
+
 int android_SharedBuffer_dealloc(SharedBuffer *sb)
 {
     l_debug("android_SharedBuffer_dealloc(%p)", sb);
@@ -162,7 +173,7 @@ void android_SharedBuffer_acquire(SharedBuffer *sb)
         l_debug("android_SharedBuffer_acquire failed: null ptr");
         return;
     }
-
+    l_debug("android_SharedBuffer_acquire start: %d", sb->refs);
     android_atomic_inc(&sb->refs);
 
     l_debug("android_SharedBuffer_acquire over: %d", sb->refs);
@@ -188,6 +199,11 @@ int32_t android_SharedBuffer_release(SharedBuffer *sb, uint32_t flags)
 
     l_debug("android_SharedBuffer_release over: prev_refs=%d", prev);
     return prev;
+}
+
+void android_SharedBuffer_initRefs(SharedBuffer *sb)
+{
+    sb->refs = 1;
 }
 
 /*

@@ -102,7 +102,7 @@ int main()
     int Surface = 0;
     char *a5 = "/runtime/";
     char *a6 = "/a6";
-    char *a7 = "/a7";
+    char *a7 = "/RuntimeApps/";
     char *a8 = "com.acrodea.gamecenter";
     char *a9 = "/lib/com.acrodea.gamecenter/app.exe";
     char *a10 = "/RuntimeApps";
@@ -111,7 +111,7 @@ int main()
     int a13 = 1;
     char *a14 = "from_manager:log_print";
     int len = 1;
-    char *a15[] = {"boot_from="};
+    char *a15[] = {"boot_from=1234"};
     JobjectArray = NewObjectArray(&jni, len, "a15", NULL);
     for (size_t i = 0; i < len; i++)
     {

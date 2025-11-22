@@ -164,6 +164,12 @@ private:
     uint32_t mReserved[2];
 };
 
+static SharedBuffer *gEmptyStringBuf = NULL;
+static char *gEmptyString = NULL;
+
+extern int gDarwinCantLoadAllObjects;
+int gDarwinIsReallyAnnoying;
+
 // String8 的简化版本，只包含必要的数据成员
 class String8
 {
@@ -187,6 +193,22 @@ public:
         SharedBuffer::bufferFromData(mString)->release();
     }
 
+    void initialize_string8()
+    {
+        // HACK: This dummy dependency forces linking libutils Static.cpp,
+        // which is needed to initialize String8/String16 classes.
+        // These variables are named for Darwin, but are needed elsewhere too,
+        // including static linking on any platform.
+        //gDarwinIsReallyAnnoying = gDarwinCantLoadAllObjects;
+
+        SharedBuffer *buf = SharedBuffer::alloc(1);
+        char *str = (char *)buf->data();
+        *str = 0;
+        //gEmptyStringBuf = buf;
+        //gEmptyString = str;
+        mString = (const char *)buf;
+    }
+
     const char *string() const { return mString; }
 
     size_t length() const
@@ -204,8 +226,14 @@ public:
         l_debug("setTo(%s)", other);
         const char *newString = allocFromUTF8(other, other ? strlen(other) : 0);
         l_debug("setTo newString(%s)", newString);
+        l_debug("setTo mString (%s)", mString);
+
         SharedBuffer::bufferFromData(mString)->release();
+        l_debug("setTo mString r(%s)", mString);
+
         mString = newString ? newString : getEmptyString();
+        l_debug("setTo mString new(%s)", mString);
+
         return *this;
     }
 
@@ -265,8 +293,6 @@ public:
 
         return String8(str, lastSlash - str);
     }
-
-private:
     static char *getEmptyString()
     {
         static SharedBuffer *gEmptyBuf = nullptr;
@@ -280,6 +306,7 @@ private:
         return static_cast<char *>(gEmptyBuf->data());
     }
 
+private:
     static char *allocFromUTF8(const char *in, size_t len)
     {
         if (len == 0)
@@ -317,78 +344,50 @@ private:
 };
 
 // 构造函数
-void *_ZN7android7String8C1Ev()
+void *_ZN7android7String8C1Ev(void **self)
 {
-    l_debug("_ZN7android7String8C1Ev");
-    return new String8();
-}
-
-void *_ZN7android7String8C1Ev0(char *self)
-{
-    //l_debug("_ZN7android7String8C1Ev0(%s)",((String8*)self)->string());
-    l_debug("_ZN7android7String8C1Ev0(%s)", self);
-    //memset(self,0,strlen(self));
+    l_debug("_ZN7android7String8C1Ev(%p)", self);
+    if (!self)
+        return NULL;
+    String8 *s = (String8 *)self;
+    s->initialize_string8();
+    l_debug("_ZN7android7String8C1Ev over(%s)", s->string());
     return self;
 }
 
-void *_ZN7android7String8C1EPKc0(const void **self, const char *other2)
+void *_ZN7android7String8C1EPKc(const void **self, const char *other2)
 {
-    l_debug("_ZN7android7String8C1EPKc0(%s)", other2);
-    String8 *path = new String8(DATA_PATH);
-    path->append(other2);
-    *self = path->string();
+    l_debug("_ZN7android7String8C1EPKc(%p,%s)", self, other2);
+    if (!self)
+        return NULL;
+    //String8 *path = new String8(DATA_PATH);
+    //path->append(other2);
+    String8 *s = (String8 *)self;
+    s->initialize_string8();
+    s->append(other2);
+    l_debug("_ZN7android7String8C1EPKc over(%s)", s->string());
     return self;
 }
 
-void *_ZN7android7String8C1EPKc(const char *other)
+void *_ZN7android7String8C1ERKS0_(const void **other, void **src)
 {
-    l_debug("_ZN7android7String8C1EPKc");
-    return new String8(other);
-}
+    l_debug("_ZN7android7String8C1ERKS0_(%p,%p)", other, src);
+    _ZN7android7String8C1EPKc(other, ((String8 *)src)->string());
 
-void *_ZN7android7String8C1EPKc(const char *other, size_t len)
-{
-    l_debug("_ZN7android7String8C1EPKcj - with length: %zu", len);
-
-    // 创建新的 String8 对象
-    String8 *str = new String8();
-    if (other && len > 0)
-    {
-        // 手动设置内容
-        SharedBuffer *buf = SharedBuffer::alloc(len + 1);
-        if (buf)
-        {
-            char *data = static_cast<char *>(buf->data());
-            memcpy(data, other, len);
-            data[len] = 0;
-
-            // 释放原有的空字符串
-            SharedBuffer::bufferFromData(str->string())->release();
-            // 设置新的字符串
-            *((const char **)str) = data;
-        }
-    }
-    return str;
-}
-
-void *_ZN7android7String8C1ERKS0_(void *other)
-{
-    l_debug("_ZN7android7String8C1ERKS0_");
-    //return new String8(*static_cast<String8 *>(other));
-    return NULL;
+    return other;
 }
 
 // 析构函数
 void _ZN7android7String8D1Ev(void *self)
 {
-    l_debug("_ZN7android7String8D1Ev");
-    //delete static_cast<String8 *>(self);
+    l_debug("(_ZN7android7String8D1Ev(%s))", self);
+    delete static_cast<String8 *>(self);
 }
 
 // setTo 函数
 void *_ZN7android7String85setToEPKc(void *self, const char *other)
 {
-    l_debug("_ZN7android7String85setToEPKc");
+    l_debug("_ZN7android7String85setToEPKc(%p,%s)", self, other);
     String8 *str = static_cast<String8 *>(self);
     return &str->setTo(other);
 }
@@ -396,7 +395,6 @@ void *_ZN7android7String85setToEPKc(void *self, const char *other)
 // append 函数
 void *_ZN7android7String86appendEPKc(void *self, const char *other)
 {
-
     String8 *str = static_cast<String8 *>(self);
     l_debug("_ZN7android7String86appendEPKc(%s,%s)", str->string(), other);
     return &str->append(other);
@@ -404,12 +402,11 @@ void *_ZN7android7String86appendEPKc(void *self, const char *other)
 
 void *_ZN7android7String86appendERKS0_(char **self, const char *other)
 {
-
-    String8 *str = new String8(*self);
+    String8 *str = (String8 *)(self);
     l_debug("_ZN7android7String86appendERKS0_(%s)", str->string());
-    String8 *otherStr = new String8(other);
+    String8 *otherStr = (String8 *)(other);
     if (!otherStr->isEmpty())
-        str->append(other);
+        str->append(otherStr->string());
     l_debug("_ZN7android7String86appendERKS0_end(%s)", str->string());
     return str;
 }
@@ -500,71 +497,12 @@ void extractSafeString(const char *src, char *dest, size_t destSize)
 }
 
 // getPathDir 函数
-void *_ZNK7android7String810getPathDirEv(void *self)
+void *_ZNK7android7String810getPathDirEv(const void **other, void **src)
 {
-    l_debug("_ZNK7android7String810getPathDirEv()");
+    l_debug("_ZNK7android7String810getPathDirEv(%s,%s)", other, src);
+    _ZN7android7String8C1ERKS0_(other, src);
 
     return NULL;
-    if (!self)
-    {
-        l_debug("ERROR: self is null!");
-        return nullptr;
-    }
-
-    // 直接检查内存内容，不依赖 String8 类
-    const char **mStringPtr = (const char **)((uintptr_t)self);
-    const char *strData = *mStringPtr;
-
-    l_debug("Raw mString value: %p", strData);
-
-    // 检查是否是有效的指针（不是 0xdeadbeef 等标记值）
-    if ((uintptr_t)strData == 0xdeadbeef ||
-        (uintptr_t)strData == 0xbaadf00d ||
-        (uintptr_t)strData < 0x1000)
-    {
-        l_debug("ERROR: mString contains invalid pointer: %p", strData);
-        // 返回一个空的 String8 对象而不是崩溃
-        return new String8("");
-    }
-
-    // 检查指针是否可读
-    if (!isReadablePointer(strData))
-    {
-        l_debug("ERROR: mString points to unreadable memory: %p", strData);
-        return new String8("");
-    }
-
-    // 安全地提取字符串内容
-    char safeBuffer[256] = {0};
-    extractSafeString(strData, safeBuffer, sizeof(safeBuffer));
-    l_debug("Path string: '%s'", safeBuffer);
-
-    // 手动实现 getPathDir 逻辑，不依赖 String8 的方法
-    const char *lastSlash = strrchr(safeBuffer, '/');
-    if (!lastSlash)
-    {
-        l_debug("No directory separator found, returning empty");
-        return new String8("");
-    }
-
-    // 提取目录部分
-    size_t dirLen = lastSlash - safeBuffer;
-    char *dirPath = (char *)malloc(dirLen + 1);
-    if (!dirPath)
-    {
-        l_debug("ERROR: malloc failed");
-        return new String8("");
-    }
-
-    memcpy(dirPath, safeBuffer, dirLen);
-    dirPath[dirLen] = 0;
-
-    l_debug("Directory: '%s'", dirPath);
-
-    String8 *result = new String8(dirPath);
-    free(dirPath);
-
-    return result;
 }
 
 // walkPath
@@ -572,74 +510,6 @@ void *_ZNK7android7String88walkPathEPS0_(void *self, void *outRemains)
 {
     l_debug("_ZNK7android7String88walkPathEPS0_()");
     return NULL;
-    if (!self)
-    {
-        l_debug("ERROR: self is null!");
-        return _ZN7android7String8C1Ev(); // 返回空字符串
-    }
-
-    // 直接访问内存获取字符串
-    const char **mStringPtr = (const char **)((uintptr_t)self);
-    const char *strData = *mStringPtr;
-
-    l_debug("Input path: %p -> '%s'", strData, strData ? strData : "NULL");
-
-    if (!strData || !strData[0])
-    {
-        l_debug("Empty path string");
-        if (outRemains)
-        {
-            *(void **)outRemains = _ZN7android7String8C1Ev(); // 设置空的剩余部分
-        }
-        return _ZN7android7String8C1Ev(); // 返回空字符串
-    }
-
-    const char *buf = strData;
-
-    // 跳过开头的路径分隔符
-    if (*buf == '/')
-    {
-        buf++;
-    }
-
-    // 找到第一个路径分隔符
-    const char *cp = strchr(buf, '/');
-
-    if (cp == nullptr)
-    {
-        // 没有找到分隔符，返回整个字符串作为结果
-        l_debug("No path separator found, returning entire path");
-        void *result = _ZN7android7String8C1EPKc(buf);
-
-        if (outRemains)
-        {
-            // 剩余部分为空
-            *(void **)outRemains = _ZN7android7String8C1Ev();
-        }
-
-        l_debug("Result: '%s', Remains: ''",
-                _ZNK7android7String86stringEv(result));
-        return result;
-    }
-
-    // 提取第一个路径组件
-    size_t componentLen = cp - buf;
-    l_debug("Found separator at position %ld, component length: %zu",
-            cp - strData, componentLen);
-
-    void *result = _ZN7android7String8C1EPKc(buf, componentLen);
-
-    if (outRemains)
-    {
-        // 设置剩余部分（跳过分隔符）
-        *(void **)outRemains = _ZN7android7String8C1EPKc(cp + 1);
-    }
-
-    l_debug("Result: '%s', Remains: '%s'",
-            _ZNK7android7String86stringEv(result),
-            outRemains ? _ZNK7android7String86stringEv(*(void **)outRemains) : "NULL");
-
-    return result;
 }
 
 // operator= 赋值操作符
@@ -675,18 +545,6 @@ size_t _ZNK7android7String84sizeEv(void *self)
     return str->size();
 }
 
-// format 函数
-void *_ZN7android7String86formatEPKcz(const char *fmt, ...)
-{
-    l_debug("_ZN7android7String86formatEPKcz");
-    va_list args;
-    va_start(args, fmt);
-    char buffer[1024];
-    vsnprintf(buffer, sizeof(buffer), fmt, args);
-    va_end(args);
-    return new String8(buffer);
-}
-
 // 获取共享缓冲区
 const void *_ZNK7android7String812sharedBufferEv(void *self)
 {
@@ -695,9 +553,9 @@ const void *_ZNK7android7String812sharedBufferEv(void *self)
     return SharedBuffer::bufferFromData(str->string());
 }
 
-void *_ZN7android12SharedBuffer5allocEj(void *self, size_t size)
+void *_ZN7android12SharedBuffer5allocEj(size_t size)
 {
-    l_debug("_ZN7android12SharedBuffer5allocEj(%p,%d)", self, size);
+    l_debug("_ZN7android12SharedBuffer5allocEj(%d)", size);
     //SharedBuffer *s = static_cast<SharedBuffer *>(self);
 
     SharedBuffer *ret = SharedBuffer::alloc(size);
