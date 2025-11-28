@@ -69,118 +69,125 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wl,-q -O3 -g -ffast-math -mfloat-abi=softfp
 set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=gnu++20 -Wno-write-strings -Wno-psabi")
 
 add_executable(${CMAKE_PROJECT_NAME}
-               source/main.c
-               source/dynlib.c
-               source/java.c
-               source/patch.c
+  source/main.c
+  source/dynlib.c
+  source/java.c
+  source/patch.c
+  source/init.c
 
-               source/reimpl/android/atomic.c
-               source/reimpl/android/SharedBuffer.c
-               source/reimpl/android/String8.c
-               source/reimpl/bits/_ctype.c
-               source/reimpl/egl.c
-               source/reimpl/errno.c
-               source/reimpl/io.c
-               source/reimpl/log.c
-               source/reimpl/mem.c
-               source/reimpl/pthr.c
-               source/reimpl/sys.c
-               source/reimpl/time64.c
-               source/reimpl/controls.c
-               source/reimpl/asset_manager.cpp
-               source/reimpl/md5.cpp
+  source/reimpl/android/atomic.c
+  source/reimpl/android/SharedBuffer.c
+  source/reimpl/android/String8.c
+  source/reimpl/libGgee/ggee.c
+  source/reimpl/libKD/kd.c
+  source/reimpl/libLD/ld.c
+  source/reimpl/libLD/ld_mem.c
+  source/reimpl/bits/_ctype.c
+  source/reimpl/egl.c
+  source/reimpl/errno.c
+  source/reimpl/io.c
+  source/reimpl/log.c
+  source/reimpl/mem.c
+  source/reimpl/pthr.c
+  source/reimpl/sys.c
+  source/reimpl/time64.c
+  source/reimpl/controls.c
+  source/reimpl/asset_manager.cpp
 
-               source/utils/dialog.c
-               source/utils/glutil.c
-               source/utils/init.c
-               source/utils/logger.c
-               source/utils/settings.c
-               source/utils/utils.c
+  source/utils/dialog.c
+  source/utils/glutil.c
+  source/utils/logger.c
+  source/utils/settings.c
+  source/utils/utils.c
 
-               lib/falso_jni/FalsoJNI.c
-               lib/falso_jni/FalsoJNI_ImplBridge.c
-               lib/falso_jni/FalsoJNI_Logger.c
-               lib/sha1/sha1.c
-               lib/fios/fios.c
-               lib/so_util/so_util.c)
+  lib/falso_jni/FalsoJNI.c
+  lib/falso_jni/FalsoJNI_ImplBridge.c
+  lib/falso_jni/FalsoJNI_Logger.c
+  lib/so_util/so_util.c
+  lib/fios/fios.c
+  lib/sha1/sha1.c
+  lib/md5/md5.c
+)
 
-add_subdirectory(lib/libc_bridge)
-add_dependencies(${CMAKE_PROJECT_NAME} SceLibcBridge)
+if (USE_SCELIBC_IO)
+  add_subdirectory(lib/libc_bridge)
+  add_dependencies(${CMAKE_PROJECT_NAME} SceLibcBridge)
+endif()
 
 target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM
-                           PUBLIC ${CMAKE_SOURCE_DIR}/lib
-                           )
+  PUBLIC ${CMAKE_SOURCE_DIR}/lib
+)
 
 target_include_directories(${CMAKE_PROJECT_NAME}
-                           PUBLIC ${CMAKE_SOURCE_DIR}/source
-                           )
+  PUBLIC ${CMAKE_SOURCE_DIR}/source
+)
 
 target_link_libraries(${CMAKE_PROJECT_NAME}
-                      -Wl,--whole-archive pthread -Wl,--no-whole-archive
-                      stdc++
-                      vitaGL
-                      vitashark
-                      SceShaccCgExt
-                      taihen_stub
-                      SceShaccCg_stub
-                      z
-                      m
-                      png16
-                      ScePgf_stub
-                      mathneon
-                      kubridge_stub
-                      ${CMAKE_BINARY_DIR}/lib/libc_bridge/stubs/libSceLibcBridge_stub.a
-                      SceHid_stub
-                      SceTouch_stub
-                      SceMotion_stub
-                      SceAppMgr_stub
-                      SceAppUtil_stub
-                      SceAudio_stub
-                      SceAudioIn_stub
-                      SceCommonDialog_stub
-                      SceDisplay_stub
-                      SceKernelDmacMgr_stub
-                      SceFios2_stub
-                      SceCtrl_stub
-                      SceGxm_stub
-                      ScePower_stub
-                      SceTouch_stub
-                      SceVshBridge_stub
-                      )
+  -Wl,--whole-archive pthread -Wl,--no-whole-archive
+  stdc++
+  vitaGL
+  vitashark
+  SceShaccCgExt
+  taihen_stub
+  SceShaccCg_stub
+  z
+  m
+  png16
+  ScePgf_stub
+  mathneon
+  kubridge_stub
+  ${CMAKE_BINARY_DIR}/lib/libc_bridge/stubs/libSceLibcBridge_stub.a
+  SceHid_stub
+  SceTouch_stub
+  SceMotion_stub
+  SceAppMgr_stub
+  SceAppUtil_stub
+  SceAudio_stub
+  SceAudioIn_stub
+  SceCommonDialog_stub
+  SceDisplay_stub
+  SceKernelDmacMgr_stub
+  SceFios2_stub
+  SceCtrl_stub
+  SceGxm_stub
+  ScePower_stub
+  SceTouch_stub
+  SceVshBridge_stub
+)
 
 vita_create_self(eboot.bin ${CMAKE_PROJECT_NAME} UNSAFE NOASLR)
 vita_create_vpk(${VITA_VPKNAME}.vpk ${VITA_TITLEID} eboot.bin
-                VERSION ${VITA_VERSION}
-                NAME ${VITA_APP_NAME}
-                FILE ${CMAKE_SOURCE_DIR}/extras/cpuinfo cpuinfo
-                ${CMAKE_SOURCE_DIR}/extras/meminfo meminfo
-                ${CMAKE_SOURCE_DIR}/extras/livearea/icon0.png sce_sys/icon0.png
-                ${CMAKE_SOURCE_DIR}/extras/livearea/pic0.png sce_sys/pic0.png
-                ${CMAKE_SOURCE_DIR}/extras/livearea/startup.png sce_sys/livearea/contents/startup.png
-                ${CMAKE_SOURCE_DIR}/extras/livearea/bg0.png sce_sys/livearea/contents/bg0.png
-                ${CMAKE_SOURCE_DIR}/extras/livearea/template.xml sce_sys/livearea/contents/template.xml
-                )
+  VERSION ${VITA_VERSION}
+  NAME ${VITA_APP_NAME}
+  FILE ${CMAKE_SOURCE_DIR}/extras/cpuinfo cpuinfo
+  ${CMAKE_SOURCE_DIR}/extras/meminfo meminfo
+  ${CMAKE_SOURCE_DIR}/extras/livearea/icon0.png sce_sys/icon0.png
+  ${CMAKE_SOURCE_DIR}/extras/livearea/pic0.png sce_sys/pic0.png
+  ${CMAKE_SOURCE_DIR}/extras/livearea/startup.png sce_sys/livearea/contents/startup.png
+  ${CMAKE_SOURCE_DIR}/extras/livearea/bg0.png sce_sys/livearea/contents/bg0.png
+  ${CMAKE_SOURCE_DIR}/extras/livearea/template.xml sce_sys/livearea/contents/template.xml
+)
 
 add_custom_target(send
-                  COMMAND echo destroy | nc ${PSVITAIP} 1338
-                  COMMAND echo destroy | nc ${PSVITAIP} 1338
-                  COMMAND curl -T eboot.bin ftp://${PSVITAIP}:1337/ux0:/app/${VITA_TITLEID}/
-                  COMMAND echo launch ${VITA_TITLEID} | nc ${PSVITAIP} 1338
-                  DEPENDS ${VITA_VPKNAME}.vpk-vpk
-                  )
+  COMMAND echo destroy | nc ${PSVITAIP} 1338
+  COMMAND echo destroy | nc ${PSVITAIP} 1338
+  COMMAND curl -T eboot.bin ftp://${PSVITAIP}:1337/ux0:/app/${VITA_TITLEID}/
+  COMMAND echo launch ${VITA_TITLEID} | nc ${PSVITAIP} 1338
+  DEPENDS ${VITA_VPKNAME}.vpk-vpk
+)
 
 add_custom_target(send_kvdb
-                  COMMAND echo destroy | nc ${PSVITAIP} 1338
-                  COMMAND curl -T eboot.bin ftp://${PSVITAIP}:1337/ux0:/app/${VITA_TITLEID}/
-                  COMMAND echo launch ux0:/app/${VITA_TITLEID}/eboot.bin | nc ${PSVITAIP} 1338
-                  DEPENDS ${VITA_VPKNAME}.vpk-vpk
-                  )
+  COMMAND echo destroy | nc ${PSVITAIP} 1338
+  COMMAND curl -T eboot.bin ftp://${PSVITAIP}:1337/ux0:/app/${VITA_TITLEID}/
+  COMMAND echo launch ux0:/app/${VITA_TITLEID}/eboot.bin | nc ${PSVITAIP} 1338
+  DEPENDS ${VITA_VPKNAME}.vpk-vpk
+)
 
 add_custom_target(dump
-                  COMMAND ${CMAKE_SOURCE_DIR}/extras/scripts/get_dump.sh ${PSVITAIP}
-                  COMMAND python3 ${PARSECOREPATH} coredump ${CMAKE_PROJECT_NAME}
-                  )
+  COMMAND ${CMAKE_SOURCE_DIR}/extras/scripts/get_dump.sh ${PSVITAIP}
+  COMMAND python3 ${PARSECOREPATH} coredump ${CMAKE_PROJECT_NAME}
+)
 
 add_custom_target(reboot
-                  COMMAND echo reboot | nc ${PSVITAIP} 1338
-                  )
+  COMMAND echo reboot | nc ${PSVITAIP} 1338
+)

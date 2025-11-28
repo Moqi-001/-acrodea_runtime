@@ -12,70 +12,70 @@
  * @brief Resolving dynamic imports of the .so.
  */
 
-#include <psp2/kernel/clib.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <ctype.h>
 #include <inttypes.h>
+#include <locale.h>
 #include <malloc.h>
 #include <math.h>
 #include <netdb.h>
+#include <poll.h>
+#include <psp2/kernel/clib.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
 #include <wctype.h>
 #include <zlib.h>
-#include <locale.h>
-#include <poll.h>
 
-#include <sys/stat.h>
-#include <sys/unistd.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/time.h>
+#include <sys/unistd.h>
 
 #include <so_util/so_util.h>
 #include <utime.h>
 
 #include "utils/glutil.h"
-#include "utils/utils.h"
 #include "utils/logger.h"
+#include "utils/utils.h"
 
+#include <jerror.h>
 #include <png.h>
 #include <pngconf.h>
 #include <pnglibconf.h>
 #include <zconf.h>
-#include <jerror.h>
 
 #ifdef USE_SCELIBC_IO
 #include <libc_bridge/libc_bridge.h>
 #endif
 
+#include "md5/md5.h"
+#include "reimpl/android/SharedBuffer.h"
+#include "reimpl/android/String8.h"
+#include "reimpl/asset_manager.h"
+#include "reimpl/egl.h"
 #include "reimpl/errno.h"
 #include "reimpl/io.h"
+#include "reimpl/libKD/kd.h"
+#include "reimpl/libLD/ld.h"
 #include "reimpl/log.h"
 #include "reimpl/mem.h"
 #include "reimpl/pthr.h"
 #include "reimpl/sys.h"
-#include "reimpl/egl.h"
 #include "reimpl/time64.h"
-#include "reimpl/asset_manager.h"
-#include "reimpl/md5.h"
-#include "reimpl/android/String8.h"
-#include "reimpl/android7string8.h"
-#include "reimpl/android/SharedBuffer.h"
 
 const unsigned int __page_size = PAGE_SIZE;
 
 // RefBase 的简化实现
 typedef struct
 {
-    int strong_refs;
-    int weak_refs;
+    int   strong_refs;
+    int   weak_refs;
     void *extensions;
 } RefBaseImpl;
 
 // RefBase 构造函数
-void _ZN7android7RefBaseC2Ev(void *self)
-{
+void _ZN7android7RefBaseC2Ev(void *self) {
     l_debug("_ZN7android7RefBaseC2Ev: %p", self);
     //    RefBaseImpl* ref = (RefBaseImpl*)self;
     //    ref->strong_refs = 0;
@@ -84,8 +84,7 @@ void _ZN7android7RefBaseC2Ev(void *self)
 }
 
 // RefBase 析构函数
-void _ZN7android7RefBaseD2Ev(void *self)
-{
+void _ZN7android7RefBaseD2Ev(void *self) {
     l_debug("_ZN7android7RefBaseD2Ev: %p", self);
     //    RefBaseImpl* ref = (RefBaseImpl*)self;
     //    if (ref->extensions) {
@@ -93,61 +92,50 @@ void _ZN7android7RefBaseD2Ev(void *self)
     //    }
 }
 
-void _ZN7android7RefBase10onFirstRefEv(void *self)
-{
+void _ZN7android7RefBase10onFirstRefEv(void *self) {
     l_debug("_ZN7android7RefBase10onFirstRefEv: %p", self);
 }
 
-void _ZN7android7RefBase15onLastStrongRefEPKv(void *self, const void *id)
-{
+void _ZN7android7RefBase15onLastStrongRefEPKv(void *self, const void *id) {
     l_debug("_ZN7android7RefBase15onLastStrongRefEPKv: %p, id = %d", self, id);
 }
 
-void _ZN7android7RefBase13onLastWeakRefEPKv(void *self, const void *id)
-{
+void _ZN7android7RefBase13onLastWeakRefEPKv(void *self, const void *id) {
     l_debug("_ZN7android7RefBase13onLastWeakRefEPKv: %p, id = %d", self, id);
 }
 
-int _ZN7android7RefBase20onIncStrongAttemptedEjPKv(void *self, unsigned int flags, const void *id)
-{
+int _ZN7android7RefBase20onIncStrongAttemptedEjPKv(void *self, unsigned int flags, const void *id) {
     l_debug("_ZN7android7RefBase20onIncStrongAttemptedEjPKv: %p, flags = %d, id = %d", self, flags, id);
     return 1;
 }
 
 // Thread 类的完全空实现
-void _ZN7android6ThreadC2Eb(void *self, int canCallJava)
-{
+void _ZN7android6ThreadC2Eb(void *self, int canCallJava) {
     l_debug("[Thread] Constructor (EMPTY): %p, canCallJava: %d", self, canCallJava);
 }
 
-void _ZN7android6ThreadD0Ev(void *self)
-{
+void _ZN7android6ThreadD0Ev(void *self) {
     l_debug("[Thread] D0 destructor (EMPTY): %p", self);
 }
 
-void _ZN7android6ThreadD1Ev(void *self)
-{
+void _ZN7android6ThreadD1Ev(void *self) {
     l_debug("[Thread] D1 destructor (EMPTY): %p", self);
 }
 
-void _ZN7android6ThreadD2Ev(void *self)
-{
+void _ZN7android6ThreadD2Ev(void *self) {
     l_debug("[Thread] D2 destructor (EMPTY): %p", self);
 }
 
-int _ZN7android6Thread10readyToRunEv(void *self)
-{
+int _ZN7android6Thread10readyToRunEv(void *self) {
     l_debug("[Thread] readyToRun (EMPTY): %p", self);
     return 1;
 }
 
-void _ZN7android6Thread11requestExitEv(void *self)
-{
+void _ZN7android6Thread11requestExitEv(void *self) {
     l_debug("[Thread] requestExit (EMPTY): %p", self);
 }
 
-int _ZN7android6Thread3runEPKcij(void *self, const char *name, int priority, size_t stack)
-{
+int _ZN7android6Thread3runEPKcij(void *self, const char *name, int priority, size_t stack) {
     l_debug("[Thread] run (EMPTY): %p, name: %s, priority: %d, stack: %zu",
             self, name ? name : "NULL", priority, stack);
     return 1;
@@ -155,25 +143,22 @@ int _ZN7android6Thread3runEPKcij(void *self, const char *name, int priority, siz
 
 typedef struct
 {
-    int ref_count; // 简单的引用计数
+    int ref_count;  // 简单的引用计数
 } SimpleRefBase;
 
-void _ZNK7android7RefBase9incStrongEPKv(void *self, const void *id)
-{
+void _ZNK7android7RefBase9incStrongEPKv(void *self, const void *id) {
     SimpleRefBase *ref = (SimpleRefBase *)self;
     ref->ref_count++;
     l_debug("[RefBase] incStrong: %p -> count=%d", self, ref->ref_count);
 }
 
-void _ZNK7android7RefBase9decStrongEPKv(void *self, const void *id)
-{
+void _ZNK7android7RefBase9decStrongEPKv(void *self, const void *id) {
     SimpleRefBase *ref = (SimpleRefBase *)self;
     ref->ref_count--;
     l_debug("[RefBase] decStrong: %p -> count=%d", self, ref->ref_count);
 }
 
-int chdir_wrap(const char *__path)
-{
+int chdir_wrap(const char *__path) {
     l_debug("chdir invoke %s", __path);
     // return chdir(__path);
     return chdir(DATA_PATH);
@@ -248,27 +233,25 @@ extern void *__swbuf;
 
 extern void *__aeabi_llsl;
 
-extern const char *BIONIC_ctype_;
+extern const char  *BIONIC_ctype_;
 extern const short *BIONIC_tolower_tab_;
 extern const short *BIONIC_toupper_tab_;
 
-static FILE __sF_fake[3];
+static FILE        __sF_fake[3];
 so_default_dynlib *default_dynlib_m;
-int size_default_dynlib;
-void *dlsym_soloader(void *handle, const char *symbol)
-{
+int                size_default_dynlib;
+
+void *dlsym_soloader(void *handle, const char *symbol) {
     // Usage example:
     // if (strcmp("AMotionEvent_getAxisValue", symbol) == 0)
     //    return &AMotionEvent_getAxisValue;
 
-    int size_default_dynlib_type = sizeof(so_default_dynlib);
-    void *result = NULL;
+    int       size_default_dynlib_type = sizeof(so_default_dynlib);
+    void     *result                   = NULL;
     uintptr_t val;
-    for (int j = 0; j < size_default_dynlib / size_default_dynlib_type; j++)
-    {
-        if (strcmp(symbol, default_dynlib_m[j].symbol) == 0)
-        {
-            val = default_dynlib_m[j].func;
+    for (int j = 0; j < size_default_dynlib / size_default_dynlib_type; j++) {
+        if (strcmp(symbol, default_dynlib_m[j].symbol) == 0) {
+            val    = default_dynlib_m[j].func;
             result = val;
             l_debug("find symbol \"%s\".  %p", symbol, result);
             break;
@@ -279,46 +262,39 @@ void *dlsym_soloader(void *handle, const char *symbol)
     return result;
 }
 
-void *dlopen_soloader(const char *file, int mode)
-{
+void *dlopen_soloader(const char *file, int mode) {
     l_debug("dlopen_soloader \"%s\".  mode:%p", file, mode);
 
     return default_dynlib_m;
 }
 
-int fprintf0(FILE *stream, const char *format, char *a1, int a3, char *a2)
-{
+int fprintf0(FILE *stream, const char *format, char *a1, int a3, char *a2) {
     l_debug("fprintf");
     l_debug(format, a1, a3, a2);
     return 0;
 }
 
-int libandroidfw(void)
-{
+int libandroidfw(void) {
     l_debug("libandroidfw");
     return 0;
 }
 
-int libutils(void)
-{
+int libutils(void) {
     l_debug("libutils");
     return 0;
 }
 
-int libmedia(void)
-{
+int libmedia(void) {
     l_debug("libmedia");
     return 0;
 }
 
-int setjmp0(jmp_buf v)
-{
+int setjmp0(jmp_buf v) {
     l_debug("setjmp0");
     return setjmp(v);
 }
 
-int jniRegisterNativeMethods(int a1, int a2, int a3, int a4)
-{
+int jniRegisterNativeMethods(int a1, int a2, int a3, int a4) {
     l_debug("jniRegisterNativeMethods(%p,%s,%p,%d)", a1, a2, a3, a4);
     char **a = (char **)a3;
     l_debug("jniRegisterNativeMethods a3(%s,%s)", a[1], a[2]);
@@ -682,7 +658,7 @@ so_default_dynlib default_dynlib[] = {
     // { "chdir", (uintptr_t)&chdir },
     {"chmod", (uintptr_t)&chmod},
     {"dup", (uintptr_t)&dup_soloader},
-    {"fseeko", (uintptr_t)&fseeko}, // TODO: wrap normal fseek for SceLibc version?
+    {"fseeko", (uintptr_t)&fseeko},  // TODO: wrap normal fseek for SceLibc version?
     {"ftello", (uintptr_t)&ftello},
     {"ftruncate", (uintptr_t)&ftruncate},
     {"getcwd", (uintptr_t)&getcwd},
@@ -1252,8 +1228,8 @@ so_default_dynlib default_dynlib[] = {
     {"setenv", (uintptr_t)&setenv_soloader},
 
     // Jmp
-    {"setjmp", (uintptr_t)&setjmp0},  // TODO: May have different struct size?
-    {"longjmp", (uintptr_t)&longjmp}, // TODO: May have different struct size?
+    {"setjmp", (uintptr_t)&setjmp0},   // TODO: May have different struct size?
+    {"longjmp", (uintptr_t)&longjmp},  // TODO: May have different struct size?
 
     // Signals
     {"bsd_signal", (uintptr_t)&signal},
@@ -1310,12 +1286,11 @@ so_default_dynlib default_dynlib[] = {
     {"_ZNK7android9ZipFileRO15findEntryByNameEPKc", (uintptr_t)&libutils},
 };
 
-void resolve_imports(so_module *mod)
-{
-    __sF_fake[0] = *stdin;
-    __sF_fake[1] = *stdout;
-    __sF_fake[2] = *stderr;
-    default_dynlib_m = default_dynlib;
+void resolve_imports(so_module *mod) {
+    __sF_fake[0]        = *stdin;
+    __sF_fake[1]        = *stdout;
+    __sF_fake[2]        = *stderr;
+    default_dynlib_m    = default_dynlib;
     size_default_dynlib = sizeof(default_dynlib);
     so_resolve(mod, default_dynlib, size_default_dynlib, 0);
 }

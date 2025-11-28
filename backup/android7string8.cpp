@@ -2,7 +2,7 @@
 // Created by Lisen on 2025/10/31.
 //
 #include "utils/logger.h"
-#include "reimpl/android7string8.h"
+#include "android7string8.h"
 #include <string.h>
 #include <stdarg.h>
 #include <stdio.h>

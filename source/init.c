@@ -7,33 +7,28 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-#include "utils/init.h"
-
-#include "utils/dialog.h"
-#include "utils/glutil.h"
-#include "utils/logger.h"
-#include "utils/utils.h"
-#include "utils/settings.h"
-
 #include <string.h>
 
+#include <falso_jni/FalsoJNI.h>
+#include <fios/fios.h>
 #include <psp2/appmgr.h>
 #include <psp2/apputil.h>
 #include <psp2/kernel/clib.h>
 #include <psp2/power.h>
-
-#include <falso_jni/FalsoJNI.h>
 #include <so_util/so_util.h>
-#include <fios/fios.h>
-#include "reimpl/android7string8.h"
 
-// Base address for the Android .so to be loaded at
-#define LOAD_ADDRESS 0x98000000
+#include "config.h"
+#include "init.h"
+#include "utils/dialog.h"
+#include "utils/glutil.h"
+#include "utils/logger.h"
+#include "utils/settings.h"
+#include "utils/utils.h"
 
 extern so_module so_mod;
 
 void soloader_init_all() {
-	// Launch `app0:configurator.bin` on `-config` init param
+    // Launch `app0:configurator.bin` on `-config` init param
     sceAppUtilInit(&(SceAppUtilInitParam){}, &(SceAppUtilBootParam){});
     SceAppUtilAppEventParam eventParam;
     sceClibMemset(&eventParam, 0, sizeof(SceAppUtilAppEventParam));
@@ -63,9 +58,11 @@ void soloader_init_all() {
     l_success("kubridge check passed.");
 
     if (!file_exists(SO_PATH)) {
-        fatal_error("Looks like you haven't installed the data files for this "
-                    "port, or they are in an incorrect location. Please make "
-                    "sure that you have %s file exactly at that path.", SO_PATH);
+        fatal_error(
+            "Looks like you haven't installed the data files for this "
+            "port, or they are in an incorrect location. Please make "
+            "sure that you have %s file exactly at that path.",
+            SO_PATH);
     }
 
     if (so_file_load(&so_mod, SO_PATH, LOAD_ADDRESS) < 0) {
@@ -89,7 +86,7 @@ void soloader_init_all() {
 
     so_flush_caches(&so_mod);
     l_success("SO caches flushed.");
-    
+
     so_initialize(&so_mod);
     l_success("SO initialized.");
 
@@ -101,5 +98,4 @@ void soloader_init_all() {
 
     controls_init();
     l_success("Controls initialized.");
-
 }

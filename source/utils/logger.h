@@ -48,7 +48,7 @@ extern "C" {
 void _log_print(int t, const char* fmt, ...)
                 __attribute__ ((format (printf, 2, 3)));
                 
-int debugPrintf(char *text, ...);
+int debugPrintf(const char *text, ...);
 
 #ifdef __cplusplus
 };

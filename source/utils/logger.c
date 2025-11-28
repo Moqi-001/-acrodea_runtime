@@ -5,13 +5,18 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-#include "utils/logger.h"
+#include <stdatomic.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
+
+#include <psp2/io/fcntl.h>
 #include <psp2/io/stat.h>
 #include <psp2/kernel/clib.h>
 #include <psp2/kernel/threadmgr.h>
 
-#include <stdbool.h>
-#include <stdatomic.h>
+#include "config.h"
+#include "utils/logger.h"
 
 #define COLOR_RED    "\x1B[38;5;196m"
 #define COLOR_PINK   "\x1B[38;5;212m"
@@ -20,17 +25,17 @@
 #define COLOR_GREEN  "\x1B[32m"
 #define COLOR_CYAN   "\x1B[36m"
 
-#define COLOR_END    "\033[0m"
-#define LOG_PATH    DATA_PATH "log.txt"
+#define COLOR_END "\033[0m"
+
 static SceKernelLwMutexWork _log_mutex;
-static atomic_bool _log_mutex_ready = ATOMIC_VAR_INIT(false);
+static atomic_bool          _log_mutex_ready = ATOMIC_VAR_INIT(false);
 
 // Buffer A is used to adjust the format string.
 static char buffer_a[2048];
 // Buffer B is used to compile the final log using the updated format string.
 static char buffer_b[2048];
 
-void _log_print(int t, const char* fmt, ...) {
+void _log_print(int t, const char *fmt, ...) {
     if (!atomic_load_explicit(&_log_mutex_ready, memory_order_relaxed)) {
         int ret = sceKernelCreateLwMutex(&_log_mutex, "log_lock", 0, 0, NULL);
         if (ret < 0) {
@@ -44,25 +49,32 @@ void _log_print(int t, const char* fmt, ...) {
     switch (t) {
         case LT_DEBUG:
             sceClibSnprintf(buffer_a, sizeof(buffer_a), " %s• debug%s    %s\n",
-                            COLOR_PINK, COLOR_END, fmt); break;
+                            COLOR_PINK, COLOR_END, fmt);
+            break;
         case LT_INFO:
             sceClibSnprintf(buffer_a, sizeof(buffer_a), " %sℹ info%s     %s\n",
-                            COLOR_BLUE, COLOR_END, fmt); break;
+                            COLOR_BLUE, COLOR_END, fmt);
+            break;
         case LT_WARN:
             sceClibSnprintf(buffer_a, sizeof(buffer_a), " %s⚠ warning%s  %s\n",
-                            COLOR_ORANGE, COLOR_END, fmt); break;
+                            COLOR_ORANGE, COLOR_END, fmt);
+            break;
         case LT_ERROR:
             sceClibSnprintf(buffer_a, sizeof(buffer_a), " %s⨯ error%s    %s\n",
-                            COLOR_RED, COLOR_END, fmt); break;
+                            COLOR_RED, COLOR_END, fmt);
+            break;
         case LT_FATAL:
             sceClibSnprintf(buffer_a, sizeof(buffer_a), " %s! fatal%s    %s\n",
-                            COLOR_RED, COLOR_END, fmt); break;
+                            COLOR_RED, COLOR_END, fmt);
+            break;
         case LT_SUCCESS:
             sceClibSnprintf(buffer_a, sizeof(buffer_a), " %s! success%s  %s\n",
-                            COLOR_GREEN, COLOR_END, fmt); break;
+                            COLOR_GREEN, COLOR_END, fmt);
+            break;
         case LT_WAIT:
             sceClibSnprintf(buffer_a, sizeof(buffer_a), " %s… waiting%s  %s\n",
-                            COLOR_CYAN, COLOR_END, fmt); break;
+                            COLOR_CYAN, COLOR_END, fmt);
+            break;
         default:
             if (atomic_load_explicit(&_log_mutex_ready, memory_order_relaxed)) {
                 sceKernelUnlockLwMutex(&_log_mutex, 1);
@@ -81,23 +93,21 @@ void _log_print(int t, const char* fmt, ...) {
     }
 }
 
-int debugPrintf(char *text, ...)
-{
+int debugPrintf(const char *text, ...) {
 #ifdef DEBUG_FILE
     va_list list;
-    char string[4096];
+    char    string[4096];
 
     va_start(list, text);
     vsprintf(string, text, list);
     va_end(list);
-    printf("%s", string);
+    printf("%s\n", string);
 
     SceUID fd = sceIoOpen(LOG_PATH, SCE_O_WRONLY | SCE_O_CREAT | SCE_O_APPEND, 0777);
-    if (fd >= 0)
-    {
-        int len=strlen(string);
-        string[len]='\n';
-        sceIoWrite(fd, string, len+1);
+    if (fd >= 0) {
+        int len     = strlen(string);
+        string[len] = '\n';
+        sceIoWrite(fd, string, len + 1);
         sceIoClose(fd);
     }
 

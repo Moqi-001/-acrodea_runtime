@@ -1,30 +1,27 @@
-#include <string.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <stdbool.h>
+#include <string.h>
 
-#include "utils/logger.h"
-#include "reimpl/android/SharedBuffer.h"
 #include "reimpl/android/atomic.h"
+#include "reimpl/android/SharedBuffer.h"
+#include "utils/logger.h"
 
-struct SharedBuffer
-{
-    int32_t refs;
-    size_t size;
+struct SharedBuffer {
+    int32_t  refs;
+    size_t   size;
     uint32_t reserved[2];
 };
 
 #define onlyOwner(sb) (sb->refs == 1)
-#define getData(sb) ((void *)(sb + 1))
+#define getData(sb)   ((void *)(sb + 1))
 
-SharedBuffer *android_SharedBuffer_alloc(size_t size)
-{
+SharedBuffer *android_SharedBuffer_alloc(size_t size) {
     l_debug("android_SharedBuffer_alloc(%u)", size);
 
     SharedBuffer *sb = (SharedBuffer *)malloc(sizeof(SharedBuffer) + size);
-    if (!sb)
-    {
+    if (!sb) {
         l_debug("android_SharedBuffer_alloc failed: cannot alloc memory");
         return NULL;
     }
@@ -36,31 +33,17 @@ SharedBuffer *android_SharedBuffer_alloc(size_t size)
     return sb;
 }
 
-SharedBuffer *getEmptySharedBuffer()
-{
-    SharedBuffer *gEmptyBuf = android_SharedBuffer_alloc(1);
-
-    char *str = getData(gEmptyBuf);
-    *str = 0;
-
-    //gEmptyBuf->refs++;
-    return gEmptyBuf;
-}
-
-int android_SharedBuffer_dealloc(SharedBuffer *sb)
-{
+int android_SharedBuffer_dealloc(SharedBuffer *sb) {
     l_debug("android_SharedBuffer_dealloc(%p)", sb);
 
-    if (!sb)
-    {
+    if (!sb) {
         l_debug("android_SharedBuffer_dealloc failed: null ptr");
         return -1;
     }
 
-    if (sb->refs != 0)
-    {
+    if (sb->refs != 0) {
         l_debug("android_SharedBuffer_dealloc invalid operation: refs=%d", sb->refs);
-        return -1; // XXX: invalid operation
+        return -1;  // XXX: invalid operation
     }
 
     free(sb);
@@ -69,12 +52,10 @@ int android_SharedBuffer_dealloc(SharedBuffer *sb)
     return 0;
 }
 
-SharedBuffer *android_SharedBuffer_attemptEdit(SharedBuffer *sb)
-{
+SharedBuffer *android_SharedBuffer_attemptEdit(SharedBuffer *sb) {
     l_debug("android_SharedBuffer_attemptEdit(%p)", sb);
 
-    if (!sb)
-    {
+    if (!sb) {
         l_debug("android_SharedBuffer_attemptEdit failed: null ptr");
         return NULL;
     }
@@ -85,27 +66,21 @@ SharedBuffer *android_SharedBuffer_attemptEdit(SharedBuffer *sb)
     return buf;
 }
 
-SharedBuffer *android_SharedBuffer_edit(SharedBuffer *sb)
-{
+SharedBuffer *android_SharedBuffer_edit(SharedBuffer *sb) {
     l_debug("android_SharedBuffer_edit(%p)", sb);
 
-    if (!sb)
-    {
+    if (!sb) {
         l_debug("android_SharedBuffer_edit failed: null ptr");
         return NULL;
     }
 
     SharedBuffer *buf;
 
-    if (onlyOwner(sb))
-    {
+    if (onlyOwner(sb)) {
         buf = sb;
-    }
-    else
-    {
+    } else {
         buf = android_SharedBuffer_alloc(sb->size);
-        if (buf)
-        {
+        if (buf) {
             memcpy(getData(buf), getData(sb), sb->size);
             android_SharedBuffer_release(sb, 0);
         }
@@ -115,33 +90,26 @@ SharedBuffer *android_SharedBuffer_edit(SharedBuffer *sb)
     return sb;
 }
 
-SharedBuffer *android_SharedBuffer_editResize(SharedBuffer *sb, size_t new_size)
-{
+SharedBuffer *android_SharedBuffer_editResize(SharedBuffer *sb, size_t new_size) {
     l_debug("android_SharedBuffer_editResize(%p,%u)", sb, new_size);
 
-    if (!sb)
-    {
+    if (!sb) {
         l_debug("android_SharedBuffer_editResize failed: null ptr");
         return NULL;
     }
 
     SharedBuffer *buf;
 
-    if (onlyOwner(sb))
-    {
+    if (onlyOwner(sb)) {
         buf = sb;
-        if (buf->size != new_size)
-        {
+        if (buf->size != new_size) {
             buf = (SharedBuffer *)realloc(buf, sizeof(SharedBuffer) + new_size);
             if (buf != NULL)
                 buf->size = new_size;
         }
-    }
-    else
-    {
+    } else {
         buf = android_SharedBuffer_alloc(new_size);
-        if (buf)
-        {
+        if (buf) {
             memcpy(getData(buf), getData(sb), buf->size < sb->size ? buf->size : sb->size);
             android_SharedBuffer_release(sb, 0);
         }
@@ -151,8 +119,7 @@ SharedBuffer *android_SharedBuffer_editResize(SharedBuffer *sb, size_t new_size)
     return buf;
 }
 
-SharedBuffer *android_SharedBuffer_reset(SharedBuffer *sb, size_t new_size)
-{
+SharedBuffer *android_SharedBuffer_reset(SharedBuffer *sb, size_t new_size) {
     l_debug("android_SharedBuffer_reset(%p,%u)", sb, new_size);
 
     // cheap-o-reset.
@@ -164,34 +131,29 @@ SharedBuffer *android_SharedBuffer_reset(SharedBuffer *sb, size_t new_size)
     return buf;
 }
 
-void android_SharedBuffer_acquire(SharedBuffer *sb)
-{
+void android_SharedBuffer_acquire(SharedBuffer *sb) {
     l_debug("android_SharedBuffer_acquire(%p)", sb);
 
-    if (!sb)
-    {
+    if (!sb) {
         l_debug("android_SharedBuffer_acquire failed: null ptr");
         return;
     }
-    l_debug("android_SharedBuffer_acquire start: %d", sb->refs);
+
     android_atomic_inc(&sb->refs);
 
     l_debug("android_SharedBuffer_acquire over: %d", sb->refs);
 }
 
-int32_t android_SharedBuffer_release(SharedBuffer *sb, uint32_t flags)
-{
+int32_t android_SharedBuffer_release(SharedBuffer *sb, uint32_t flags) {
     l_debug("android_SharedBuffer_release(%p,%u)", sb, flags);
 
-    if (!sb)
-    {
+    if (!sb) {
         l_debug("android_SharedBuffer_release failed: null ptr");
         return 0;
     }
 
     int32_t prev = 1;
-    if (onlyOwner(sb) || ((prev = android_atomic_dec(&sb->refs)) == 1))
-    {
+    if (onlyOwner(sb) || ((prev = android_atomic_dec(&sb->refs)) == 1)) {
         sb->refs = 0;
         if ((flags & ANDFROID_SHARED_BUFFER_KEEP_STORAGE) == 0)
             free(sb);
@@ -201,34 +163,22 @@ int32_t android_SharedBuffer_release(SharedBuffer *sb, uint32_t flags)
     return prev;
 }
 
-void android_SharedBuffer_initRefs(SharedBuffer *sb)
-{
-    sb->refs = 1;
-}
-
-/*
-size_t android_SharedBuffer_size(SharedBuffer *sb)
-{
+size_t android_SharedBuffer_size(SharedBuffer *sb) {
     return sb ? sb->size : 0;
 }
 
-void *android_SharedBuffer_data(SharedBuffer *sb)
-{
+void *android_SharedBuffer_data(SharedBuffer *sb) {
     return sb ? (void *)(sb + 1) : NULL;
 }
 
-SharedBuffer *android_SharedBuffer_bufferFromData(void *data)
-{
+SharedBuffer *android_SharedBuffer_bufferFromData(void *data) {
     return data ? (SharedBuffer *)data - 1 : NULL;
 }
 
-size_t android_SharedBuffer_sizeFromData(const void *data)
-{
+size_t android_SharedBuffer_sizeFromData(void *data) {
     return data ? (android_SharedBuffer_bufferFromData(data))->size : 0;
 }
 
-bool android_SharedBuffer_onlyOwner(SharedBuffer *sb)
-{
+bool android_SharedBuffer_onlyOwner(SharedBuffer *sb) {
     return sb ? sb->refs == 1 : false;
 }
-*/

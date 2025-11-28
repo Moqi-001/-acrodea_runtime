@@ -9,13 +9,13 @@
 
 #include "reimpl/io.h"
 
+#include <dirent.h>
+#include <psp2/kernel/threadmgr.h>
+#include <stdarg.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/unistd.h>
-#include <stdlib.h>
-#include <dirent.h>
-#include <stdarg.h>
-#include <psp2/kernel/threadmgr.h>
 
 #ifdef USE_SCELIBC_IO
 #include <libc_bridge/libc_bridge.h>
@@ -29,75 +29,63 @@
 // dirent64_bionic * dirent_newlib_to_bionic(struct dirent* dirent_newlib);
 // void stat_newlib_to_bionic(struct stat * src, stat64_bionic * dst);
 #include "reimpl/bits/_struct_converters.c"
-void replace(char str[],char old,char new,int count)
-{
-for (size_t i = 0; i < count; i++)
-{
-    if(str[i]==old)
-    {
-        str[i]=new;
+
+void replace(char str[], char old, char new, int count) {
+    for (size_t i = 0; i < count; i++) {
+        if (str[i] == old) {
+            str[i] = new;
+        }
     }
 }
-
-}
-FILE * fopen_soloader(const char * filename, const char * mode) {
-    debugPrintf("fopen_soloader:%s",filename);
+FILE *fopen_soloader(const char *filename, const char *mode) {
+    debugPrintf("fopen_soloader:%s", filename);
     // TODO: 判断文件名称, 帮他引导到 DATA_PATH/filename 下去 open
 #ifdef USE_SCELIBC_IO
-    FILE* ret = sceLibcBridge_fopen(filename, mode);
+    FILE *ret = sceLibcBridge_fopen(filename, mode);
 #else
-    FILE* ret = fopen(filename, mode);
+    FILE *ret = fopen(filename, mode);
 #endif
 
-    if (ret)
-    {
+    if (ret) {
         l_debug("fopen(%s, %s): %p", filename, mode, ret);
-    }
-    else
-    {
+    } else {
         l_warn("error fopen(%s, %s): %p", filename, mode, ret);
     }
 
     return ret;
 }
 
-int dup_soloader(int fd)
-{
-    debugPrintf("dup_soloader:%d",fd);
+int dup_soloader(int fd) {
+    debugPrintf("dup_soloader:%d", fd);
     return fd;
 }
 
-size_t fread_soloader(void * data, size_t _size, size_t _n, FILE * fd)
-{
-    debugPrintf("fread:%x  _size:%d  _n:%d",fd,_size,_n);
-    return fread(data,_size,_n,fd);
+size_t fread_soloader(void *data, size_t _size, size_t _n, FILE *fd) {
+    debugPrintf("fread:%x  _size:%d  _n:%d", fd, _size, _n);
+    return fread(data, _size, _n, fd);
 }
 
-FILE * fdopen_soloader(int fd, const char * mode) {
- 
-    char* filename="ux0:data/Acrodea/app.exe";
-    debugPrintf("fdopen_soloader:%s",filename);
+FILE *fdopen_soloader(int fd, const char *mode) {
+    char *filename = "ux0:data/Acrodea/app.exe";
+    debugPrintf("fdopen_soloader:%s", filename);
 #ifdef USE_SCELIBC_IO
-    FILE* ret = sceLibcBridge_fopen(filename, mode);
+    FILE *ret = sceLibcBridge_fopen(filename, mode);
 #else
-    FILE* ret = fopen(filename, mode);
+    FILE *ret = fopen(filename, mode);
 #endif
 
-    if (ret)
-    {
+    if (ret) {
         l_debug("fdopen(%s, %s): %p", filename, mode, ret);
-    }
-    else
-    {
-        debugPrintf("fdopen_soloader not find file:%s",filename);
+    } else {
+        debugPrintf("fdopen_soloader not find file:%s", filename);
         l_warn("fdopen(%s, %s): %p", filename, mode, ret);
     }
 
     return ret;
 }
 
-int open_soloader(const char * path, int oflag, ...) {
-    debugPrintf("open_soloader:%s",path);
+int open_soloader(const char *path, int oflag, ...) {
+    debugPrintf("open_soloader:%s", path);
     if (strcmp(path, "/proc/cpuinfo") == 0) {
         return open_soloader("app0:/cpuinfo", oflag);
     } else if (strcmp(path, "/proc/meminfo") == 0) {
@@ -113,7 +101,7 @@ int open_soloader(const char * path, int oflag, ...) {
         va_end(args);
     }
 
-    oflag = oflags_bionic_to_newlib(oflag);
+    oflag   = oflags_bionic_to_newlib(oflag);
     int ret = open(path, oflag, mode);
     if (ret >= 0)
         l_debug("open(%s, %x): %i", path, oflag, ret);
@@ -122,9 +110,9 @@ int open_soloader(const char * path, int oflag, ...) {
     return ret;
 }
 
-int fstat_soloader(int fd, stat64_bionic * buf) {
+int fstat_soloader(int fd, stat64_bionic *buf) {
     struct stat st;
-    int res = fstat(fd, &st);
+    int         res = fstat(fd, &st);
 
     if (res == 0)
         stat_newlib_to_bionic(&st, buf);
@@ -133,9 +121,9 @@ int fstat_soloader(int fd, stat64_bionic * buf) {
     return res;
 }
 
-int stat_soloader(const char * path, stat64_bionic * buf) {
+int stat_soloader(const char *path, stat64_bionic *buf) {
     struct stat st;
-    int res = stat(path, &st);
+    int         res = stat(path, &st);
 
     if (res == 0)
         stat_newlib_to_bionic(&st, buf);
@@ -144,7 +132,7 @@ int stat_soloader(const char * path, stat64_bionic * buf) {
     return res;
 }
 
-int fclose_soloader(FILE * f) {
+int fclose_soloader(FILE *f) {
 #ifdef USE_SCELIBC_IO
     int ret = sceLibcBridge_fclose(f);
 #else
@@ -161,21 +149,21 @@ int close_soloader(int fd) {
     return ret;
 }
 
-DIR* opendir_soloader(char* _pathname) {
+DIR *opendir_soloader(char *_pathname) {
     l_debug("opendir(\"%s\")", _pathname);
-    DIR* ret = opendir(_pathname);
+    DIR *ret = opendir(_pathname);
     l_debug("opendir(\"%s\"): %p", _pathname, ret);
     return ret;
 }
 
-struct dirent64_bionic * readdir_soloader(DIR * dir) {
+struct dirent64_bionic *readdir_soloader(DIR *dir) {
     static struct dirent64_bionic dirent_tmp;
 
-    struct dirent* ret = readdir(dir);
+    struct dirent *ret = readdir(dir);
     l_debug("readdir(%p): %p", dir, ret);
 
     if (ret) {
-        dirent64_bionic* entry_tmp = dirent_newlib_to_bionic(ret);
+        dirent64_bionic *entry_tmp = dirent_newlib_to_bionic(ret);
         memcpy(&dirent_tmp, entry_tmp, sizeof(dirent64_bionic));
         free(entry_tmp);
         return &dirent_tmp;
@@ -184,15 +172,15 @@ struct dirent64_bionic * readdir_soloader(DIR * dir) {
     return NULL;
 }
 
-int readdir_r_soloader(DIR * dirp, dirent64_bionic * entry,
-                       dirent64_bionic ** result) {
-    struct dirent dirent_tmp;
-    struct dirent * pdirent_tmp;
+int readdir_r_soloader(DIR *dirp, dirent64_bionic *entry,
+                       dirent64_bionic **result) {
+    struct dirent  dirent_tmp;
+    struct dirent *pdirent_tmp;
 
     int ret = readdir_r(dirp, &dirent_tmp, &pdirent_tmp);
 
     if (ret == 0) {
-        dirent64_bionic* entry_tmp = dirent_newlib_to_bionic(&dirent_tmp);
+        dirent64_bionic *entry_tmp = dirent_newlib_to_bionic(&dirent_tmp);
         memcpy(entry, entry_tmp, sizeof(dirent64_bionic));
         *result = (pdirent_tmp != NULL) ? entry : NULL;
         free(entry_tmp);
@@ -202,7 +190,7 @@ int readdir_r_soloader(DIR * dirp, dirent64_bionic * entry,
     return ret;
 }
 
-int closedir_soloader(DIR * dir) {
+int closedir_soloader(DIR *dir) {
     int ret = closedir(dir);
     l_debug("closedir(%p): %i", dir, ret);
     return ret;
