@@ -21,7 +21,7 @@ char *__kdMapFilename(const char *filename, const char *mode) {
         if (filename[0] != '/') {
             snprintf(new_path, 1024, "%s", DATA_PATH, filename);
         } else {
-            if (strncmp(filename, "/native/", 8) == 8) {
+            if (strncmp(filename, "/native/", 8) == 0) {
                 snprintf(new_path, 1024, "%s%s", DATA_PATH, filename + 8);
             } else if (strncmp(filename, "/lib/", 5) == 0) {
                 snprintf(new_path, 1024, "%sassets/%s", DATA_PATH, filename + 5);

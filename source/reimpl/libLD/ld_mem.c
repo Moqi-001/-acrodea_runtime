@@ -70,8 +70,10 @@ LdLoadMemEntry *ldLoadMemCreateEntry(uintptr_t addr, int flages, size_t size, si
     opt.size       = sizeof(SceKernelAllocMemBlockKernelOpt);
     opt.attr       = 0x1;
     opt.field_C    = mem_addr;
-    SceUID blockid = kuKernelAllocMemBlock((flages == SCE_KERNEL_MEMBLOCK_TYPE_USER_RX) ? "rx_block" : "rw_block",
-                                           SCE_KERNEL_MEMBLOCK_TYPE_USER_RW, mem_size, &opt);
+ 
+    SceUID blockid = kuKernelAllocMemBlock((flages == SCE_KERNEL_MEMBLOCK_TYPE_USER_RX) ? "rx_block" : "rw_block", 
+    flages, mem_size, &opt);
+    
     if (blockid < 0) {
         l_debug("ldLoadMemCreateEntry failed: err_code=0x%x, mem_addr=0x%x, mem_size=0x%x", blockid, mem_addr, mem_size);
         free(entry);

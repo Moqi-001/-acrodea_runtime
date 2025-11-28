@@ -297,7 +297,7 @@ int setjmp0(jmp_buf v) {
 int jniRegisterNativeMethods(int a1, int a2, int a3, int a4) {
     l_debug("jniRegisterNativeMethods(%p,%s,%p,%d)", a1, a2, a3, a4);
     char **a = (char **)a3;
-    l_debug("jniRegisterNativeMethods a3(%s,%s)", a[1], a[2]);
+    l_debug("jniRegisterNativeMethods Methods:(%s,%s,%p)", a[0], a[1],a[2]);
 
     return 0;
 }
