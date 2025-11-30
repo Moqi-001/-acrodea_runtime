@@ -9,33 +9,35 @@
 
 #define ALIGN(x, align) (((x) + ((align) - 1)) & ~((align) - 1))
 
-#define LdLoadMemContextSize (ALIGN(sizeof(LdLoadMemContext), 0x1000))
+#define LdLoadMemContextAlignSize (ALIGN(sizeof(LdLoadMemContext), 0x1000))
 
 LdLoadMemContext *ldLoadMemGetContextFromData(const void *data) {
-    return data ? (LdLoadMemContext *)((uintptr_t)data - LdLoadMemContextSize) : NULL;
+    return data ? (LdLoadMemContext *)((uintptr_t)data - LdLoadMemContextAlignSize) : NULL;
 }
 
 LdLoadMemContext *ldLoadMemCreateContext(uintptr_t addr) {
     l_debug("ldLoadMemCreateContext(0x%x)", addr);
 
-    LdLoadMemContext *context      = NULL;
-    size_t            context_size = LdLoadMemContextSize;
+    LdLoadMemContext *context  = NULL;
+    size_t            mem_size = LdLoadMemContextAlignSize;
 
     SceKernelAllocMemBlockKernelOpt opt;
     memset(&opt, 0, sizeof(SceKernelAllocMemBlockKernelOpt));
     opt.size       = sizeof(SceKernelAllocMemBlockKernelOpt);
     opt.attr       = 0x1;
-    opt.field_C    = addr - context_size;
-    SceUID blockid = kuKernelAllocMemBlock("rw_block", SCE_KERNEL_MEMBLOCK_TYPE_USER_RW, context_size, &opt);
-    if (blockid < 0)
+    opt.field_C    = addr - mem_size;
+    SceUID blockid = kuKernelAllocMemBlock("rw_block", SCE_KERNEL_MEMBLOCK_TYPE_USER_RW, mem_size, &opt);
+    if (blockid < 0) {
+        l_debug("ldLoadMemCreateContext(0x%x) failed: err_code=0x%x", addr, blockid);
         return NULL;
+    }
 
     sceKernelGetMemBlockBase(blockid, (void **)&context);
-    memset(context, 0, context_size);
+    memset(context, 0, sizeof(LdLoadMemContext));
     context->blockid   = blockid;
-    context->load_addr = (uintptr_t)context + context_size;
+    context->load_addr = (uintptr_t)context + mem_size;
 
-    l_debug("ldLoadMemCreateContext success: context=%p, in_addr=0x%x, load_addr=0x%x", context, context->load_addr);
+    l_debug("ldLoadMemCreateContext success: context=%p, load_addr=0x%x", context, context->load_addr);
     return context;
 }
 
@@ -55,8 +57,10 @@ void ldLoadMemDestroyContext(LdLoadMemContext *context) {
     }
 }
 
-LdLoadMemEntry *ldLoadMemCreateEntry(uintptr_t addr, int flages, size_t size, size_t align) {
-    l_debug("ldLoadMemCreateEntry(0x%x,0x%x,0x%x,0x%x)", addr, flages, size, align);
+LdLoadMemEntry *ldLoadMemCreateEntry(uintptr_t addr, int flags, size_t size, size_t align) {
+    l_debug("ldLoadMemCreateEntry(0x%x,\"%s\",0x%x,0x%x)", addr,
+            (flags == SCE_KERNEL_MEMBLOCK_TYPE_USER_RX) ? "rx" : "rw",
+            size, align);
 
     LdLoadMemEntry *entry = calloc(1, sizeof(LdLoadMemEntry));
     if (!entry)
@@ -70,10 +74,8 @@ LdLoadMemEntry *ldLoadMemCreateEntry(uintptr_t addr, int flages, size_t size, si
     opt.size       = sizeof(SceKernelAllocMemBlockKernelOpt);
     opt.attr       = 0x1;
     opt.field_C    = mem_addr;
- 
-    SceUID blockid = kuKernelAllocMemBlock((flages == SCE_KERNEL_MEMBLOCK_TYPE_USER_RX) ? "rx_block" : "rw_block", 
-    flages, mem_size, &opt);
-    
+    SceUID blockid = kuKernelAllocMemBlock((flags == SCE_KERNEL_MEMBLOCK_TYPE_USER_RX) ? "rx_block" : "rw_block",
+                                           flags, mem_size, &opt);
     if (blockid < 0) {
         l_debug("ldLoadMemCreateEntry failed: err_code=0x%x, mem_addr=0x%x, mem_size=0x%x", blockid, mem_addr, mem_size);
         free(entry);
@@ -83,7 +85,7 @@ LdLoadMemEntry *ldLoadMemCreateEntry(uintptr_t addr, int flages, size_t size, si
     sceKernelGetMemBlockBase(blockid, &entry->mem_base);
     entry->mem_size = mem_size;
     entry->blockid  = blockid;
-    entry->flags    = flages;
+    entry->flags    = flags;
     entry->addr     = addr;
     entry->size     = size;
 
@@ -94,7 +96,7 @@ LdLoadMemEntry *ldLoadMemCreateEntry(uintptr_t addr, int flages, size_t size, si
 
 void *ldLoadMemDestroyEntry(LdLoadMemEntry *entry) {
     if (entry) {
-        l_debug("ldLoadMemDestroyEntry(%p): mem_base=%p, mem_size=%u", entry, entry->mem_base, entry->mem_size);
+        l_debug("ldLoadMemDestroyEntry(%p): mem_base=%p, mem_size=0x%x", entry, entry->mem_base, entry->mem_size);
         sceKernelFreeMemBlock(entry->blockid);
         free(entry);
     }
@@ -115,7 +117,7 @@ int ldLoadMemAddEntry(LdLoadMemContext *context, LdLoadMemEntry *entry) {
     context->count++;
     context->size += entry->mem_size;
 
-    l_debug("ldLoadMemAddEntry(%p,%p): mem_base=%p, mem_size=%u", context, entry, entry->mem_base, entry->mem_size);
+    l_debug("ldLoadMemAddEntry(%p,%p): mem_base=%p, mem_size=0x%x", context, entry, entry->mem_base, entry->mem_size);
     return 0;
 }
 

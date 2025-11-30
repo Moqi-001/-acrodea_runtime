@@ -31,7 +31,7 @@ typedef struct LdLoadMemContext {
 LdLoadMemContext *ldLoadMemGetContextFromData(const void *data);
 LdLoadMemContext *ldLoadMemCreateContext(uintptr_t addr);
 void              ldLoadMemDestroyContext(LdLoadMemContext *context);
-LdLoadMemEntry   *ldLoadMemCreateEntry(uintptr_t addr, int flages, size_t size, size_t align);
+LdLoadMemEntry   *ldLoadMemCreateEntry(uintptr_t addr, int flags, size_t size, size_t align);
 void             *ldLoadMemDestroyEntry(LdLoadMemEntry *entry);
 int               ldLoadMemAddEntry(LdLoadMemContext *context, LdLoadMemEntry *entry);
 void              ldLoadMemFlushCaches(LdLoadMemContext *context);

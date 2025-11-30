@@ -69,35 +69,35 @@ struct LdContext {
 };  // +324
 
 struct LdModule {
-    uint32_t       ref_count;    // +0   引用计数器
-    char          *mod_name;     // +4   动态库文件名
-    char          *mod_path;     // +8   动态库文件路径
-    uint32_t       flags;        // +12  ？初始化值为0xFFFFEFFF，添加到context后|0x1000，最终的值应为0xFFFFFFFF
-    uint32_t       status;       // +16  模块状态 (是否已初始化等)
-    LdContext     *context;      // +20  加载器上下文反引用
-    LdModule      *parent_mod;   // +24  ？似乎是父module
-    uint32_t       needed_num;   // +28  依赖库数量
-    LdModule     **needed_mods;  // +32  依赖库模块列表
-    uint32_t       unk_36;       // +36
-    void          *code_mem;     // +40  so库内存块数据指针
-    uint32_t       code_size;    // +44  so库内存块数据大小
-    uint32_t       load_offset;  // +48
-    void          *tls;          // +52
-    uint32_t       tls_filesz;   // +56
-    uint32_t       tls_memsz;    // +60
-    uint32_t       tls_map;      // +64
-    Elf32_Ehdr    *ehdr;         // +68
-    uint32_t      *hash;         // +72  symbol的哈希表
-    char          *strtab;       // +76  symbol的字符串表
-    Elf32_Sym     *symtab;       // +80  symbol的函数地址表
-    Elf32_Phdr    *phdr;         // +84
-    Elf32_Phdr    *dyn_phdr;     // +88
-    Elf32_Verdef  *verdef;       // +92
-    uint32_t       verdefnum;    // +96
-    Elf32_Verneed *verneed;      // +100
-    uint32_t       verneednum;   // +104
-    Elf32_Versym  *versym;       // +108
-    uint32_t       versymnum;    // +112
+    uint32_t       ref_count;     // +0   引用计数器
+    char          *mod_name;      // +4   动态库文件名
+    char          *mod_path;      // +8   动态库文件路径
+    uint32_t       flags;         // +12  ？初始化值为0xFFFFEFFF，添加到context后|0x1000，最终的值应为0xFFFFFFFF
+    uint32_t       status;        // +16  模块状态 (是否已初始化等)
+    LdContext     *context;       // +20  加载器上下文反引用
+    LdModule      *parent_mod;    // +24  ？似乎是父module
+    uint32_t       needed_num;    // +28  依赖库数量
+    LdModule     **needed_mods;   // +32  依赖库模块列表
+    uint32_t       unk_36;        // +36
+    void          *load_base;     // +40  so库内存块数据指针
+    uint32_t       load_size;     // +44  so库内存块数据大小
+    uint32_t       load_offset;   // +48
+    void          *tls;           // +52
+    uint32_t       tls_filesz;    // +56
+    uint32_t       tls_memsz;     // +60
+    uint32_t       tls_map;       // +64
+    Elf32_Ehdr    *ehdr;          // +68
+    uint32_t      *hashtab;       // +72  symbol的哈希表
+    char          *strtab;        // +76  symbol的字符串表
+    Elf32_Sym     *symtab;        // +80  symbol的函数地址表
+    Elf32_Phdr    *phdr;          // +84
+    Elf32_Phdr    *dynamic_phdr;  // +88
+    Elf32_Verdef  *verdef;        // +92
+    uint32_t       verdefnum;     // +96
+    Elf32_Verneed *verneed;       // +100
+    uint32_t       verneednum;    // +104
+    Elf32_Versym  *versym;        // +108
+    uint32_t       versymnum;     // +112
 };  // +116
 
 typedef struct LdBindingCreatext_offsettor {
@@ -112,11 +112,18 @@ typedef struct LdBindingCreatext_offsettor {
 const char *ldGetErrorMessage(LdContext *context);
 void       *ldModuleGetEntryPoint(LdModule *mod);
 
+int  ldModuleRelocate(LdModule *mod);
 int  ldModuleAllocAndLoadImage(LdModule *mod, const char *path, const char *err_msg);
 void ldModuleDestroyImage(LdModule *mod);
 int  ldModuleInitialize(LdModule *mod);
 int  ldModuleDeinitialize(LdModule *mod);
 
-extern int (*bootstrap_start)(int argc, char *argv[], char *envp[]);
+extern uintptr_t (*ldModuleGetSymbol)(LdModule *in_mod, const char *sym_name, uint32_t sym_hash, int type,
+                                      const char *vna_name, uint32_t vna_hash, LdModule **out_mod);
+extern uintptr_t (*ldModuleLookupSymbol)(LdModule *mod, const char *sym_name, uint32_t sym_hash, int visibility,
+                                         const char *vna_name, uint32_t vna_hash);
+
+so_hook __ldModuleHookAddr(LdModule *mod, uintptr_t vaddr, uintptr_t dst);
+so_hook __ldModuleHookSymbool(LdModule *mod, const char *symbol, uintptr_t dst);
 
 #endif

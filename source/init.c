@@ -24,6 +24,7 @@
 #include "utils/logger.h"
 #include "utils/settings.h"
 #include "utils/utils.h"
+#include "reimpl/controls.h"
 
 extern so_module so_mod;
 

@@ -13,7 +13,8 @@
 #define _DWORD uintptr_t
 extern so_module so_mod;
 
-int (*bootstrap_start)(int argc, char *argv[], char *envp[]);
+LdModule *bootstrap_mod                                      = NULL;
+int (*bootstrap_start)(int argc, char *argv[], char *envp[]) = NULL;
 
 int bootstrap_start_soloader(int argc, char *argv[], char *envp[]) {
     l_debug("bootstrap_start(%d,%p,%p)", argc, argv, envp);
@@ -62,12 +63,17 @@ void so_patch(void) {
     // Sample hook
     // hook_addr((uintptr_t)so_symbol(&so_mod, "kdExit"), (uintptr_t)&kdExit);
     hook_addr((uintptr_t)so_symbol(&so_mod, "__kdMapFilename"), (uintptr_t)&__kdMapFilename);
+    // hook_addr((uintptr_t)so_symbol(&so_mod, "__kdFlushICache"), (uintptr_t)&__kdFlushICache);
     hook_addr((uintptr_t)so_symbol(&so_mod, "__kdFlushICache"), (uintptr_t)&__kdFlushICache);
 
     hook_addr((uintptr_t)so_symbol(&so_mod, "ldGetErrorMessage"), (uintptr_t)&ldGetErrorMessage);
     hook_addr((uintptr_t)so_symbol(&so_mod, "ldModuleGetEntryPoint"), (uintptr_t)&ldModuleGetEntryPoint);
-    // hook_addr((uintptr_t)so_symbol(&so_mod, "ldModuleAllocAndLoadImage"), (uintptr_t)&ldModuleAllocAndLoadImage);
-    // hook_addr((uintptr_t)so_symbol(&so_mod, "ldModuleDestroyImage"), (uintptr_t)&ldModuleDestroyImage);
+    ldModuleGetSymbol    = (void *)so_symbol(&so_mod, "ldModuleGetSymbol");
+    ldModuleLookupSymbol = (void *)so_symbol(&so_mod, "ldModuleLookupSymbol");
+    hook_addr((uintptr_t)so_symbol(&so_mod, "ldModuleRelocate"), (uintptr_t)&ldModuleRelocate);
+    hook_addr((uintptr_t)so_symbol(&so_mod, "ldModuleAllocAndLoadImage"), (uintptr_t)&ldModuleAllocAndLoadImage);
+    hook_addr((uintptr_t)so_symbol(&so_mod, "ldModuleDestroyImage"), (uintptr_t)&ldModuleDestroyImage);
+
     hook_addr((uintptr_t)so_symbol(&so_mod, "ldModuleInitialize"), (uintptr_t)&ldModuleInitialize);
     hook_addr((uintptr_t)so_symbol(&so_mod, "ldModuleDeinitialize"), (uintptr_t)&ldModuleDeinitialize);
 

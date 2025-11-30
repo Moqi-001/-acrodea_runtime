@@ -12,9 +12,9 @@
 
 #include "so_util/so_util.h"
 
-#include <string.h>
 #include <malloc.h>
 #include <psp2/kernel/clib.h>
+#include <string.h>
 
 void *sceClibMemclr(void *dst, size_t len) {
     return sceClibMemset(dst, 0, len);
@@ -39,50 +39,56 @@ void *sceClibMemclr(void *dst, size_t len) {
 //     return 0;
 // }
 
+#include <kubridge.h>
+
 #ifndef SCE_KERNEL_MEMBLOCK_TYPE_USER_RX
-#define SCE_KERNEL_MEMBLOCK_TYPE_USER_RX                 (0x0C20D050)
+#define SCE_KERNEL_MEMBLOCK_TYPE_USER_RX (0x0C20D050)
 #endif
 #define MAP_FIXED 0x10
 #define PROT_EXEC 4
-#include <kubridge.h>
+
 #define ALIGN(x, align) (((x) + ((align) - 1)) & ~((align) - 1))
+
 void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset) {
     l_warn("mmap(%p, %i, %i, %i, %i, %li)", addr, length, prot, flags, fd, offset);
 
-	int blockid;
-	void *retval;
-	SceKernelAllocMemBlockKernelOpt opt;
-	memset(&opt, 0, sizeof(SceKernelAllocMemBlockKernelOpt));
-	opt.size = sizeof(SceKernelAllocMemBlockKernelOpt);
-	if (flags & MAP_FIXED) {
-		opt.attr = 0x1;
-		opt.field_C = (SceUInt32)addr;
-		blockid = kuKernelAllocMemBlock("mmap", SCE_KERNEL_MEMBLOCK_TYPE_USER_RW, ALIGN(length, 0x1000), &opt);
-	} else {
-		if (prot & PROT_EXEC) {
-			opt.attr = 0x10000;
-			opt.field_30 = 2;
-			blockid = kuKernelAllocMemBlock("mmap", SCE_KERNEL_MEMBLOCK_TYPE_USER_RX, ALIGN(length, 0x100000), &opt);
-			sceKernelOpenVMDomain();
-		} else {
-			blockid = sceKernelAllocMemBlock("mmap", SCE_KERNEL_MEMBLOCK_TYPE_USER_RW, ALIGN(length, 0x1000), NULL);
-		}
-	}
-	if (blockid < 0) {
-		printf("Failed to allocate memory for %p %x %x %x\n", addr, length, prot, flags);
-		return MAP_FAILED;
-	}
-	sceKernelGetMemBlockBase(blockid, &retval);
-    l_debug("mmap return %p",retval);
-	return retval;
+    int                             blockid;
+    void                           *retval;
+    SceKernelAllocMemBlockKernelOpt opt;
+    memset(&opt, 0, sizeof(SceKernelAllocMemBlockKernelOpt));
+    opt.size = sizeof(SceKernelAllocMemBlockKernelOpt);
+
+    if (flags & MAP_FIXED) {
+        opt.attr    = 0x1;
+        opt.field_C = (SceUInt32)addr;
+        blockid     = kuKernelAllocMemBlock("mmap", SCE_KERNEL_MEMBLOCK_TYPE_USER_RW, ALIGN(length, 0x1000), &opt);
+    } else {
+        if (prot & PROT_EXEC) {
+            opt.attr     = 0x10000;
+            opt.field_30 = 2;
+            blockid      = kuKernelAllocMemBlock("mmap", SCE_KERNEL_MEMBLOCK_TYPE_USER_RX, ALIGN(length, 0x100000), &opt);
+            sceKernelOpenVMDomain();
+        } else {
+            blockid = sceKernelAllocMemBlock("mmap", SCE_KERNEL_MEMBLOCK_TYPE_USER_RW, ALIGN(length, 0x1000), NULL);
+        }
+    }
+
+    if (blockid < 0) {
+        l_debug("Failed to allocate memory for %p %x %x %x\n", addr, length, prot, flags);
+        return MAP_FAILED;
+    }
+
+    sceKernelGetMemBlockBase(blockid, &retval);
+    l_debug("mmap return %p", retval);
+    return retval;
 }
 
 int munmap(void *addr, size_t length) {
-	int blockid = sceKernelFindMemBlockByAddr(addr, length);
-	if (blockid < 0) {
-		printf("Could not find memory %p with size %x to unmap.\n", addr, length);
-		return -1;
-	}
-	sceKernelFreeMemBlock(blockid);
-	return 0;
+    int blockid = sceKernelFindMemBlockByAddr(addr, length);
+    if (blockid < 0) {
+        l_debug("Could not find memory %p with size %x to unmap.\n", addr, length);
+        return -1;
+    }
+    sceKernelFreeMemBlock(blockid);
+    return 0;
 }

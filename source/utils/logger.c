@@ -93,14 +93,14 @@ void _log_print(int t, const char *fmt, ...) {
     }
 }
 
-int debugPrintf(const char *text, ...) {
+void debugPrintf(const char *text, ...) {
 #ifdef DEBUG_FILE
-    va_list list;
     char    string[4096];
-
+    va_list list;
     va_start(list, text);
     vsprintf(string, text, list);
     va_end(list);
+
     printf("%s\n", string);
 
     SceUID fd = sceIoOpen(LOG_PATH, SCE_O_WRONLY | SCE_O_CREAT | SCE_O_APPEND, 0777);
@@ -110,8 +110,5 @@ int debugPrintf(const char *text, ...) {
         sceIoWrite(fd, string, len + 1);
         sceIoClose(fd);
     }
-
 #endif
-
-    return 0;
 }

@@ -246,13 +246,11 @@ void *dlsym_soloader(void *handle, const char *symbol) {
     // if (strcmp("AMotionEvent_getAxisValue", symbol) == 0)
     //    return &AMotionEvent_getAxisValue;
 
-    int       size_default_dynlib_type = sizeof(so_default_dynlib);
-    void     *result                   = NULL;
-    uintptr_t val;
+    int   size_default_dynlib_type = sizeof(so_default_dynlib);
+    void *result                   = NULL;
     for (int j = 0; j < size_default_dynlib / size_default_dynlib_type; j++) {
         if (strcmp(symbol, default_dynlib_m[j].symbol) == 0) {
-            val    = default_dynlib_m[j].func;
-            result = val;
+            result = (void *)default_dynlib_m[j].func;
             l_debug("find symbol \"%s\".  %p", symbol, result);
             break;
         }
@@ -297,7 +295,7 @@ int setjmp0(jmp_buf v) {
 int jniRegisterNativeMethods(int a1, int a2, int a3, int a4) {
     l_debug("jniRegisterNativeMethods(%p,%s,%p,%d)", a1, a2, a3, a4);
     char **a = (char **)a3;
-    l_debug("jniRegisterNativeMethods Methods:(%s,%s,%p)", a[0], a[1],a[2]);
+    l_debug("jniRegisterNativeMethods Methods:(%s,%s,%p)", a[0], a[1], a[2]);
 
     return 0;
 }

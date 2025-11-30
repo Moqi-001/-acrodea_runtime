@@ -26,32 +26,29 @@ extern "C" {
 #define LT_WAIT    6
 
 #ifdef DEBUG_SOLOADER
-#define l_debug(...)   _log_print(LT_DEBUG,   __VA_ARGS__)
-#define l_info(...)    _log_print(LT_INFO,    __VA_ARGS__)
-#define l_warn(...)    _log_print(LT_WARN,    __VA_ARGS__)
+#define l_debug(...)   _log_print(LT_DEBUG, __VA_ARGS__)
+#define l_info(...)    _log_print(LT_INFO, __VA_ARGS__)
+#define l_warn(...)    _log_print(LT_WARN, __VA_ARGS__)
 #define l_success(...) _log_print(LT_SUCCESS, __VA_ARGS__)
-#define l_wait(...)    _log_print(LT_WAIT,    __VA_ARGS__)
-#define l_error(...)   _log_print(LT_ERROR,   __VA_ARGS__)
-#define l_fatal(...)   _log_print(LT_FATAL,   __VA_ARGS__)
+#define l_wait(...)    _log_print(LT_WAIT, __VA_ARGS__)
+#define l_error(...)   _log_print(LT_ERROR, __VA_ARGS__)
+#define l_fatal(...)   _log_print(LT_FATAL, __VA_ARGS__)
 #else
-#define l_debug(...) debugPrintf(__VA_ARGS__)
-#define l_info(...) debugPrintf(__VA_ARGS__)
-#define l_warn(...) debugPrintf(__VA_ARGS__)
+#define l_debug(...)   debugPrintf(__VA_ARGS__)
+#define l_info(...)    debugPrintf(__VA_ARGS__)
+#define l_warn(...)    debugPrintf(__VA_ARGS__)
 #define l_success(...) debugPrintf(__VA_ARGS__)
-#define l_wait(...) debugPrintf(__VA_ARGS__)
+#define l_wait(...)    debugPrintf(__VA_ARGS__)
 #define l_error(...)   debugPrintf(__VA_ARGS__)
 #define l_fatal(...)   debugPrintf(__VA_ARGS__)
-
 #endif
 
+void _log_print(int t, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
 
-void _log_print(int t, const char* fmt, ...)
-                __attribute__ ((format (printf, 2, 3)));
-                
-int debugPrintf(const char *text, ...);
+void debugPrintf(const char *text, ...);
 
 #ifdef __cplusplus
 };
 #endif
 
-#endif // SOLOADER_LOGGER_H
+#endif  // SOLOADER_LOGGER_H

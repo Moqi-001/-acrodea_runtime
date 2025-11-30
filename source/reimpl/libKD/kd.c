@@ -41,17 +41,11 @@ char *__kdMapFilename(const char *filename, const char *mode) {
     return new_path;
 }
 
-// 暂有bug
-int __kdFlushICache_soloader(const void *ptr, size_t len) {
+int __kdFlushICache(const void *ptr, size_t len) {
     l_debug("__kdFlushICache(%p,%d)", ptr, len);
     LdLoadMemContext *context = ldLoadMemGetContextFromData(ptr);
     ldLoadMemFlushCaches(context);
-    return 0;
-}
-
-int __kdFlushICache(const void *ptr, size_t len) {
-    l_debug("__kdFlushICache(%p,%d)", ptr, len);
-    kuKernelFlushCaches(ptr, len);
+    // kuKernelFlushCaches(ptr, len);
     return 0;
 }
 
