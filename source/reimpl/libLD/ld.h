@@ -6,6 +6,7 @@
 #include <stdio.h>
 
 #include <so_util/elf.h>
+#include <so_util/so_util.h>
 
 typedef struct
 {
@@ -124,6 +125,6 @@ extern uintptr_t (*ldModuleLookupSymbol)(LdModule *mod, const char *sym_name, ui
                                          const char *vna_name, uint32_t vna_hash);
 
 so_hook __ldModuleHookAddr(LdModule *mod, uintptr_t vaddr, uintptr_t dst);
-so_hook __ldModuleHookSymbool(LdModule *mod, const char *symbol, uintptr_t dst);
+so_hook __ldModuleHookSymbol(LdModule *mod, const char *symbol, uintptr_t dst);
 
 #endif

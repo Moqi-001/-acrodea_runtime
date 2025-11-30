@@ -525,7 +525,7 @@ so_hook __ldModuleHookAddr(LdModule *mod, uintptr_t vaddr, uintptr_t dst) {
     return hook_addr(addr, dst);
 }
 
-so_hook __ldModuleHookSymbool(LdModule *mod, const char *symbol, uintptr_t dst) {
+so_hook __ldModuleHookSymbol(LdModule *mod, const char *symbol, uintptr_t dst) {
     if (!mod) {
         so_hook h;
         return h;
