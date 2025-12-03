@@ -73,19 +73,8 @@ int main() {
 
     hook_addr((uintptr_t)so_symbol(&so_mod, "_ZN18RuntimeContextBase6LaunchEb"), (uintptr_t)&Launch);
 
-    // uintptr_t a1=*((uintptr_t*)(RuntimeThreadInstance)+9);
-    // void* a1=RuntimeContextInstance;
-    // debugPrintf("a1(%u)",a1);
-    // debugPrintf("a1p(%p)",(void*)a1);
-    // void* a22=a1+1144;
-    // debugPrintf("a22(%u)",a22);
-    // debugPrintf("a22s(%s)",(char*)a22);
-    // void* a33=a1+148;
-    // debugPrintf("a33(%u)",a33);
-    // debugPrintf("a33s(%s)",(char*)a33);
-    // void* a44=a1+164;
-    // debugPrintf("a44(%u)",a44);
-    // debugPrintf("a44s(%s)",(char*)a44);
+    gl_init();
+    eglSwapInterval(0, 2);
 
     marketlaunch = (void *)(LOAD_ADDRESS + 0x416CD);
     launch       = (void *)(LOAD_ADDRESS + 0x413F9);
@@ -95,17 +84,17 @@ int main() {
     int   SDK_INT = 10;
     int   Surface = 0;
     char *a5      = "/runtime/";
-    char *a6      = "/a6";
+    char *a6      = "/com.acrodea.vividruntime.launcher";
     char *a7      = "/RuntimeApps/";
-    char *a8      = "com.acrodea.gamecenter";
+    char *a8      = "1760";
     char *a9      = "/lib/com.acrodea.gamecenter/app.exe";
-    char *a10     = "/RuntimeApps";
-    char *a11     = RES_PATH;
-    char *a12     = "/.tmp";
+    char *a10     = "/com.acrodea.gamecenter/res";
+    char *a11     = "/com.acrodea.gamecenter/data";
+    char *a12     = "/com.acrodea.gamecenter/.tmp";
     int   a13     = 1;
     char *a14     = "from_manager:log_print";
     int   len     = 1;
-    char *a15[]   = {"boot_from=1234"};
+    char *a15[]   = {"boot_from=1760"};
     JobjectArray  = NewObjectArray(&jni, len, "a15", NULL);
     for (size_t i = 0; i < len; i++) {
         SetObjectArrayElement(&jni, JobjectArray, i, a15[i]);
@@ -113,15 +102,8 @@ int main() {
     marketlaunch(&jni, appId, SDK_INT, Surface, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, JobjectArray);
     debugPrintf("marketlaunch over %p\n", marketlaunch);
 
-    // launch(&jni,appId,SDK_INT,Surface,a5,a6,a7,a8,a13,a14,a15,0);
-    // debugPrintf("marketlaunch over %p\n",marketlaunch);
-
-    gl_init();
-    // int (* kdMain)(void *,void *) = (void *)so_symbol(&so_mod, "kdMain");
-    // value= kdMain(NULL,NULL);
-    // debugPrintf("kdMain over %d \n",value);
-
-    eglSwapInterval(0, 2);
+    //launch(&jni,appId,10,0,"/runtime/","/com.acrodea.vividruntime.launcher","/RuntimeApps", "1760",a13,"from_manager:log_print",0,0);
+    //debugPrintf("launch over %p\n",launch);
 
     // ... do some initialization
     return 0;

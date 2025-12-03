@@ -300,6 +300,27 @@ int jniRegisterNativeMethods(int a1, int a2, int a3, int a4) {
     return 0;
 }
 
+int systemTime(int a)
+{
+    l_debug("systemTime(%d)",a);
+    if(a)
+    {
+     //uint64_t time=current_timestamp_ms();
+     return 0;
+    }
+    else 
+    {
+        return 0;
+    }
+    
+}
+
+int glLightModelx()
+{
+    l_debug("glLightModelx()");
+    return 0;
+}
+
 so_default_dynlib default_dynlib[] = {
     // MD5 Impl
     {"MD5_Init", (uintptr_t)&MD5_Init},
@@ -881,7 +902,7 @@ so_default_dynlib default_dynlib[] = {
     {"glLightfv", (uintptr_t)&glLightfv},
     {"glLightModelf", (uintptr_t)&ret0},
     {"glLightModelfv", (uintptr_t)&glLightModelfv},
-    {"glLightModelx", (uintptr_t)&ret0},
+    {"glLightModelx", (uintptr_t)&glLightModelx},
     {"glLightModelxv", (uintptr_t)&glLightModelxv},
     {"glLightx", (uintptr_t)&ret0},
     {"glLightxv", (uintptr_t)&glLightxv},
@@ -1258,7 +1279,7 @@ so_default_dynlib default_dynlib[] = {
     // { "uncompress", (uintptr_t)&uncompress },
 
     {"symlink", (uintptr_t)&ret0},
-    {"systemTime", (uintptr_t)&ret0},
+    {"systemTime", (uintptr_t)&systemTime},
     {"jniRegisterNativeMethods", (uintptr_t)&jniRegisterNativeMethods},
     {"epoll_create", (uintptr_t)&ret0},
 
