@@ -300,19 +300,31 @@ int jniRegisterNativeMethods(int a1, int a2, int a3, int a4) {
     return 0;
 }
 
-int systemTime(int a)
+typedef int64_t nsecs_t;       // nano-seconds
+
+nsecs_t systemTime(int clock)
 {
-    l_debug("systemTime(%d)",a);
-    if(a)
-    {
-     //uint64_t time=current_timestamp_ms();
-     return 0;
-    }
-    else 
-    {
-        return 0;
-    }
-    
+    l_debug("systemTime(%d)",clock);
+#if defined(HAVE_POSIX_CLOCKS)
+    static const clockid_t clocks[] = {
+            CLOCK_REALTIME,
+            CLOCK_MONOTONIC,
+            CLOCK_PROCESS_CPUTIME_ID,
+            CLOCK_THREAD_CPUTIME_ID
+    };
+    struct timespec t;
+    t.tv_sec = t.tv_nsec = 0;
+    clock_gettime(clocks[clock], &t);
+    return nsecs_t(t.tv_sec)*1000000000LL + t.tv_nsec;
+#else
+    // we don't support the clocks here.
+    struct timeval t;
+    t.tv_sec = t.tv_usec = 0;
+    gettimeofday(&t, NULL);
+    nsecs_t nanoSeconds = (nsecs_t)(t.tv_sec)*1000000000LL + (nsecs_t)(t.tv_usec)*1000LL;
+    l_debug("systemTime => (%lld)", nanoSeconds);
+    return nanoSeconds;
+#endif
 }
 
 int glLightModelx()
@@ -574,7 +586,8 @@ so_default_dynlib default_dynlib[] = {
     {"recv", (uintptr_t)&recv},
     {"recvfrom", (uintptr_t)&recvfrom},
     {"recvmsg", (uintptr_t)&recvmsg},
-    {"select", (uintptr_t)&select},
+    // {"select", (uintptr_t)&select},
+    {"select", (uintptr_t)&ret0},
     {"send", (uintptr_t)&send},
     {"sendmsg", (uintptr_t)&sendmsg},
     {"sendto", (uintptr_t)&sendto},
