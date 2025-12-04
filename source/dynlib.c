@@ -45,6 +45,8 @@
 #include <pnglibconf.h>
 #include <zconf.h>
 
+#include <sqlite3/sqlite3.h>
+
 #ifdef USE_SCELIBC_IO
 #include <libc_bridge/libc_bridge.h>
 #endif
@@ -338,6 +340,21 @@ so_default_dynlib default_dynlib[] = {
     {"MD5_Init", (uintptr_t)&MD5_Init},
     {"MD5_Update", (uintptr_t)&MD5_Update},
     {"MD5_Final", (uintptr_t)&MD5_Final},
+
+    // SQLite3
+    {"sqlite3_open", (uintptr_t)&sqlite3_open},
+    {"sqlite3_close", (uintptr_t)&sqlite3_close},
+    {"sqlite3_prepare_v2", (uintptr_t)&sqlite3_prepare_v2},
+    {"sqlite3_exec", (uintptr_t)&sqlite3_exec},
+    {"sqlite3_errmsg", (uintptr_t)&sqlite3_errmsg},
+    {"sqlite3_step", (uintptr_t)&sqlite3_step},
+    {"sqlite3_finalize", (uintptr_t)&sqlite3_finalize},
+    {"sqlite3_column_count", (uintptr_t)&sqlite3_column_count},
+    {"sqlite3_column_double", (uintptr_t)&sqlite3_column_double},
+    {"sqlite3_column_int", (uintptr_t)&sqlite3_column_int},
+    {"sqlite3_column_name", (uintptr_t)&sqlite3_column_name},
+    {"sqlite3_column_text", (uintptr_t)&sqlite3_column_text},
+    {"sqlite3_column_type", (uintptr_t)&sqlite3_column_type},
 
     // additional aeabi hook
     {"__aeabi_i2f", (uintptr_t)&__aeabi_i2f},

@@ -68,12 +68,22 @@ add_definitions(-D_GNU_SOURCE -D__POSIX_VISIBLE=999999)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wl,-q -O3 -g -ffast-math -mfloat-abi=softfp -Wno-deprecated")
 set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=gnu++20 -Wno-write-strings -Wno-psabi")
 
+# 为 SQLite 单独设置 -fno-fast-math
+set_source_files_properties(
+        lib/sqlite3/sqlite3.c
+        PROPERTIES
+        COMPILE_FLAGS "-fno-fast-math"
+)
+
+add_definitions(-DSQLITE_OS_OTHER=1 -DSQLITE_TEMP_STORE=3 -DSQLITE_THREADSAFE=0)
+
 add_executable(${CMAKE_PROJECT_NAME}
   source/main.c
   source/dynlib.c
   source/java.c
   source/patch.c
   source/init.c
+  source/vita_sqlite.c
 
   source/reimpl/android/atomic.c
   source/reimpl/android/SharedBuffer.c
@@ -107,6 +117,8 @@ add_executable(${CMAKE_PROJECT_NAME}
   lib/fios/fios.c
   lib/sha1/sha1.c
   lib/md5/md5.c
+
+  lib/sqlite3/sqlite3.c
 )
 
 if (USE_SCELIBC_IO)
