@@ -2,6 +2,7 @@
 #include <falso_jni/FalsoJNI.h>
 #include "utils/logger.h"
 #include <dirent.h>
+#include <malloc.h>
 /*
  * JNI Methods
 */
@@ -167,6 +168,31 @@ void surfaceChanged(jmethodID id, va_list args)
     debugPrintf("surfaceChanged()");
 }
 
+typedef struct {
+    int i;
+} MyHttp;
+
+jobject MyHttp_constructor(jmethodID id, va_list args)
+{
+    int i = va_arg(args, int);
+    debugPrintf("MyHttp_constructor(%d)", i);
+    MyHttp* httpObj = (MyHttp*)malloc(sizeof(MyHttp));
+    httpObj->i = i;
+    return (jobject)httpObj;
+}
+
+jint MyHttp_init(jmethodID id, va_list args)
+{
+    jstring str = va_arg(args, jstring);
+    int i1 = va_arg(args, int );
+    int i2 = va_arg(args, int );
+    int i3 = va_arg(args, int );
+
+    debugPrintf("MyHttp_init(%s, %d, %d, %d)", str, i1, i2, i3);
+
+    return 0;
+}
+
 NameToMethodID nameToMethodId[] = {
     {1, "Native_Exit", METHOD_TYPE_VOID, Native_Exit},                              // ()V
     {2, "vibrate", METHOD_TYPE_VOID, vibrate},                                      // ()V
@@ -189,6 +215,10 @@ NameToMethodID nameToMethodId[] = {
     {19, "stereoIsAvailability", METHOD_TYPE_VOID, stereoIsAvailability},
     {20, "stereoSetView", METHOD_TYPE_VOID, stereoSetView},
     {21, "stereoGetDepth", METHOD_TYPE_VOID, stereoGetDepth},
+
+    // Temp MyHttp fake hook
+    {22, "com/acrodea/vividruntime/launcher/extension/MyHttp/<init>", METHOD_TYPE_OBJECT, MyHttp_constructor},
+    {23, "init", METHOD_TYPE_INT, MyHttp_init},
 };
 
 MethodsBoolean methodsBoolean[] = {};
