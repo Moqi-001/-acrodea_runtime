@@ -170,6 +170,7 @@ int chdir_wrap(const char *__path) {
 extern void *__aeabi_i2f;
 extern void *__aeabi_fmul;
 extern void *__aeabi_f2iz;
+extern void *__aeabi_lmul;
 
 extern void *_ZNSt9exceptionD2Ev;
 extern void *_ZSt17__throw_bad_allocv;
@@ -306,7 +307,7 @@ typedef int64_t nsecs_t;       // nano-seconds
 
 nsecs_t systemTime(int clock)
 {
-    l_debug("systemTime(%d)",clock);
+    // l_debug("systemTime(%d)",clock);
 #if defined(HAVE_POSIX_CLOCKS)
     static const clockid_t clocks[] = {
             CLOCK_REALTIME,
@@ -324,7 +325,7 @@ nsecs_t systemTime(int clock)
     t.tv_sec = t.tv_usec = 0;
     gettimeofday(&t, NULL);
     nsecs_t nanoSeconds = (nsecs_t)(t.tv_sec)*1000000000LL + (nsecs_t)(t.tv_usec)*1000LL;
-    l_debug("systemTime => (%lld)", nanoSeconds);
+    // l_debug("systemTime => (%lld)", nanoSeconds);
     return nanoSeconds;
 #endif
 }
@@ -360,6 +361,7 @@ so_default_dynlib default_dynlib[] = {
     {"__aeabi_i2f", (uintptr_t)&__aeabi_i2f},
     {"__aeabi_fmul", (uintptr_t)&__aeabi_fmul},
     {"__aeabi_f2iz", (uintptr_t)&__aeabi_f2iz},
+    {"__aeabi_lmul", (uintptr_t)&__aeabi_lmul},
 
     // Android String8
     {"_ZN7android7String8C1Ev", (uintptr_t)&android_String8_init},
