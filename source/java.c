@@ -4,6 +4,7 @@
 #include "patch.h"
 #include <dirent.h>
 #include <malloc.h>
+#include <psp2/kernel/threadmgr.h>
 /*
  * JNI Methods
 */
@@ -223,12 +224,71 @@ jint MyHttp_obj_setUserPtr(jmethodID id, va_list args)
     return 0;
 }
 
+typedef struct {
+    int arg1;
+    int arg2;
+    int arg3;
+    int arg4;
+    int userPtr;
+    int kw;
+    int i;
+} ThreadArgs;
+
+int http_response_thread(SceSize size, void* argp) {
+    ThreadArgs* thread_params = (ThreadArgs*)argp;
+
+    debugPrintf("[Vita] HTTP thread started: userPtr=%d", thread_params->userPtr);
+
+    HttpResponse_soloader(thread_params->arg1, thread_params->arg2,
+                          thread_params->arg3, thread_params->arg4,
+                          thread_params->userPtr, thread_params->kw,
+                          thread_params->i);
+
+    debugPrintf("[Vita] HTTP thread complete for userPtr=%d", thread_params->userPtr);
+
+    // free(thread_params);
+    return 0;
+}
+
 jint MyHttp_obj_connect(jmethodID id, va_list args)
 {
     int R_1 = -28;
     int R_2 = -1;
     int ERROR = -8;
-    HttpResponse_soloader(0,0,-18,0,httpObj.UserPtr,httpObj.kw,httpObj.i);
+    // HttpResponse_soloader(0,0,-18,0,httpObj.UserPtr,httpObj.kw,httpObj.i);
+
+    ThreadArgs* thread_args = (ThreadArgs*)malloc(sizeof(ThreadArgs));
+    if (!thread_args) {
+        debugPrintf("Failed to allocate thread args");
+        return -8;
+    }
+
+    thread_args->arg1 = 0;
+    thread_args->arg2 = 0;
+    thread_args->arg3 = -18;
+    thread_args->arg4 = 0;
+    thread_args->userPtr = httpObj.UserPtr;
+    thread_args->kw = httpObj.kw;
+    thread_args->i = httpObj.i;
+
+    SceUID thread_id = sceKernelCreateThread(
+            "http_thread",
+             http_response_thread,
+             0x10000100,
+             0x10000,
+             0,
+             0,
+             NULL
+    );
+
+    if (thread_id < 0) {
+        debugPrintf("[Vita] Failed to create thread: 0x%08X", thread_id);
+        free(thread_args);
+        return -8;
+    }
+
+    sceKernelStartThread(thread_id, sizeof(ThreadArgs), thread_args);
+
     // Java 层正确处理返回 0
     return 0;
 }

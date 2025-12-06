@@ -138,7 +138,8 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
   mathneon
   kubridge_stub
   ${CMAKE_SOURCE_DIR}/lib_stub/vitaSQLite3.a
-  ${CMAKE_BINARY_DIR}/lib/libc_bridge/stubs/libSceLibcBridge_stub.a
+  # ${CMAKE_BINARY_DIR}/lib/libc_bridge/stubs/libSceLibcBridge_stub.a
+  ${CMAKE_SOURCE_DIR}/lib_stub/libSceLibcBridge_stub.a
   # SceLibcBridge_stub
   SceHid_stub
   SceTouch_stub
