@@ -4,6 +4,7 @@
 
 #include <kubridge.h>
 #include <so_util/so_util.h>
+#include "config.h"
 
 #include "reimpl/libGgee/ggee.h"
 #include "reimpl/libKD/kd.h"
@@ -68,6 +69,16 @@ int bootstrap_start_soloader(int argc, char *argv[], char *envp[]) {
     return ret;
 }
 
+int (*HttpResponse)(void *, int, int, int, void *, void *, void *);
+
+void HttpResponse_soloader(void *a1, int a2, int a3, int a4, void *a5, void *a6, void *a7)
+{
+    l_debug("HttpResponse(%p)", a1);
+    int ret = HttpResponse(a1,a2,a3,a4,a5,a6,a7);
+    l_debug("HttpResponse return %p", ret);
+
+}
+
 void plugin_gles_procaddress_terminate() {
     debugPrintf("plugin_gles_procaddress_terminate()");
 }
@@ -93,6 +104,8 @@ void so_patch(void) {
     // hook_addr((uintptr_t)so_symbol(&so_mod, "plugin_gles_procaddress_terminate"), (uintptr_t)&plugin_gles_procaddress_terminate);
 
     ggeeLibExpand = (void *)so_symbol(&so_mod, "ggeeLibExpand");
+    HttpResponse = (void *)(LOAD_ADDRESS + 0x40FB4+1);
+
     // ggeeLibExpandFile("ux0:data/Acrodea/lib4_5_0/libc.so", "ux0:data/Acrodea/libc.so");
 
     // int * UserConfirm = (int *) so_symbol(&so_mod, "_UserConfirm");

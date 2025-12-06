@@ -1,6 +1,7 @@
 #include <falso_jni/FalsoJNI_Impl.h>
 #include <falso_jni/FalsoJNI.h>
 #include "utils/logger.h"
+#include "patch.h"
 #include <dirent.h>
 #include <malloc.h>
 /*
@@ -34,7 +35,7 @@ jobject getLocale(jmethodID id, va_list args)
 {
 
     debugPrintf("getLocale()");
-    return "";
+    return "en";
 }
 
 jobject getCommonDir(jmethodID id, va_list args)
@@ -170,17 +171,21 @@ void surfaceChanged(jmethodID id, va_list args)
 
 typedef struct {
     int i;
+    jstring str;
+    int UserPtr;
+    int kw;
 } MyHttp;
+
+static MyHttp httpObj;
 
 jobject MyHttp_constructor(jmethodID id, va_list args)
 {
     int i = va_arg(args, int);
 
-    debugPrintf("MyHttp_constructor(%d)", i);
-    debugPrintf("MyHttp_constructor(%u)", i);
-    MyHttp* httpObj = (MyHttp*)malloc(sizeof(MyHttp));
-    httpObj->i = i;
-    return (jobject)httpObj;
+    debugPrintf("MyHttp_constructor(%p)", i);
+    httpObj.i = i;
+
+    return (jobject)&httpObj;
 }
 
 jint MyHttp_obj_init(jmethodID id, va_list args)
@@ -189,17 +194,17 @@ jint MyHttp_obj_init(jmethodID id, va_list args)
     int NOT_HTTP_URL = -17;
     int REQUEST_OK = 0;
 
-    jstring str = va_arg(args, jstring); // boot_from=1760app/1.0.0/top/topUrlInformation
+    httpObj.str = va_arg(args, jstring); // boot_from=1760app/1.0.0/top/topUrlInformation
     int i1 = va_arg(args, int); // 1
     int i2 = va_arg(args, int); // 0
 
     // 这个值要存起来, 实际通过 init 函数传递给了 k.kw
-    int i3 = va_arg(args, int); // 0
+    httpObj.kw = va_arg(args, int); // 0
 
-    debugPrintf("MyHttp_obj_init(%s, %d, %d, %d)", str, i1, i2, i3);
+    debugPrintf("MyHttp_obj_init(%s, %d, %d, %d)", httpObj.str, i1, i2, httpObj.kw);
 
     // 判定 URL 是否以 "http" 开头
-    if (str == NULL || strncmp(str, "http", 4) != 0) {
+    if (httpObj.str == NULL || strncmp(httpObj.str, "http", 4) != 0) {
         // 正常 Java 层代码返回的 NOT_HTTP_URL
         return REQUEST_OK;
     }
@@ -211,8 +216,8 @@ jint MyHttp_obj_init(jmethodID id, va_list args)
 jint MyHttp_obj_setUserPtr(jmethodID id, va_list args)
 {
     // 这个值继续存起来, 后面要用, 实际存到了 k.kv
-    int i = va_arg(args, int);
-    debugPrintf("MyHttp_obj_setUserPtr(%d)", i);
+    httpObj.UserPtr = va_arg(args, int);
+    debugPrintf("MyHttp_obj_setUserPtr(%lld)", httpObj.UserPtr);
 
     // Java 层永远返回 0
     return 0;
@@ -223,7 +228,7 @@ jint MyHttp_obj_connect(jmethodID id, va_list args)
     int R_1 = -28;
     int R_2 = -1;
     int ERROR = -8;
-
+    HttpResponse_soloader(0,0,-18,0,httpObj.UserPtr,httpObj.kw,httpObj.i);
     // Java 层正确处理返回 0
     return 0;
 }
