@@ -165,11 +165,6 @@ void jniTrackerAssignAttribute(jmethodID id, va_list args)
     debugPrintf("jniTrackerAssignAttribute(%s)", value);
 }
 
-void surfaceChanged(jmethodID id, va_list args)
-{
-    debugPrintf("surfaceChanged()");
-}
-
 typedef struct {
     int i;
     jstring str;
@@ -177,7 +172,7 @@ typedef struct {
     int kw;
 } MyHttp;
 
-static MyHttp httpObj;
+MyHttp httpObj;
 
 jobject MyHttp_constructor(jmethodID id, va_list args)
 {
@@ -185,7 +180,6 @@ jobject MyHttp_constructor(jmethodID id, va_list args)
 
     debugPrintf("MyHttp_constructor(%p)", i);
     httpObj.i = i;
-
     return (jobject)&httpObj;
 }
 
@@ -201,9 +195,8 @@ jint MyHttp_obj_init(jmethodID id, va_list args)
 
     // 这个值要存起来, 实际通过 init 函数传递给了 k.kw
     httpObj.kw = va_arg(args, int); // 0
-
+    
     debugPrintf("MyHttp_obj_init(%s, %d, %d, %d)", httpObj.str, i1, i2, httpObj.kw);
-
     // 判定 URL 是否以 "http" 开头
     if (httpObj.str == NULL || strncmp(httpObj.str, "http", 4) != 0) {
         // 正常 Java 层代码返回的 NOT_HTTP_URL
@@ -218,7 +211,7 @@ jint MyHttp_obj_setUserPtr(jmethodID id, va_list args)
 {
     // 这个值继续存起来, 后面要用, 实际存到了 k.kv
     httpObj.UserPtr = va_arg(args, int);
-    debugPrintf("MyHttp_obj_setUserPtr(%lld)", httpObj.UserPtr);
+    debugPrintf("MyHttp_obj_setUserPtr(%p)", httpObj.UserPtr);
 
     // Java 层永远返回 0
     return 0;
@@ -237,41 +230,46 @@ typedef struct {
 int http_response_thread(SceSize size, void* argp) {
     ThreadArgs* thread_params = (ThreadArgs*)argp;
 
-    debugPrintf("[Vita] HTTP thread started: userPtr=%d", thread_params->userPtr);
+    debugPrintf("[Vita] HTTP thread started: userPtr=%p", thread_params->userPtr);
+    debugPrintf("[Vita] HTTP thread started: i=%p", thread_params->i);
+    debugPrintf("[Vita] HTTP thread started: arg3=%d", thread_params->arg3);
 
     HttpResponse_soloader(thread_params->arg1, thread_params->arg2,
                           thread_params->arg3, thread_params->arg4,
                           thread_params->userPtr, thread_params->kw,
                           thread_params->i);
 
-    debugPrintf("[Vita] HTTP thread complete for userPtr=%d", thread_params->userPtr);
-
-    // free(thread_params);
+    debugPrintf("[Vita] HTTP thread complete for userPtr=%p", thread_params->userPtr);
+    //SetRuntimeContext(124,0);
+    //SetRuntimeContext(1112,0);
     return 0;
 }
-
+SceUID thread_id=-1;
 jint MyHttp_obj_connect(jmethodID id, va_list args)
 {
     int R_1 = -28;
     int R_2 = -1;
     int ERROR = -8;
+    int ERROR_SERVER = 404;
+
     // HttpResponse_soloader(0,0,-18,0,httpObj.UserPtr,httpObj.kw,httpObj.i);
 
-    ThreadArgs* thread_args = (ThreadArgs*)malloc(sizeof(ThreadArgs));
-    if (!thread_args) {
-        debugPrintf("Failed to allocate thread args");
-        return -8;
-    }
+    ThreadArgs thread_args;
 
-    thread_args->arg1 = 0;
-    thread_args->arg2 = 0;
-    thread_args->arg3 = -18;
-    thread_args->arg4 = 0;
-    thread_args->userPtr = httpObj.UserPtr;
-    thread_args->kw = httpObj.kw;
-    thread_args->i = httpObj.i;
-
-    SceUID thread_id = sceKernelCreateThread(
+    thread_args.arg1 = 0;
+    thread_args.arg2 = 0;
+    thread_args.arg3 = -18;
+    thread_args.arg4 = 0;
+    thread_args.userPtr = httpObj.UserPtr;
+    thread_args.kw = httpObj.kw;
+    thread_args.i = httpObj.i;
+    if(thread_id>=0)
+     {
+        return -28;
+     }
+    if(thread_id==-1)
+    {
+         thread_id = sceKernelCreateThread(
             "http_thread",
              http_response_thread,
              0x10000100,
@@ -280,16 +278,22 @@ jint MyHttp_obj_connect(jmethodID id, va_list args)
              0,
              NULL
     );
+    }
+     
 
     if (thread_id < 0) {
         debugPrintf("[Vita] Failed to create thread: 0x%08X", thread_id);
-        free(thread_args);
         return -8;
     }
 
-    sceKernelStartThread(thread_id, sizeof(ThreadArgs), thread_args);
-
+    sceKernelStartThread(thread_id, sizeof(ThreadArgs), &thread_args);
+    
     // Java 层正确处理返回 0
+    return 0;
+}
+
+jint MyHttp_destroy(jmethodID id, va_list args)
+{
     return 0;
 }
 
@@ -310,17 +314,17 @@ NameToMethodID nameToMethodId[] = {
     {14, "jniTrackerRemoveAttribute", METHOD_TYPE_LONG, jniTrackerRemoveAttribute}, // ([BII)I
     {15, "getLocale", METHOD_TYPE_INT, getLocale},                                  // ([BII)I
     {16, "trialSetTime", METHOD_TYPE_INT, trialSetTime},                            // ([BII)I
-    {17, "surfaceChanged", METHOD_TYPE_VOID, surfaceChanged},
-    {18, "jniTrackerSetAttribute", METHOD_TYPE_VOID, jniTrackerSetAttribute},
-    {19, "stereoIsAvailability", METHOD_TYPE_VOID, stereoIsAvailability},
-    {20, "stereoSetView", METHOD_TYPE_VOID, stereoSetView},
-    {21, "stereoGetDepth", METHOD_TYPE_VOID, stereoGetDepth},
+    {17, "jniTrackerSetAttribute", METHOD_TYPE_VOID, jniTrackerSetAttribute},
+    {18, "stereoIsAvailability", METHOD_TYPE_VOID, stereoIsAvailability},
+    {19, "stereoSetView", METHOD_TYPE_VOID, stereoSetView},
+    {20, "stereoGetDepth", METHOD_TYPE_VOID, stereoGetDepth},
 
     // Temp MyHttp fake hook
-    {22, "com/acrodea/vividruntime/launcher/extension/MyHttp/<init>", METHOD_TYPE_OBJECT, MyHttp_constructor},
-    {23, "init", METHOD_TYPE_INT, MyHttp_obj_init},
-    {24, "setUserPtr", METHOD_TYPE_INT, MyHttp_obj_setUserPtr},
-    {25, "connect", METHOD_TYPE_INT, MyHttp_obj_connect},
+    {21, "com/acrodea/vividruntime/launcher/extension/MyHttp/<init>", METHOD_TYPE_OBJECT, MyHttp_constructor},
+    {22, "init", METHOD_TYPE_INT, MyHttp_obj_init},
+    {23, "setUserPtr", METHOD_TYPE_INT, MyHttp_obj_setUserPtr},
+    {24, "connect", METHOD_TYPE_INT, MyHttp_obj_connect},
+    {25, "destroy", METHOD_TYPE_INT, MyHttp_destroy},
 };
 
 MethodsBoolean methodsBoolean[] = {};
@@ -330,11 +334,11 @@ MethodsDouble methodsDouble[] = {
 
 };
 MethodsFloat methodsFloat[] = {
-    {21, stereoGetDepth},
+    {20, stereoGetDepth},
 };
 MethodsInt methodsInt[] = {};
 MethodsLong methodsLong[] = {
-    {22, GetCurrentTime},
+    {30, GetCurrentTime},
 };
 MethodsObject methodsObject[] = {};
 MethodsShort methodsShort[] = {};

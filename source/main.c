@@ -16,7 +16,8 @@
 int sceLibcHeapSize = 4 * 1024 * 1024;
 #endif
 int _newlib_heap_size_user = 256 * 1024 * 1024;
-
+#define SCREEN_W 960
+#define SCREEN_H 544
 so_module so_mod;
 
 jobjectArray JobjectArray;
@@ -48,6 +49,7 @@ int main_thread(SceSize args, void *argp) {
 
 int (*marketlaunch)(void *, int, int, int, int, int, int, int, int, int, int, int, int, int, int);
 int (*launch)(void *, int, int, int, int, int, int, int, char, int, int, int);
+int (*surfaceChanged)(void *, int, int, int);
 jobjectArray JobjectArray;
 
 int Launch(void *this, int a2) {
@@ -78,6 +80,7 @@ int main() {
 
     marketlaunch = (void *)(LOAD_ADDRESS + 0x416CD);
     launch       = (void *)(LOAD_ADDRESS + 0x413F9);
+    surfaceChanged= (void *)(LOAD_ADDRESS + 0x40291);
 
     debugPrintf("marketlaunch start %p\n", marketlaunch);
     char *appId   = "com.acrodea.gamecenter";
@@ -93,12 +96,16 @@ int main() {
     char *a12     = "/com.acrodea.gamecenter/.tmp";
     int   a13     = 1;
     char *a14     = "from_manager:log_print";
-    int   len     = 1;
-    char *a15[]   = {"boot_from=1760"};
+    int   len     = 2;
+    char *a15[]   = {"http://","boot_from=1760"};
     JobjectArray  = NewObjectArray(&jni, len, "a15", NULL);
     for (size_t i = 0; i < len; i++) {
         SetObjectArrayElement(&jni, JobjectArray, i, a15[i]);
     }
+
+    surfaceChanged(NULL,0,SCREEN_W,SCREEN_H);
+    debugPrintf("surfaceChanged over %p\n", surfaceChanged);
+
     marketlaunch(&jni, appId, SDK_INT, Surface, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, JobjectArray);
     debugPrintf("marketlaunch over %p\n", marketlaunch);
 

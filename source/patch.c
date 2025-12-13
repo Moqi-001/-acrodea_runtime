@@ -73,10 +73,20 @@ int (*HttpResponse)(void *, int, int, int, void *, void *, void *);
 
 void HttpResponse_soloader(void *a1, int a2, int a3, int a4, void *a5, void *a6, void *a7)
 {
-    l_debug("HttpResponse(%p)", a1);
+    l_debug("HttpResponse(%p)", a7);
     int ret = HttpResponse(a1,a2,a3,a4,a5,a6,a7);
-    l_debug("HttpResponse return %p", ret);
+    l_debug("HttpResponse return %d", ret);
 
+}
+
+void SetRuntimeContext(int index,int value)
+{
+    char *(*Get)(void *)         = (void *)so_symbol(&so_mod, "_ZN14RuntimeContext3GetEv");
+    char *RuntimeContextInstance = Get(NULL);
+    char *F=RuntimeContextInstance+index;
+    debugPrintf("SetRuntimeContext form(%d)",*F);
+    *(F)=value;
+    debugPrintf("SetRuntimeContext to(%d)",*F);
 }
 
 void plugin_gles_procaddress_terminate() {
@@ -100,7 +110,7 @@ void so_patch(void) {
 
     hook_addr((uintptr_t)so_symbol(&so_mod, "ldModuleInitialize"), (uintptr_t)&ldModuleInitialize);
     hook_addr((uintptr_t)so_symbol(&so_mod, "ldModuleDeinitialize"), (uintptr_t)&ldModuleDeinitialize);
-
+    
     // hook_addr((uintptr_t)so_symbol(&so_mod, "plugin_gles_procaddress_terminate"), (uintptr_t)&plugin_gles_procaddress_terminate);
 
     ggeeLibExpand = (void *)so_symbol(&so_mod, "ggeeLibExpand");

@@ -774,7 +774,7 @@ so_default_dynlib default_dynlib[] = {
 
     // additional EGL Hook
     {"eglGetCurrentDisplay", (uintptr_t)&ret0},
-    {"eglSwapInterval", (uintptr_t)&ret0},
+    {"eglSwapInterval", (uintptr_t)&eglSwapInterval},
     {"eglCreatePbufferSurface", (uintptr_t)&ret0},
     {"eglCreatePixmapSurface", (uintptr_t)&ret0},
     {"eglQueryAPI", (uintptr_t)&ret0},
