@@ -50,6 +50,8 @@ int main_thread(SceSize args, void *argp) {
 int (*marketlaunch)(void *, int, int, int, int, int, int, int, int, int, int, int, int, int, int);
 int (*launch)(void *, int, int, int, int, int, int, int, char, int, int, int);
 int (*surfaceChanged)(void *, int, int, int);
+int (*extensionInit)(void *, int, int);
+
 jobjectArray JobjectArray;
 
 int Launch(void *this, int a2) {
@@ -80,7 +82,11 @@ int main() {
 
     marketlaunch = (void *)(LOAD_ADDRESS + 0x416CD);
     launch       = (void *)(LOAD_ADDRESS + 0x413F9);
-    surfaceChanged= (void *)(LOAD_ADDRESS + 0x40291);
+    surfaceChanged = (void *)(LOAD_ADDRESS + 0x40291);
+    extensionInit = (void *)(LOAD_ADDRESS + 0x41221);
+
+    extensionInit(&jni,0,"");
+    debugPrintf("extensionInit over \n");
 
     debugPrintf("marketlaunch start %p\n", marketlaunch);
     char *appId   = "com.acrodea.gamecenter";

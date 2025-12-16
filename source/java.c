@@ -28,22 +28,19 @@ void Native_Exit(jmethodID id, va_list args)
 
 void vibrate(jmethodID id, va_list args)
 {
-
     debugPrintf("vibrate()");
 }
 
 jobject getLocale(jmethodID id, va_list args)
 {
-
     debugPrintf("getLocale()");
     return "en";
 }
 
 jobject getCommonDir(jmethodID id, va_list args)
 {
-
     debugPrintf("getCommonDir()");
-    return "ggee/";
+    return "ux0:data/Acrodea/assets/ggee/";
 }
 
 void appFinish(jmethodID id, va_list args)
@@ -129,14 +126,12 @@ jobject getEnv(jmethodID id, va_list args)
 void trialSetTime(jmethodID id, va_list args)
 {
     int time = va_arg(args, int);
-
     debugPrintf("trialSetTime(%d)", time);
 }
 
 void jniTrackerRemoveAttribute(jmethodID id, va_list args)
 {
     int value = va_arg(args, int);
-
     debugPrintf("jniTrackerRemoveAttribute(%d)", value);
 }
 
@@ -177,11 +172,12 @@ MyHttp httpObj;
 jobject MyHttp_constructor(jmethodID id, va_list args)
 {
     int i = va_arg(args, int);
-
     debugPrintf("MyHttp_constructor(%p)", i);
     httpObj.i = i;
     return (jobject)&httpObj;
 }
+
+int code=0;
 
 jint MyHttp_obj_init(jmethodID id, va_list args)
 {
@@ -197,6 +193,7 @@ jint MyHttp_obj_init(jmethodID id, va_list args)
     httpObj.kw = va_arg(args, int); // 0
     
     debugPrintf("MyHttp_obj_init(%s, %d, %d, %d)", httpObj.str, i1, i2, httpObj.kw);
+
     // 判定 URL 是否以 "http" 开头
     if (httpObj.str == NULL || strncmp(httpObj.str, "http", 4) != 0) {
         // 正常 Java 层代码返回的 NOT_HTTP_URL
@@ -240,8 +237,6 @@ int http_response_thread(SceSize size, void* argp) {
                           thread_params->i);
 
     debugPrintf("[Vita] HTTP thread complete for userPtr=%p", thread_params->userPtr);
-    //SetRuntimeContext(124,0);
-    //SetRuntimeContext(1112,0);
     return 0;
 }
 SceUID thread_id=-1;
@@ -264,9 +259,10 @@ jint MyHttp_obj_connect(jmethodID id, va_list args)
     thread_args.kw = httpObj.kw;
     thread_args.i = httpObj.i;
     if(thread_id>=0)
-     {
-        return -28;
-     }
+    {
+        return 0;
+    }
+
     if(thread_id==-1)
     {
          thread_id = sceKernelCreateThread(
@@ -279,7 +275,6 @@ jint MyHttp_obj_connect(jmethodID id, va_list args)
              NULL
     );
     }
-     
 
     if (thread_id < 0) {
         debugPrintf("[Vita] Failed to create thread: 0x%08X", thread_id);
@@ -295,6 +290,115 @@ jint MyHttp_obj_connect(jmethodID id, va_list args)
 jint MyHttp_destroy(jmethodID id, va_list args)
 {
     return 0;
+}
+
+jint getWifiState(jmethodID id, va_list args)
+{
+    debugPrintf("getWifiState()");
+    return 1;
+}
+
+jint getCellState(jmethodID id, va_list args)
+{
+    debugPrintf("getCellState()");
+    return 1;
+}
+
+jobject getShareData(jmethodID id, va_list args)
+{
+    const char *value = va_arg(args, char *);
+    debugPrintf("getShareData(%s)", value);
+    return "true";
+}
+
+jint setPropertycv(jmethodID id, va_list args)
+{
+    int i = va_arg(args, int);
+    const char *value = va_arg(args, char *);
+    debugPrintf("setPropertycv(%d,%s)",i, value);
+    return 0;
+}
+
+jint show(jmethodID id, va_list args)
+{
+    debugPrintf("show()");
+    return 0;
+}
+
+jobject getText(jmethodID id, va_list args)
+{
+    debugPrintf("getText()");
+    return "1";
+}
+
+jint getWidth(jmethodID id, va_list args)
+{
+    const char *value = va_arg(args, char *);
+    debugPrintf("getWidth(%s)",value);
+    return strlen(value);
+}
+
+void getFontInfo(jmethodID id, va_list args)
+{
+    debugPrintf("getFontInfo()");
+}
+
+jobject getAutoLoginID(jmethodID id, va_list args)
+{
+    debugPrintf("getAutoLoginID()");
+    return "111000";
+}
+
+jobject getExtensonByName(jmethodID id, va_list args)
+{
+    debugPrintf("getExtensonByName()");
+    return "MyExtensionInterface";
+}
+
+jobject getImei(jmethodID id, va_list args)
+{
+    debugPrintf("getImei()");
+    return "IMEI:";
+}
+
+jobject getImsi(jmethodID id, va_list args)
+{
+    debugPrintf("getImsi()");
+    return "000000000000000";
+}
+
+jint setProgress(jmethodID id, va_list args)
+{
+    int i = va_arg(args, int);
+    debugPrintf("setProgress(%d)",i);
+    return 0;
+}
+
+jobject drawStringEx(jmethodID id, va_list args)
+{
+    const char *value = va_arg(args, char *);
+    debugPrintf("drawStringEx(%s)",value);
+    return NULL;
+}
+
+jobject drawString(jmethodID id, va_list args)
+{
+    const char *value = va_arg(args, char *);
+    debugPrintf("drawString(%s)",value);
+    return NULL;
+}
+
+jint getHeightEx(jmethodID id, va_list args)
+{
+    const char *value = va_arg(args, char *);
+    debugPrintf("getHeightEx(%s)",value);
+    return 1;
+}
+
+void setMessage(jmethodID id, va_list args)
+{
+    const char *value = va_arg(args, char *);
+    debugPrintf("setMessage(%s)",value);
 }
 
 NameToMethodID nameToMethodId[] = {
@@ -325,6 +429,25 @@ NameToMethodID nameToMethodId[] = {
     {23, "setUserPtr", METHOD_TYPE_INT, MyHttp_obj_setUserPtr},
     {24, "connect", METHOD_TYPE_INT, MyHttp_obj_connect},
     {25, "destroy", METHOD_TYPE_INT, MyHttp_destroy},
+
+    // MyClass
+    {26, "getWifiState", METHOD_TYPE_INT, getWifiState},
+    {27, "getCellState", METHOD_TYPE_INT, getCellState},
+    {28, "getShareData", METHOD_TYPE_INT, getShareData},
+    {29, "setPropertycv", METHOD_TYPE_INT, setPropertycv},
+    {30, "show", METHOD_TYPE_INT, show},
+    {31, "getText", METHOD_TYPE_INT, getText},
+    {32, "getWidth", METHOD_TYPE_INT, getWidth},
+    {33, "getFontInfo", METHOD_TYPE_INT, getFontInfo},
+    {34, "getAutoLoginID", METHOD_TYPE_INT, getAutoLoginID},
+    {35, "setProgress", METHOD_TYPE_INT, setProgress},
+    {36, "getImei", METHOD_TYPE_INT, getImei},
+    {37, "getImsi", METHOD_TYPE_INT, getImsi},
+    {38, "getExtensonByName", METHOD_TYPE_INT, getExtensonByName},
+    {39, "getHeightEx", METHOD_TYPE_INT, getHeightEx},
+    {40, "drawString", METHOD_TYPE_INT, drawString},
+    {41, "drawStringEx", METHOD_TYPE_INT, drawStringEx},
+    {42, "setMessage", METHOD_TYPE_INT, setMessage},
 };
 
 MethodsBoolean methodsBoolean[] = {};
@@ -338,7 +461,7 @@ MethodsFloat methodsFloat[] = {
 };
 MethodsInt methodsInt[] = {};
 MethodsLong methodsLong[] = {
-    {30, GetCurrentTime},
+    {50, GetCurrentTime},
 };
 MethodsObject methodsObject[] = {};
 MethodsShort methodsShort[] = {};

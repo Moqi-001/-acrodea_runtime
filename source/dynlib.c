@@ -336,6 +336,12 @@ int glLightModelx()
     return 0;
 }
 
+int select0()
+{
+    l_debug("select0");
+    return 1;
+}
+
 so_default_dynlib default_dynlib[] = {
     // MD5 Impl
     {"MD5_Init", (uintptr_t)&MD5_Init},
@@ -605,8 +611,8 @@ so_default_dynlib default_dynlib[] = {
     {"recv", (uintptr_t)&recv},
     {"recvfrom", (uintptr_t)&recvfrom},
     {"recvmsg", (uintptr_t)&recvmsg},
-    // {"select", (uintptr_t)&select},
-    {"select", (uintptr_t)&ret0},
+    //{"select", (uintptr_t)&select},
+    {"select", (uintptr_t)&select0},
     {"send", (uintptr_t)&send},
     {"sendmsg", (uintptr_t)&sendmsg},
     {"sendto", (uintptr_t)&sendto},
