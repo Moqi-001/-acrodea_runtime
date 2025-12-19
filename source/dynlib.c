@@ -332,13 +332,13 @@ nsecs_t systemTime(int clock)
 
 int glLightModelx()
 {
-    l_debug("glLightModelx()");
+    //l_debug("glLightModelx()");
     return 0;
 }
 
 int select0()
 {
-    l_debug("select0");
+    //l_debug("select0");
     return 1;
 }
 

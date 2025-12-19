@@ -18,7 +18,7 @@ struct SharedBuffer {
 #define getData(sb)   ((void *)(sb + 1))
 
 SharedBuffer *android_SharedBuffer_alloc(size_t size) {
-    l_debug("android_SharedBuffer_alloc(%u)", size);
+    //l_debug("android_SharedBuffer_alloc(%u)", size);
 
     SharedBuffer *sb = (SharedBuffer *)malloc(sizeof(SharedBuffer) + size);
     if (!sb) {
@@ -29,12 +29,12 @@ SharedBuffer *android_SharedBuffer_alloc(size_t size) {
     sb->refs = 1;
     sb->size = size;
 
-    l_debug("android_SharedBuffer_alloc over: sb=%p,data=%p", sb, getData(sb));
+    //l_debug("android_SharedBuffer_alloc over: sb=%p,data=%p", sb, getData(sb));
     return sb;
 }
 
 int android_SharedBuffer_dealloc(SharedBuffer *sb) {
-    l_debug("android_SharedBuffer_dealloc(%p)", sb);
+    //l_debug("android_SharedBuffer_dealloc(%p)", sb);
 
     if (!sb) {
         l_debug("android_SharedBuffer_dealloc failed: null ptr");
@@ -48,7 +48,7 @@ int android_SharedBuffer_dealloc(SharedBuffer *sb) {
 
     free(sb);
 
-    l_debug("android_SharedBuffer_dealloc ok");
+    //l_debug("android_SharedBuffer_dealloc ok");
     return 0;
 }
 
@@ -145,7 +145,7 @@ void android_SharedBuffer_acquire(SharedBuffer *sb) {
 }
 
 int32_t android_SharedBuffer_release(SharedBuffer *sb, uint32_t flags) {
-    l_debug("android_SharedBuffer_release(%p,%u)", sb, flags);
+    //l_debug("android_SharedBuffer_release(%p,%u)", sb, flags);
 
     if (!sb) {
         l_debug("android_SharedBuffer_release failed: null ptr");
@@ -159,7 +159,7 @@ int32_t android_SharedBuffer_release(SharedBuffer *sb, uint32_t flags) {
             free(sb);
     }
 
-    l_debug("android_SharedBuffer_release over: prev_refs=%d", prev);
+    //l_debug("android_SharedBuffer_release over: prev_refs=%d", prev);
     return prev;
 }
 

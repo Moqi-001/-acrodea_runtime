@@ -401,7 +401,120 @@ void setMessage(jmethodID id, va_list args)
     debugPrintf("setMessage(%s)",value);
 }
 
+jint playVibrateTimer(jmethodID id, va_list args)
+{
+    //debugPrintf("playVibrateTimer()");
+    return 0;
+}
+
+int downloadApplicationNum=1;
+jobject getDownloadApplicationTypeInfoFromIndex(jmethodID id, va_list args)
+{
+    int i = va_arg(args, int);
+    int i2 = va_arg(args, int);
+    debugPrintf("getDownloadApplicationTypeInfoFromIndex(%d,%d)",i,i2);
+    if(i>=downloadApplicationNum)
+    {
+        return "";
+    }
+    switch (i2) 
+    {
+        case 0:
+          return "1760";
+        case 1:
+          return "DevilMayCry4";
+        case 2:
+          return "CAPCOM";
+        default:
+          return "";
+     
+     }
+    return "";
+}
+
+int uninstallApplicationNum=0;
+jobject getUninstallApplicationTypeInfoFromIndex(jmethodID id, va_list args)
+{
+    int i = va_arg(args, int);
+    int i2 = va_arg(args, int);
+    debugPrintf("getUninstallApplicationTypeInfoFromIndex(%d,%d)",i,i2);
+    if(i>=uninstallApplicationNum)
+    {
+        return "";
+    }
+    switch (i2) 
+    {
+        case 0:
+          return "1760";
+        default:
+          return "";
+     }
+    return "";
+}
+
+jint getUninstallApplicationCount(jmethodID id, va_list args)
+{
+    debugPrintf("getUninstallApplicationCount()");
+    return 0;
+}
+
+int index=100;
+jint getDownloadApplicationInfoFromIndex(jmethodID id, va_list args)
+{
+    int i = va_arg(args, int);
+    debugPrintf("getDownloadApplicationInfoFromIndex(%d)",i);
+    if(i<downloadApplicationNum)
+    {
+        return index;
+    }
+    
+    return -1;
+}
+
+jint applicationDownloadGetPauseStatus(jmethodID id, va_list args)
+{
+    debugPrintf("applicationDownloadGetPauseStatus()");
+    return 0;
+}
+
+jint applicationDownloadGetNetowrkPauseStatus(jmethodID id, va_list args)
+{
+    debugPrintf("applicationDownloadGetNetowrkPauseStatus()");
+    return 0;
+}
+
+jint getDownloadApplicationBodySizeFromIndex(jmethodID id, va_list args)
+{
+    int i = va_arg(args, int);
+    debugPrintf("getDownloadApplicationBodySizeFromIndex(%d)",i);
+    if(i<downloadApplicationNum)
+    {
+        return 100;
+    }
+    
+    return -1;
+}
+
+jint getDownloadApplicationSizeFromIndex(jmethodID id, va_list args)
+{
+    int i = va_arg(args, int);
+    debugPrintf("getDownloadApplicationSizeFromIndex(%d)",i);
+    if(i<downloadApplicationNum)
+    {
+        return 100;
+    }
+    
+    return -1;
+}
+
+jint return0(jmethodID id, va_list args)
+{
+    debugPrintf("return0()");
+    return 0;
+}
+
 NameToMethodID nameToMethodId[] = {
+    {0, "NULL", METHOD_TYPE_VOID, return0},                              
     {1, "Native_Exit", METHOD_TYPE_VOID, Native_Exit},                              // ()V
     {2, "vibrate", METHOD_TYPE_VOID, vibrate},                                      // ()V
     {3, "launchRuntime", METHOD_TYPE_VOID, launchRuntime},                          // (I)V
@@ -448,6 +561,17 @@ NameToMethodID nameToMethodId[] = {
     {40, "drawString", METHOD_TYPE_INT, drawString},
     {41, "drawStringEx", METHOD_TYPE_INT, drawStringEx},
     {42, "setMessage", METHOD_TYPE_INT, setMessage},
+
+    // My App
+    {43, "playVibrateTimer", METHOD_TYPE_INT, playVibrateTimer},
+    {44, "getDownloadApplicationTypeInfoFromIndex", METHOD_TYPE_INT, getDownloadApplicationTypeInfoFromIndex},
+    {45, "getUninstallApplicationCount", METHOD_TYPE_INT, getUninstallApplicationCount},
+    {46, "getDownloadApplicationInfoFromIndex", METHOD_TYPE_INT, getDownloadApplicationInfoFromIndex},
+    {47, "applicationDownloadGetPauseStatus", METHOD_TYPE_INT, applicationDownloadGetPauseStatus},
+    {48, "applicationDownloadGetNetowrkPauseStatus", METHOD_TYPE_INT, applicationDownloadGetNetowrkPauseStatus},
+    {49, "getDownloadApplicationBodySizeFromIndex", METHOD_TYPE_INT, getDownloadApplicationBodySizeFromIndex},
+    {50, "getDownloadApplicationSizeFromIndex", METHOD_TYPE_INT, getDownloadApplicationSizeFromIndex},
+    {50, "getUninstallApplicationTypeInfoFromIndex", METHOD_TYPE_INT, getUninstallApplicationTypeInfoFromIndex},
 };
 
 MethodsBoolean methodsBoolean[] = {};
@@ -461,7 +585,7 @@ MethodsFloat methodsFloat[] = {
 };
 MethodsInt methodsInt[] = {};
 MethodsLong methodsLong[] = {
-    {50, GetCurrentTime},
+    {100, GetCurrentTime},
 };
 MethodsObject methodsObject[] = {};
 MethodsShort methodsShort[] = {};

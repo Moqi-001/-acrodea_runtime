@@ -24,26 +24,13 @@ jobjectArray JobjectArray;
 int          StartOffset;
 char        *dspUserID;
 
-int main_thread(SceSize args, void *argp) {
-    int (*NativeFrame)(void) = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativeFrame");
-
-    int      fpsLock          = 33;
-    uint32_t last_render_time = sceKernelGetProcessTimeLow();
-    uint32_t delta            = (1000000 / (fpsLock + 1));
-
-    while (1) {
-        // controls_poll();
-        // NativeFrame();
-
-        while (sceKernelGetProcessTimeLow() - last_render_time < delta) {
-            sched_yield();
-        }
-
-        last_render_time = sceKernelGetProcessTimeLow();
-
-        gl_swap();
+int controls_thread(SceSize args, void *argp) {
+    
+    while (1)
+    {
+       controls_poll();
     }
-    debugPrintf("RenderUpdate over \n");
+    
     return 0;
 }
 
@@ -102,8 +89,10 @@ int main() {
     char *a12     = "/com.acrodea.gamecenter/.tmp";
     int   a13     = 1;
     char *a14     = "from_manager:log_print";
-    int   len     = 2;
-    char *a15[]   = {"http://","boot_from=1760"};
+    char *a15[]   = {"http://","http://","boot_from=1760"};
+    //int   len     = sizeof(a15);
+    int   len     = 3;
+    
     JobjectArray  = NewObjectArray(&jni, len, "a15", NULL);
     for (size_t i = 0; i < len; i++) {
         SetObjectArrayElement(&jni, JobjectArray, i, a15[i]);
@@ -111,6 +100,9 @@ int main() {
 
     surfaceChanged(NULL,0,SCREEN_W,SCREEN_H);
     debugPrintf("surfaceChanged over %p\n", surfaceChanged);
+
+    SceUID thid = sceKernelCreateThread("controls_thread", (SceKernelThreadEntry)controls_thread, 0x40,2* 128 * 1024, 0, 0, NULL);
+    sceKernelStartThread(thid, 0, NULL);
 
     marketlaunch(&jni, appId, SDK_INT, Surface, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, JobjectArray);
     debugPrintf("marketlaunch over %p\n", marketlaunch);
@@ -121,7 +113,5 @@ int main() {
     // ... do some initialization
     return 0;
 
-    // SceUID thid = sceKernelCreateThread("main_thread", (SceKernelThreadEntry)main_thread, 0x40,2* 128 * 1024, 0, 0, NULL);
-    // sceKernelStartThread(thid, 0, NULL);
     return sceKernelExitDeleteThread(0);
 }
