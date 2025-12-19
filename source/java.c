@@ -191,7 +191,7 @@ jint MyHttp_obj_init(jmethodID id, va_list args)
 
     // 这个值要存起来, 实际通过 init 函数传递给了 k.kw
     httpObj.kw = va_arg(args, int); // 0
-    
+
     debugPrintf("MyHttp_obj_init(%s, %d, %d, %d)", httpObj.str, i1, i2, httpObj.kw);
 
     // 判定 URL 是否以 "http" 开头
@@ -282,7 +282,7 @@ jint MyHttp_obj_connect(jmethodID id, va_list args)
     }
 
     sceKernelStartThread(thread_id, sizeof(ThreadArgs), &thread_args);
-    
+
     // Java 层正确处理返回 0
     return 0;
 }
@@ -334,13 +334,13 @@ jobject getText(jmethodID id, va_list args)
 jint getWidth(jmethodID id, va_list args)
 {
     const char *value = va_arg(args, char *);
-    debugPrintf("getWidth(%s)",value);
+    // debugPrintf("getWidth(%s)",value);
     return strlen(value);
 }
 
 void getFontInfo(jmethodID id, va_list args)
 {
-    debugPrintf("getFontInfo()");
+    // debugPrintf("getFontInfo()");
 }
 
 jobject getAutoLoginID(jmethodID id, va_list args)
@@ -377,15 +377,28 @@ jint setProgress(jmethodID id, va_list args)
 jobject drawStringEx(jmethodID id, va_list args)
 {
     const char *value = va_arg(args, char *);
-    debugPrintf("drawStringEx(%s)",value);
-    return NULL;
+    jintArray arr = va_arg(args, jintArray);
+
+    jint* arrayElements = jni->GetIntArrayElements(&jni, arr, NULL);
+    jint width = arrayElements[2];
+    jint height = arrayElements[1];
+
+    debugPrintf("drawStringEx(%s. %d, %d)", value, width, height);
+
+    return jni->NewIntArray(&jni, width * height);
 }
 
-jobject drawString(jmethodID id, va_list args)
+jintArray drawString(jmethodID id, va_list args)
 {
     const char *value = va_arg(args, char *);
-    debugPrintf("drawString(%s)",value);
-    return NULL;
+    jintArray arr = va_arg(args, jintArray);
+
+    jint* arrayElements = jni->GetIntArrayElements(&jni, arr, NULL);
+    jint width = arrayElements[2];
+    jint height = arrayElements[1];
+    debugPrintf("drawString(%s, %d, %d)",value, width, height);
+
+    return jni->NewIntArray(&jni, width * height);
 }
 
 jint getHeightEx(jmethodID id, va_list args)
@@ -417,7 +430,7 @@ jobject getDownloadApplicationTypeInfoFromIndex(jmethodID id, va_list args)
     {
         return "";
     }
-    switch (i2) 
+    switch (i2)
     {
         case 0:
           return "1760";
@@ -429,6 +442,7 @@ jobject getDownloadApplicationTypeInfoFromIndex(jmethodID id, va_list args)
           return "";
      
      }
+
     return "";
 }
 
@@ -442,7 +456,7 @@ jobject getUninstallApplicationTypeInfoFromIndex(jmethodID id, va_list args)
     {
         return "";
     }
-    switch (i2) 
+    switch (i2)
     {
         case 0:
           return "1760";
@@ -463,12 +477,13 @@ jint getDownloadApplicationInfoFromIndex(jmethodID id, va_list args)
 {
     int i = va_arg(args, int);
     debugPrintf("getDownloadApplicationInfoFromIndex(%d)",i);
-    if(i<downloadApplicationNum)
+    /*if(i<downloadApplicationNum)
     {
         return index;
-    }
-    
-    return -1;
+    }*/
+
+    // return -1;
+    return 0;
 }
 
 jint applicationDownloadGetPauseStatus(jmethodID id, va_list args)
@@ -491,7 +506,7 @@ jint getDownloadApplicationBodySizeFromIndex(jmethodID id, va_list args)
     {
         return 100;
     }
-    
+
     return -1;
 }
 
@@ -503,7 +518,7 @@ jint getDownloadApplicationSizeFromIndex(jmethodID id, va_list args)
     {
         return 100;
     }
-    
+
     return -1;
 }
 
@@ -514,7 +529,7 @@ jint return0(jmethodID id, va_list args)
 }
 
 NameToMethodID nameToMethodId[] = {
-    {0, "NULL", METHOD_TYPE_VOID, return0},                              
+    {0, "NULL", METHOD_TYPE_VOID, return0},
     {1, "Native_Exit", METHOD_TYPE_VOID, Native_Exit},                              // ()V
     {2, "vibrate", METHOD_TYPE_VOID, vibrate},                                      // ()V
     {3, "launchRuntime", METHOD_TYPE_VOID, launchRuntime},                          // (I)V
@@ -558,8 +573,8 @@ NameToMethodID nameToMethodId[] = {
     {37, "getImsi", METHOD_TYPE_INT, getImsi},
     {38, "getExtensonByName", METHOD_TYPE_INT, getExtensonByName},
     {39, "getHeightEx", METHOD_TYPE_INT, getHeightEx},
-    {40, "drawString", METHOD_TYPE_INT, drawString},
-    {41, "drawStringEx", METHOD_TYPE_INT, drawStringEx},
+    {40, "drawString", METHOD_TYPE_OBJECT, drawString},
+    {41, "drawStringEx", METHOD_TYPE_OBJECT, drawStringEx},
     {42, "setMessage", METHOD_TYPE_INT, setMessage},
 
     // My App
