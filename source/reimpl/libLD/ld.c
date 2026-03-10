@@ -24,7 +24,7 @@ void ldSetErrorCode(LdContext *context, int code, const char *msg) {
             strncpy(context->error_msg, msg, 255);
         else
             context->error_msg[0] = '\0';
-        l_debug("ldSetErrorCode: %s", context->error_msg);
+        l_debug("ldSetErrorCode: %s", context->error_code);
     }
 }
 
@@ -137,7 +137,7 @@ FAILED:
         mem_context = NULL;
     }
 
-    if (failed_count < 50) {  // 如果失败次数<50，将映射地址递增，重新尝试
+    if (failed_count < 100) {  // 如果失败次数<50，将映射地址递增，重新尝试
         l_debug("ldModuleAllocAndLoadImage(%p) failed on addr 0x%x, will retry!", mod, load_addr);
         failed_count++;
         load_addr += 0x01000000;

@@ -17,12 +17,6 @@ extern so_module so_mod;
 LdModule *bootstrap_mod                                      = NULL;
 int (*bootstrap_start)(int argc, char *argv[], char *envp[]) = NULL;
 
-int sub_52860(int a1)
-{
-    debugPrintf("sub_52860(%d)",a1);
-    return 0;
-}
-
 int bootstrap_start_soloader(int argc, char *argv[], char *envp[]) {
     l_debug("bootstrap_start(%d,%p,%p)", argc, argv, envp);
     for (size_t i = 0; i < argc && argv[i]; i++) {
@@ -60,8 +54,6 @@ int bootstrap_start_soloader(int argc, char *argv[], char *envp[]) {
     // hook_addr((uintptr_t)(0x101154+1+0x99000000), (uintptr_t)&sub_101154);
     // hook_addr((uintptr_t)(0x105D58+1+0x99000000), (uintptr_t)&sub_105D58);
     // hook_addr((uintptr_t)(0x10F07C+1+0x99000000), (uintptr_t)&sub_10F07C);
-    hook_addr((uintptr_t)(0x52860+1+0x99000000), (uintptr_t)&sub_52860);
-    
 
     //int ret = bootstrap_start(sizeof(marketlaunch_argv) / sizeof(marketlaunch_argv[0]), marketlaunch_argv, envp);
     int ret = bootstrap_start(argc, argv, envp);

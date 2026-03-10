@@ -43,6 +43,12 @@
         "io.h": "c",
         "cstdlib": "c",
         "egl.h": "c",
-        "dialog.h": "c"
+        "dialog.h": "c",
+        "*.tcc": "c",
+        "config.h": "c",
+        "ld_mem.h": "c",
+        "ld.h": "c",
+        "ld_patch.h": "c",
+        "patch.h": "c"
     }
 }

@@ -11,9 +11,16 @@
 #include "utils/logger.h"
 #include "reimpl/pthr.h"
 
+int sub_52860(int a1)
+{
+    debugPrintf("sub_52860(%d)",a1);
+    return 0;
+}
+
 static void patch_bootstrap(LdModule *mod) {
     bootstrap_mod = mod;
     // __ldModuleHookAddr(bootstrap_mod, 0x101154 + 1, (uintptr_t)&sub_101154);
+    __ldModuleHookAddr(bootstrap_mod, 0x52860 + 1, (uintptr_t)&sub_52860);
 }
 
 static void patch_libc(LdModule *mod) {

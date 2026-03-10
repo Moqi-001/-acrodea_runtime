@@ -15,7 +15,7 @@
 #ifdef USE_SCELIBC_IO
 int sceLibcHeapSize = 4 * 1024 * 1024;
 #endif
-int _newlib_heap_size_user = 256 * 1024 * 1024;
+int _newlib_heap_size_user = 192 * 1024 * 1024;
 #define SCREEN_W 960
 #define SCREEN_H 544
 so_module so_mod;
@@ -123,7 +123,7 @@ int main() {
     marketlaunch(&jni, appId, SDK_INT, Surface, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, JobjectArray);
     debugPrintf("marketlaunch over %p\n", marketlaunch);
     */
-   
+
     char* bw[0];
     launch(&jni,appId,10,0,
     "/runtime/",
