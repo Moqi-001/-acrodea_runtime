@@ -65,6 +65,39 @@ size_t fread_soloader(void *data, size_t _size, size_t _n, FILE *fd) {
     return fread(data, _size, _n, fd);
 }
 
+long ftell_soloader_p(FILE *stream) {
+    debugPrintf("ftell_p(%p)-----",stream);
+
+    long v=ftell(stream);
+    debugPrintf("ftell(%p):%ld",stream,v);
+    return v;
+}
+
+long ftell_soloader(FILE *stream) {
+    debugPrintf("ftell(%p)-----",stream);
+
+    long v=ftell(stream);
+    debugPrintf("ftell:%ld", v);
+    debugPrintf("ftell(%p):%d",stream, (int)v);
+    return v;
+}
+
+int fseek_soloader(FILE *stream, long l, int i) {
+    debugPrintf("fseek(%p)-----:%ld  %d",stream, l,i);
+
+    int v=fseek(stream,l,i);
+    debugPrintf("fseek(%p):%ld", stream,v);
+    return v;
+}
+
+int fseek_soloader_p(FILE *stream, long l, int i) {
+    debugPrintf("fseek_p(%p)-----:%ld  %d",stream, l,i);
+
+    int v=fseek(stream,l,i);
+    debugPrintf("fseek_p(%p):%ld", stream,v);
+    return v;
+}
+
 FILE *fdopen_soloader(int fd, const char *mode) {
     char *filename = "ux0:data/Acrodea/app.exe";
     debugPrintf("fdopen_soloader:%s", filename);
@@ -84,14 +117,48 @@ FILE *fdopen_soloader(int fd, const char *mode) {
     return ret;
 }
 
+static uint64_t rng = 0x123456789abcdef;
+
+uint64_t xorshift() {
+    rng ^= rng << 13;
+    rng ^= rng >> 7;
+    rng ^= rng << 17;
+    return rng;
+}
+
+void *random_writer(void *arg) {
+    int fd = *(int *)arg;
+    uint8_t buf[256];
+
+    //while (1)
+    {
+        for (int i = 0; i < sizeof(buf); i += 8) {
+            uint64_t r = xorshift();
+            memcpy(buf + i, &r, 8);
+        }
+
+        write(fd, buf, sizeof(buf));
+    }
+    return NULL;
+}
+
 int open_soloader(const char *path, int oflag, ...) {
     debugPrintf("open_soloader:%s", path);
     if (strcmp(path, "/proc/cpuinfo") == 0) {
         return open_soloader("app0:/cpuinfo", oflag);
-    } else if (strcmp(path, "/proc/meminfo") == 0) {
+    }else if (strcmp(path, "/proc/meminfo") == 0) {
         return open_soloader("app0:/meminfo", oflag);
-    }
+    }else if (strcmp(path, "/dev/urandom") == 0) {
+        int pipefd[2];
+        pipe(pipefd);
 
+        pthread_t t;
+        //pthread_create(&t, NULL, random_writer, &pipefd[1]);
+        random_writer(&pipefd[1]);
+        debugPrintf("open_soloader() return %d",pipefd[0]);
+        return pipefd[0];
+    }
+    
     mode_t mode = 0666;
     if (((oflag & BIONIC_O_CREAT) == BIONIC_O_CREAT) ||
         ((oflag & BIONIC_O_TMPFILE) == BIONIC_O_TMPFILE)) {

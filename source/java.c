@@ -76,10 +76,15 @@ jint isUseRecord(jmethodID id, va_list args)
     return 0;
 }
 
+float Depth=0;
 jfloat stereoGetDepth(jmethodID id, va_list args)
 {
     debugPrintf("stereoGetDepth()");
-    return 1;
+    if(Depth==1)
+       Depth=0;
+    else 
+      Depth=1;
+    return Depth;
 }
 
 jobject getCommonAppDir(jmethodID id, va_list args)
@@ -295,13 +300,13 @@ jint MyHttp_destroy(jmethodID id, va_list args)
 jint getWifiState(jmethodID id, va_list args)
 {
     debugPrintf("getWifiState()");
-    return 1;
+    return 0;
 }
 
 jint getCellState(jmethodID id, va_list args)
 {
     debugPrintf("getCellState()");
-    return 1;
+    return 0;
 }
 
 jobject getShareData(jmethodID id, va_list args)
@@ -358,13 +363,15 @@ jobject getExtensonByName(jmethodID id, va_list args)
 jobject getImei(jmethodID id, va_list args)
 {
     debugPrintf("getImei()");
-    return "IMEI:";
+    //return "IMEI:358216043015106";
+    return "MACW:0026e879f969";
+    //return "IMEI:35821604301510";
 }
 
 jobject getImsi(jmethodID id, va_list args)
 {
     debugPrintf("getImsi()");
-    return "000000000000000";
+    return "358216043015106";
 }
 
 jint setProgress(jmethodID id, va_list args)
@@ -407,7 +414,7 @@ jint playVibrateTimer(jmethodID id, va_list args)
     return 0;
 }
 
-int downloadApplicationNum=1;
+int downloadApplicationNum=0;
 jobject getDownloadApplicationTypeInfoFromIndex(jmethodID id, va_list args)
 {
     int i = va_arg(args, int);
@@ -448,27 +455,14 @@ jobject getUninstallApplicationTypeInfoFromIndex(jmethodID id, va_list args)
           return "1760";
         default:
           return "";
-     }
+    }
     return "";
 }
 
 jint getUninstallApplicationCount(jmethodID id, va_list args)
 {
     debugPrintf("getUninstallApplicationCount()");
-    return 0;
-}
-
-int index=100;
-jint getDownloadApplicationInfoFromIndex(jmethodID id, va_list args)
-{
-    int i = va_arg(args, int);
-    debugPrintf("getDownloadApplicationInfoFromIndex(%d)",i);
-    if(i<downloadApplicationNum)
-    {
-        return index;
-    }
-    
-    return -1;
+    return uninstallApplicationNum;
 }
 
 jint applicationDownloadGetPauseStatus(jmethodID id, va_list args)
@@ -481,6 +475,31 @@ jint applicationDownloadGetNetowrkPauseStatus(jmethodID id, va_list args)
 {
     debugPrintf("applicationDownloadGetNetowrkPauseStatus()");
     return 0;
+}
+
+int index=0;
+jint getDownloadApplicationInfoFromIndex(jmethodID id, va_list args)
+{
+    int i = va_arg(args, int);
+    debugPrintf("getDownloadApplicationInfoFromIndex(%d)",i);
+    return -1;
+
+    if(i<downloadApplicationNum)
+    {
+        if(index>=100)
+        {
+          //Install(&jni,0,"/runtime/","/RuntimeApps/","/RuntimeApps/","","","");
+          index=0;
+        }
+        else 
+        {
+           index+=20;
+        }
+        
+        return index;
+    }
+    
+    return -1;
 }
 
 jint getDownloadApplicationBodySizeFromIndex(jmethodID id, va_list args)
@@ -501,7 +520,7 @@ jint getDownloadApplicationSizeFromIndex(jmethodID id, va_list args)
     debugPrintf("getDownloadApplicationSizeFromIndex(%d)",i);
     if(i<downloadApplicationNum)
     {
-        return 100;
+        return index;
     }
     
     return -1;
@@ -511,6 +530,12 @@ jint return0(jmethodID id, va_list args)
 {
     debugPrintf("return0()");
     return 0;
+}
+
+void setCode(jmethodID id, va_list args)
+{
+    u_int32_t code = va_arg(args, u_int32_t);
+    debugPrintf("setCode(%u)",code);
 }
 
 NameToMethodID nameToMethodId[] = {
@@ -571,7 +596,8 @@ NameToMethodID nameToMethodId[] = {
     {48, "applicationDownloadGetNetowrkPauseStatus", METHOD_TYPE_INT, applicationDownloadGetNetowrkPauseStatus},
     {49, "getDownloadApplicationBodySizeFromIndex", METHOD_TYPE_INT, getDownloadApplicationBodySizeFromIndex},
     {50, "getDownloadApplicationSizeFromIndex", METHOD_TYPE_INT, getDownloadApplicationSizeFromIndex},
-    {50, "getUninstallApplicationTypeInfoFromIndex", METHOD_TYPE_INT, getUninstallApplicationTypeInfoFromIndex},
+    {51, "getUninstallApplicationTypeInfoFromIndex", METHOD_TYPE_INT, getUninstallApplicationTypeInfoFromIndex},
+    {52, "setCode", METHOD_TYPE_INT, setCode},
 };
 
 MethodsBoolean methodsBoolean[] = {};

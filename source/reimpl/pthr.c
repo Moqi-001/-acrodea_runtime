@@ -369,6 +369,11 @@ int pthread_once_soloader(volatile int *once_control, void (*init_routine)(void)
     return 0;
 }
 
+int pthread_cancel_soloader(pthread_t thread) {
+    debugPrintf("pthread_cancel_soloader");
+    return pthread_cancel(thread);
+}
+
 #ifndef MAX_TASK_COMM_LEN
 #define MAX_TASK_COMM_LEN 16
 #endif

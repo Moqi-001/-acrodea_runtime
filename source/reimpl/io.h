@@ -84,6 +84,12 @@ int readdir_r_soloader(DIR * dirp, dirent64_bionic * entry,
 
 int close_soloader(int fd);
 
+long ftell_soloader(FILE *stream);
+long ftell_soloader_p(FILE *stream);
+
+int fseek_soloader(FILE *stream, long l, int i);
+int fseek_soloader_p(FILE *stream, long l, int i);
+
 int fclose_soloader(FILE *f);
 
 int closedir_soloader(DIR *dir);

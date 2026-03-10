@@ -112,7 +112,7 @@ typedef struct LdBindingCreatext_offsettor {
 
 const char *ldGetErrorMessage(LdContext *context);
 void       *ldModuleGetEntryPoint(LdModule *mod);
-
+void ldSetErrorCode(LdContext *context, int code, const char *msg);
 int  ldModuleRelocate(LdModule *mod);
 int  ldModuleAllocAndLoadImage(LdModule *mod, const char *path, const char *err_msg);
 void ldModuleDestroyImage(LdModule *mod);

@@ -9,6 +9,7 @@
 #include "reimpl/controls.h"
 #include "utils/glutil.h"
 #include "utils/logger.h"
+#include "patch.h"
 
 #define RES_PATH "/com.acrodea.gamecenter/res"
 
@@ -38,6 +39,7 @@ int (*marketlaunch)(void *, int, int, int, int, int, int, int, int, int, int, in
 int (*launch)(void *, int, int, int, int, int, int, int, char, int, int, int);
 int (*surfaceChanged)(void *, int, int, int);
 int (*extensionInit)(void *, int, int);
+int (*mediaManagerInit)(void);
 
 jobjectArray JobjectArray;
 
@@ -71,32 +73,41 @@ int main() {
     launch       = (void *)(LOAD_ADDRESS + 0x413F9);
     surfaceChanged = (void *)(LOAD_ADDRESS + 0x40291);
     extensionInit = (void *)(LOAD_ADDRESS + 0x41221);
+    mediaManagerInit = (void *)(LOAD_ADDRESS + 0x41285);
 
     extensionInit(&jni,0,"");
     debugPrintf("extensionInit over \n");
+
+    mediaManagerInit();
+    debugPrintf("mediaManagerInit over \n");
 
     debugPrintf("marketlaunch start %p\n", marketlaunch);
     char *appId   = "com.acrodea.gamecenter";
     int   SDK_INT = 10;
     int   Surface = 0;
     char *a5      = "/runtime/";
-    char *a6      = "/com.acrodea.vividruntime.launcher";
-    char *a7      = "/RuntimeApps/";
-    char *a8      = "1760";
+    char *a6      = "/data/app/com.acrode.vividruntime.launcher-1.apk";
+    //char *a6      = "/data/app/com.acrodea.vividruntime.launcher-1.apk";
+    char *a7      = "/assets/";
+    char *a8      = "com.acrodea.gamecenter";
     char *a9      = "/lib/com.acrodea.gamecenter/app.exe";
-    char *a10     = "/com.acrodea.gamecenter/res";
-    char *a11     = "/com.acrodea.gamecenter/data";
+    char *a10     = "/RuntimeApps";
+    char *a11     = "/com.acrodea.gamecenter/res";
     char *a12     = "/com.acrodea.gamecenter/.tmp";
-    int   a13     = 1;
-    char *a14     = "from_manager:log_print";
-    char *a15[]   = {"http://","http://","boot_from=1760"};
+    int   a13     = 0;
+    //char *a14     = "from_manager:log_print";
+    char *a14     = "";
+    char *a15[]   = {"http://","http://"};
     //int   len     = sizeof(a15);
-    int   len     = 3;
+    int   len     = 2;
     
     JobjectArray  = NewObjectArray(&jni, len, "a15", NULL);
     for (size_t i = 0; i < len; i++) {
         SetObjectArrayElement(&jni, JobjectArray, i, a15[i]);
     }
+
+    FocusChanged(&jni,1);
+    debugPrintf("FocusChanged over\n");
 
     surfaceChanged(NULL,0,SCREEN_W,SCREEN_H);
     debugPrintf("surfaceChanged over %p\n", surfaceChanged);
@@ -104,11 +115,20 @@ int main() {
     SceUID thid = sceKernelCreateThread("controls_thread", (SceKernelThreadEntry)controls_thread, 0x40,2* 128 * 1024, 0, 0, NULL);
     sceKernelStartThread(thid, 0, NULL);
 
-    marketlaunch(&jni, appId, SDK_INT, Surface, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, JobjectArray);
-    debugPrintf("marketlaunch over %p\n", marketlaunch);
-
-    //launch(&jni,appId,10,0,"/runtime/","/com.acrodea.vividruntime.launcher","/RuntimeApps", "1760",a13,"from_manager:log_print",0,0);
-    //debugPrintf("launch over %p\n",launch);
+    //marketlaunch(&jni, appId, SDK_INT, Surface, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, JobjectArray);
+    //debugPrintf("marketlaunch over %p\n", marketlaunch);
+    
+    char* bw[0];
+    launch(&jni,appId,15,0,
+    "/runtime/",
+    "/data/app/com.acrodea.vividruntime.launcher-1.apk",
+    "/RuntimeApps", 
+    "1760",
+    a13,
+    "",
+    bw,
+    0);
+    debugPrintf("launch over %p\n",launch);
 
     // ... do some initialization
     return 0;

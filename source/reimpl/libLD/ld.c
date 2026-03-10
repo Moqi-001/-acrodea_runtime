@@ -4,6 +4,7 @@
 #include <kubridge.h>
 #include <so_util/so_util.h>
 
+#include "ld_patch.h"
 #include "config.h"
 #include "ld.h"
 #include "ld_mem.h"
@@ -23,7 +24,7 @@ void ldSetErrorCode(LdContext *context, int code, const char *msg) {
             strncpy(context->error_msg, msg, 255);
         else
             context->error_msg[0] = '\0';
-        l_debug("ldSetErrorCode: %s", context->error_msg);
+        l_debug("ldSetErrorCode: %u", context->error_code);
     }
 }
 
@@ -79,7 +80,7 @@ int ldModuleAllocAndLoadImage(LdModule *mod, const char *path, const char *err_m
         return 0;
     }
 
-    l_debug("ldModuleAllocAndLoadImage(%p): name=%s", mod, mod->mod_name);
+    l_debug("ldModuleAllocAndLoadImage(%p,%s): name=%s", mod,path, mod->mod_name);
 
     load_addr        = LOAD_ADDRESS;
     mem_context      = NULL;
@@ -445,7 +446,7 @@ int ldModuleInitialize(LdModule *mod) {
     }
 
     mod->status = LD_MODULE_STATUS_INITIALIZED;
-
+    ldModuleInitialize_patch(mod);
     l_debug("ldModuleInitialize(%p) %s success!", mod, mod->mod_name);
     return 0;
 }

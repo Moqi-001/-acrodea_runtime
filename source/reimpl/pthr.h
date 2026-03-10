@@ -82,6 +82,7 @@ int pthread_attr_setdetachstate_soloader(pthread_attr_t_bionic *attr, int state)
 int pthread_attr_setstacksize_soloader(pthread_attr_t_bionic *attr, size_t stacksize);
 
 int pthread_setname_np_soloader(pthread_t thread, const char *thread_name);
+int pthread_cancel_soloader(pthread_t thread);
 
 int sem_init_soloader(int *sem, int pshared, unsigned int value);
 int sem_destroy_soloader(int *sem);

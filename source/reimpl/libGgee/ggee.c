@@ -41,7 +41,7 @@ int ggeeLibExpandFile(const char *srcpath, const char *dstpath) {
 
     handle = fopen(dstpath, "wb");
     if (!handle) {
-        l_debug("fopen dstpath failed: %s\n", srcpath);
+        l_debug("fopen dstpath failed: %s\n", dstpath);
         goto FAILED;
     }
     fwrite(expanded_data, 1, expanded_size, handle);

@@ -236,6 +236,14 @@ extern void *__swbuf;
 
 extern void *__aeabi_llsl;
 
+extern void *__fini_array_end;
+//extern void *__deregister_frame_info;
+extern void *__fini_array_start;
+extern void *__init_array_end;
+extern void *__init_array_start;
+//extern void *__register_frame_info;
+extern void *__preinit_array_start;
+
 extern const char  *BIONIC_ctype_;
 extern const short *BIONIC_tolower_tab_;
 extern const short *BIONIC_toupper_tab_;
@@ -282,6 +290,36 @@ int libandroidfw(void) {
 
 int libutils(void) {
     l_debug("libutils");
+    return 0;
+}
+
+int _ZNK7android9ZipFileRO12getEntryInfoEPvPiPlS3_S3_S3_S3_(void) {
+    l_debug("_ZNK7android9ZipFileRO12getEntryInfoEPvPiPlS3_S3_S3_S3_");
+    return 0;
+}
+
+int _ZNK7android9ZipFileRO12getEntryInfoEPvPiPjS3_PlS4_S4_(void) {
+    l_debug("_ZNK7android9ZipFileRO12getEntryInfoEPvPiPjS3_PlS4_S4_");
+    return 0;
+}
+
+int _ZNK7android9ZipFileRO12getEntryInfoEPvPiPjS3_PxPlS5_(void) {
+    l_debug("_ZNK7android9ZipFileRO12getEntryInfoEPvPiPjS3_PxPlS5_");
+    return 0;
+}
+
+int _ZN7android9ZipFileRO4openEPKc(void) {
+    l_debug("_ZN7android9ZipFileRO4openEPKc");
+    return 0;
+}
+
+int _ZNK7android9ZipFileRO15uncompressEntryEPvS1_(void) {
+    l_debug("_ZNK7android9ZipFileRO15uncompressEntryEPvS1_");
+    return 0;
+}
+
+int _ZNK7android9ZipFileRO15findEntryByNameEPKc(void) {
+    l_debug("_ZNK7android9ZipFileRO15findEntryByNameEPKc");
     return 0;
 }
 
@@ -340,6 +378,18 @@ int select0()
 {
     //l_debug("select0");
     return 1;
+}
+
+int _Jv_RegisterClasses()
+{
+    l_debug("_Jv_RegisterClasses");
+    return 0;
+}
+
+int main_soloader()
+{
+    l_debug("main");
+    return 0;
 }
 
 so_default_dynlib default_dynlib[] = {
@@ -693,9 +743,9 @@ so_default_dynlib default_dynlib[] = {
     {"fputs", (uintptr_t)&fputs},
     {"fread", (uintptr_t)&fread},
     {"freopen", (uintptr_t)&freopen},
-    {"fseek", (uintptr_t)&fseek},
     {"fsetpos", (uintptr_t)&fsetpos},
-    {"ftell", (uintptr_t)&ftell},
+    {"fseek", (uintptr_t)&fseek_soloader},
+    {"ftell", (uintptr_t)&ftell_soloader},
     {"fwide", (uintptr_t)&fwide},
     {"fwrite", (uintptr_t)&fwrite},
     {"getc", (uintptr_t)&getc},
@@ -1335,12 +1385,25 @@ so_default_dynlib default_dynlib[] = {
     {"_ZN7android11AudioRecord5startEv", (uintptr_t)&libmedia},
     {"_ZN7android11AudioRecord3setE14audio_source_tj14audio_format_tjiPFviPvS3_ES3_ibiNS0_13transfer_typeE19audio_input_flags_t", (uintptr_t)&libmedia},
 
-    {"_ZNK7android9ZipFileRO12getEntryInfoEPvPiPlS3_S3_S3_S3_", (uintptr_t)&libutils},
-    {"_ZNK7android9ZipFileRO12getEntryInfoEPvPiPjS3_PlS4_S4_", (uintptr_t)&libutils},
-    {"_ZNK7android9ZipFileRO12getEntryInfoEPvPiPjS3_PxPlS5_", (uintptr_t)&libutils},
-    {"_ZN7android9ZipFileRO4openEPKc", (uintptr_t)&libutils},
-    {"_ZNK7android9ZipFileRO15uncompressEntryEPvS1_", (uintptr_t)&libutils},
-    {"_ZNK7android9ZipFileRO15findEntryByNameEPKc", (uintptr_t)&libutils},
+    {"_ZNK7android9ZipFileRO12getEntryInfoEPvPiPlS3_S3_S3_S3_", (uintptr_t)&_ZNK7android9ZipFileRO12getEntryInfoEPvPiPlS3_S3_S3_S3_},
+    {"_ZNK7android9ZipFileRO12getEntryInfoEPvPiPjS3_PlS4_S4_", (uintptr_t)&_ZNK7android9ZipFileRO12getEntryInfoEPvPiPjS3_PlS4_S4_},
+    {"_ZNK7android9ZipFileRO12getEntryInfoEPvPiPjS3_PxPlS5_", (uintptr_t)&_ZNK7android9ZipFileRO12getEntryInfoEPvPiPjS3_PxPlS5_},
+    {"_ZN7android9ZipFileRO4openEPKc", (uintptr_t)&_ZN7android9ZipFileRO4openEPKc},
+    {"_ZNK7android9ZipFileRO15uncompressEntryEPvS1_", (uintptr_t)&_ZNK7android9ZipFileRO15uncompressEntryEPvS1_},
+    {"_ZNK7android9ZipFileRO15findEntryByNameEPKc", (uintptr_t)&_ZNK7android9ZipFileRO15findEntryByNameEPKc},
+
+    {"__init_array_start", (uintptr_t)&__init_array_start},
+    {"__init_array_end", (uintptr_t)&__init_array_end},
+    {"__fini_array_start", (uintptr_t)&__fini_array_start},
+    {"__fini_array_end", (uintptr_t)&__fini_array_end},
+    //{"__deregister_frame_info", (uintptr_t)&__deregister_frame_info},
+    {"__preinit_array_start", (uintptr_t)&__preinit_array_start},
+    //{"__register_frame_info", (uintptr_t)&__register_frame_info},
+
+    {"_Jv_RegisterClasses", (uintptr_t)&_Jv_RegisterClasses},
+    {"main", (uintptr_t)&main_soloader},
+    {"pthread_cancel", (uintptr_t)&pthread_cancel_soloader},
+
 };
 
 void resolve_imports(so_module *mod) {
