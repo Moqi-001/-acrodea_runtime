@@ -67,6 +67,10 @@ typedef struct __attribute__((__packed__)) dirent64_bionic {
     char d_name[256]; // 256 bytes // offset 0x13
 } dirent64_bionic;
 
+long ftell_soloader(FILE *stream);
+
+int fseek_soloader(FILE *stream, long l, int i);
+
 int open_soloader(const char * path, int oflag, ...);
 
 FILE * fopen_soloader(const char * filename, const char * mode);

@@ -165,6 +165,18 @@ void jniTrackerAssignAttribute(jmethodID id, va_list args)
     debugPrintf("jniTrackerAssignAttribute(%s)", value);
 }
 
+jobject getImei(jmethodID id, va_list args)
+{
+    debugPrintf("getImei()");
+    return "MACW:0026e879f969";
+}
+
+void setMessage(jmethodID id, va_list args)
+{
+    const char *value = va_arg(args, char *);
+    debugPrintf("setMessage(%s)",value);
+}
+
 typedef struct {
     int i;
     jstring str;
@@ -325,6 +337,9 @@ NameToMethodID nameToMethodId[] = {
     {23, "setUserPtr", METHOD_TYPE_INT, MyHttp_obj_setUserPtr},
     {24, "connect", METHOD_TYPE_INT, MyHttp_obj_connect},
     {25, "destroy", METHOD_TYPE_INT, MyHttp_destroy},
+    
+    {26, "getImei", METHOD_TYPE_INT, getImei},
+    {27, "setMessage", METHOD_TYPE_INT, setMessage},
 };
 
 MethodsBoolean methodsBoolean[] = {};

@@ -84,12 +84,52 @@ FILE *fdopen_soloader(int fd, const char *mode) {
     return ret;
 }
 
+long ftell_soloader(FILE *stream) {
+    long v=ftell(stream);
+    debugPrintf("ftell(%p) return:%ld",stream,v);
+    return v;
+}
+
+int fseek_soloader(FILE *stream, long l, int i) {
+    int v=fseek(stream,l,i);
+    debugPrintf("fseek(%p,%ld,%d) return:%d",stream, l,i,v);
+    return v;
+}
+
+static uint64_t rng = 0x123456789abcdef;
+
+uint64_t xorshift() {
+    rng ^= rng << 13;
+    rng ^= rng >> 7;
+    rng ^= rng << 17;
+    return rng;
+}
+
+void *random_writer(void *arg) {
+    int fd = *(int *)arg;
+    uint8_t buf[256];
+    for (int i = 0; i < sizeof(buf); i += 8) 
+    {
+        uint64_t r = xorshift();
+        memcpy(buf + i, &r, 8);
+    }
+
+    write(fd, buf, sizeof(buf));
+    return NULL;
+}
+
 int open_soloader(const char *path, int oflag, ...) {
     debugPrintf("open_soloader:%s", path);
     if (strcmp(path, "/proc/cpuinfo") == 0) {
         return open_soloader("app0:/cpuinfo", oflag);
     } else if (strcmp(path, "/proc/meminfo") == 0) {
         return open_soloader("app0:/meminfo", oflag);
+    }else if (strcmp(path, "/dev/urandom") == 0) {
+        int pipefd[2];
+        pipe(pipefd);
+        random_writer(&pipefd[1]);
+        debugPrintf("open_soloader() return %d",pipefd[0]);
+        return pipefd[0];
     }
 
     mode_t mode = 0666;

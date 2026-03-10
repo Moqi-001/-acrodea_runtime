@@ -82,6 +82,7 @@ add_executable(${CMAKE_PROJECT_NAME}
   source/reimpl/libGgee/ggee.c
   source/reimpl/libKD/kd.c
   source/reimpl/libLD/ld.c
+  source/reimpl/libLD/ld_patch.c
   source/reimpl/libLD/ld_mem.c
   source/reimpl/bits/_ctype.c
   source/reimpl/egl.c

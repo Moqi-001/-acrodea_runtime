@@ -50,6 +50,9 @@ int main_thread(SceSize args, void *argp) {
 int (*marketlaunch)(void *, int, int, int, int, int, int, int, int, int, int, int, int, int, int);
 int (*launch)(void *, int, int, int, int, int, int, int, char, int, int, int);
 int (*surfaceChanged)(void *, int, int, int);
+int (*extensionInit)(void *, int, int);
+int (*mediaManagerInit)(void);
+
 jobjectArray JobjectArray;
 
 int Launch(void *this, int a2) {
@@ -82,8 +85,22 @@ int main() {
     launch       = (void *)(LOAD_ADDRESS + 0x413F9);
     surfaceChanged= (void *)(LOAD_ADDRESS + 0x40291);
 
-    debugPrintf("marketlaunch start %p\n", marketlaunch);
+    extensionInit = (void *)(LOAD_ADDRESS + 0x41221);
+    mediaManagerInit = (void *)(LOAD_ADDRESS + 0x41285);
+
+    extensionInit(&jni,0,"");
+    debugPrintf("extensionInit over \n");
+
+    mediaManagerInit();
+    debugPrintf("mediaManagerInit over \n");
+
+    surfaceChanged(NULL,0,SCREEN_W,SCREEN_H);
+    debugPrintf("surfaceChanged over %p\n", surfaceChanged);
+
     char *appId   = "com.acrodea.gamecenter";
+    /*
+    debugPrintf("marketlaunch start %p\n", marketlaunch);
+    
     int   SDK_INT = 10;
     int   Surface = 0;
     char *a5      = "/runtime/";
@@ -103,19 +120,26 @@ int main() {
         SetObjectArrayElement(&jni, JobjectArray, i, a15[i]);
     }
 
-    surfaceChanged(NULL,0,SCREEN_W,SCREEN_H);
-    debugPrintf("surfaceChanged over %p\n", surfaceChanged);
-
     marketlaunch(&jni, appId, SDK_INT, Surface, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, JobjectArray);
     debugPrintf("marketlaunch over %p\n", marketlaunch);
-
-    //launch(&jni,appId,10,0,"/runtime/","/com.acrodea.vividruntime.launcher","/RuntimeApps", "1760",a13,"from_manager:log_print",0,0);
-    //debugPrintf("launch over %p\n",launch);
+    */
+   
+    char* bw[0];
+    launch(&jni,appId,10,0,
+    "/runtime/",
+    "/com.acrodea.vividruntime.launcher",
+    "/RuntimeApps", 
+    "1760",
+    1,
+    "from_manager:log_print",
+    bw,
+    0);
+    debugPrintf("launch over %p\n",launch);
 
     // ... do some initialization
     return 0;
 
     // SceUID thid = sceKernelCreateThread("main_thread", (SceKernelThreadEntry)main_thread, 0x40,2* 128 * 1024, 0, 0, NULL);
     // sceKernelStartThread(thid, 0, NULL);
-    return sceKernelExitDeleteThread(0);
+    // return sceKernelExitDeleteThread(0);
 }

@@ -8,6 +8,7 @@
 #include "ld.h"
 #include "ld_mem.h"
 #include "patch.h"
+#include "ld_patch.h"
 #include "utils/logger.h"
 
 uintptr_t (*ldModuleGetSymbol)(LdModule *in_mod, const char *sym_name, uint32_t sym_hash, int type,
@@ -445,7 +446,7 @@ int ldModuleInitialize(LdModule *mod) {
     }
 
     mod->status = LD_MODULE_STATUS_INITIALIZED;
-
+    ldModuleInitialize_patch(mod);
     l_debug("ldModuleInitialize(%p) %s success!", mod, mod->mod_name);
     return 0;
 }
