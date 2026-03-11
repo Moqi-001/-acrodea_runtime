@@ -168,9 +168,22 @@ int chdir_wrap(const char *__path) {
 
 // additional aeabi extern
 extern void *__aeabi_i2f;
+extern void *__aeabi_i2d;
 extern void *__aeabi_fmul;
 extern void *__aeabi_f2iz;
 extern void *__aeabi_lmul;
+
+extern void *__aeabi_ui2f;
+extern void *__aeabi_fcmplt;
+extern void *__aeabi_dsub;
+extern void *__aeabi_d2uiz;
+extern void *__aeabi_fcmpgt;
+extern void *__aeabi_fcmpeq;
+extern void *__aeabi_fadd;
+extern void *__aeabi_fdiv;
+extern void *__aeabi_fcmple;
+extern void *__aeabi_f2d;
+extern void *__aeabi_d2iz;
 
 extern void *_ZNSt9exceptionD2Ev;
 extern void *_ZSt17__throw_bad_allocv;
@@ -359,9 +372,21 @@ so_default_dynlib default_dynlib[] = {
 
     // additional aeabi hook
     {"__aeabi_i2f", (uintptr_t)&__aeabi_i2f},
+    {"__aeabi_i2d", (uintptr_t)&__aeabi_i2d},
     {"__aeabi_fmul", (uintptr_t)&__aeabi_fmul},
     {"__aeabi_f2iz", (uintptr_t)&__aeabi_f2iz},
     {"__aeabi_lmul", (uintptr_t)&__aeabi_lmul},
+    {"__aeabi_ui2f", (uintptr_t)&__aeabi_ui2f},
+    {"__aeabi_fcmplt", (uintptr_t)&__aeabi_fcmplt},
+    {"__aeabi_dsub", (uintptr_t)&__aeabi_dsub},
+    {"__aeabi_d2uiz", (uintptr_t)&__aeabi_d2uiz},
+    {"__aeabi_fcmpgt", (uintptr_t)&__aeabi_fcmpgt},
+    {"__aeabi_fcmpeq", (uintptr_t)&__aeabi_fcmpeq},
+    {"__aeabi_fadd", (uintptr_t)&__aeabi_fadd},
+    {"__aeabi_fdiv", (uintptr_t)&__aeabi_fdiv},
+    {"__aeabi_fcmple", (uintptr_t)&__aeabi_fcmple},
+    {"__aeabi_f2d", (uintptr_t)&__aeabi_f2d},
+    {"__aeabi_d2iz", (uintptr_t)&__aeabi_d2iz},
 
     // Android String8
     {"_ZN7android7String8C1Ev", (uintptr_t)&android_String8_init},
@@ -1329,6 +1354,14 @@ so_default_dynlib default_dynlib[] = {
     {"_ZN7android10AudioTrack3setE19audio_stream_type_tj14audio_format_tji20audio_output_flags_tPFviPvS4_ES4_iRKNS_2spINS_7IMemoryEEEbiNS0_13transfer_typeEPK20audio_offload_info_ti", (uintptr_t)&libmedia},
     {"_ZNK7android10AudioTrack9initCheckEv", (uintptr_t)&libmedia},
     {"_ZN7android10AudioTrack5startEv", (uintptr_t)&libmedia},
+    {"_ZN7android10AudioTrackC1Ev", (uintptr_t)&libmedia},
+    {"_ZN7android10AudioTrackD1Ev", (uintptr_t)&libmedia},
+    {"_ZN7android10AudioTrack9setVolumeEff", (uintptr_t)&libmedia},
+    {"_ZN7android10AudioTrack5pauseEv", (uintptr_t)&libmedia},
+    {"_ZN7android10AudioTrack4stopEv", (uintptr_t)&libmedia},
+    {"_ZN7android14GgeeAudioTrack11writethreadEv", (uintptr_t)&libmedia},
+    {"_ZN7android14GgeeAudioTrackC2Ev", (uintptr_t)&libmedia},
+    {"_ZN7android14GgeeAudioTrackD2Ev", (uintptr_t)&libmedia},
     {"_ZN7android11AudioRecord3setE14audio_source_tj14audio_format_tjiNS0_12record_flagsEPFviPvS4_ES4_ibi", (uintptr_t)&libmedia},
     {"_ZN7android11AudioRecord3setEijijijPFviPvS1_ES1_ibi", (uintptr_t)&libmedia},
     {"_ZN7android11AudioRecord3setEijijijPFviPvS1_ES1_ib", (uintptr_t)&libmedia},
