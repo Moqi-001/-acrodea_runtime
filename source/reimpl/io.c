@@ -105,9 +105,10 @@ uint64_t xorshift() {
     return rng;
 }
 
+uint8_t buf[256];
 void *random_writer(void *arg) {
     int fd = *(int *)arg;
-    uint8_t buf[4096];
+    
     for (int i = 0; i < sizeof(buf); i += 8) 
     {
         uint64_t r = xorshift();

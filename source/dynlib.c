@@ -44,6 +44,7 @@
 #include <pngconf.h>
 #include <pnglibconf.h>
 #include <zconf.h>
+#include <sys/resource.h>
 
 #include <sqlite3/sqlite3.h>
 
@@ -65,7 +66,6 @@
 #include "reimpl/pthr.h"
 #include "reimpl/sys.h"
 #include "reimpl/time64.h"
-
 const unsigned int __page_size = PAGE_SIZE;
 
 // RefBase 的简化实现
@@ -1089,6 +1089,7 @@ so_default_dynlib default_dynlib[] = {
     {"pthread_cond_init", (uintptr_t)&pthread_cond_init_soloader},
     {"pthread_cond_signal", (uintptr_t)&pthread_cond_signal_soloader},
     {"pthread_cond_timedwait", (uintptr_t)&pthread_cond_timedwait_soloader},
+    {"pthread_cond_timedwait_relative_np", (uintptr_t)&pthread_cond_timedwait_soloader},
     {"pthread_cond_wait", (uintptr_t)&pthread_cond_wait_soloader},
 
     {"pthread_create", (uintptr_t)&pthread_create_soloader},
@@ -1117,6 +1118,8 @@ so_default_dynlib default_dynlib[] = {
     {"pthread_setname_np", (uintptr_t)&pthread_setname_np_soloader},
     {"pthread_setschedparam", (uintptr_t)&pthread_setschedparam_soloader},
     {"pthread_setspecific", (uintptr_t)&pthread_setspecific},
+    {"pthread_sigmask", (uintptr_t)&ret0},
+
     {"pthread_sigmask", (uintptr_t)&ret0},
 
     {"sem_destroy", (uintptr_t)&sem_destroy_soloader},
@@ -1289,6 +1292,9 @@ so_default_dynlib default_dynlib[] = {
 
     // Locale
     {"setlocale", (uintptr_t)&setlocale},
+
+    // Resource
+    {"setpriority", (uintptr_t)&setpriority},
 
     // zlib
     // { "adler32", (uintptr_t)&adler32 },

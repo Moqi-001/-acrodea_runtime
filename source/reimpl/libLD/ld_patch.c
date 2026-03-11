@@ -17,16 +17,28 @@ int sub_52860(int a1)
     return 0;
 }
 
+void* objc_calloc(size_t a1,size_t a2)
+{
+    debugPrintf("objc_calloc(%u,%u)",a1,a2);
+    void* p= calloc(a1,a2);
+    debugPrintf("objc_calloc() retutn:%p",p);
+
+    return p;
+}
+
 static void patch_bootstrap(LdModule *mod) {
     bootstrap_mod = mod;
     // __ldModuleHookAddr(bootstrap_mod, 0x101154 + 1, (uintptr_t)&sub_101154);
     __ldModuleHookAddr(bootstrap_mod, 0x52860 + 1, (uintptr_t)&sub_52860);
 }
 
+static void patch_libobjc(LdModule *mod) {
+    __ldModuleHookSymbol(mod, "objc_calloc", (uintptr_t)&objc_calloc);
+}
+
 static void patch_libc(LdModule *mod) {
     __ldModuleHookSymbol(mod, "fseek", (uintptr_t)&fseek_soloader);
     __ldModuleHookSymbol(mod, "ftell", (uintptr_t)&ftell_soloader);
-
     /*
     __ldModuleHookSymbol(mod, "fopen", (uintptr_t)&fopen_soloader);
     __ldModuleHookSymbol(mod, "fread", (uintptr_t)&fread);
@@ -56,6 +68,8 @@ void ldModuleInitialize_patch(LdModule *mod) {
         patch_bootstrap(mod);
     } else if (strcmp(mod->mod_name, "libc.so") == 0) {
         patch_libc(mod);
+    }else if (strcmp(mod->mod_name, "libobjc.so") == 0) {
+        patch_libobjc(mod);
     }
 }
 

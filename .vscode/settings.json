@@ -49,6 +49,8 @@
         "ld_mem.h": "c",
         "ld.h": "c",
         "ld_patch.h": "c",
-        "patch.h": "c"
+        "patch.h": "c",
+        "time.h": "c",
+        "resource.h": "c"
     }
 }

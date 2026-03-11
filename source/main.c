@@ -15,7 +15,7 @@
 #ifdef USE_SCELIBC_IO
 int sceLibcHeapSize = 4 * 1024 * 1024;
 #endif
-int _newlib_heap_size_user = 192 * 1024 * 1024;
+int _newlib_heap_size_user = 128 * 1024 * 1024;
 #define SCREEN_W 960
 #define SCREEN_H 544
 so_module so_mod;
@@ -52,6 +52,7 @@ int (*launch)(void *, int, int, int, int, int, int, int, char, int, int, int);
 int (*surfaceChanged)(void *, int, int, int);
 int (*extensionInit)(void *, int, int);
 int (*mediaManagerInit)(void);
+int (*focusChanged)(void *, int, int);
 
 jobjectArray JobjectArray;
 
@@ -84,6 +85,7 @@ int main() {
     marketlaunch = (void *)(LOAD_ADDRESS + 0x416CD);
     launch       = (void *)(LOAD_ADDRESS + 0x413F9);
     surfaceChanged= (void *)(LOAD_ADDRESS + 0x40291);
+    focusChanged = (void *)(LOAD_ADDRESS + 0x40269);
 
     extensionInit = (void *)(LOAD_ADDRESS + 0x41221);
     mediaManagerInit = (void *)(LOAD_ADDRESS + 0x41285);
@@ -93,6 +95,9 @@ int main() {
 
     mediaManagerInit();
     debugPrintf("mediaManagerInit over \n");
+
+    int ret = focusChanged(jni,0,1);
+    debugPrintf("FocusChanged return %p", ret);
 
     surfaceChanged(NULL,0,SCREEN_W,SCREEN_H);
     debugPrintf("surfaceChanged over %p\n", surfaceChanged);
