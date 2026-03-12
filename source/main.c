@@ -144,6 +144,4 @@ int main() {
 
     // ... do some initialization
     return 0;
-
-    // return sceKernelExitDeleteThread(0);
 }

@@ -155,16 +155,16 @@ void controls_poll() {
             if (lastX[i] == -1 || lastY[i] == -1) {
                 debugPrintf("touchdown x %i y %i \n", x, y);
                 debugPrintf("touch.reportNum %d \n",touch.reportNum);
-                nativeOnTouchPress(&jni, NULL, 0, x, y, i==0);
+                nativeOnTouchPress(&jni, NULL, i==0, x, y, 0);
             }
             else if (lastX[i] != x || lastY[i] != y)
-                nativeOnTouchMove(&jni, NULL, 0, x, y);
+                nativeOnTouchMove(&jni, NULL, i==0, x, y);
             lastX[i] = x;
             lastY[i] = y;
             reportNum=touch.reportNum;
         } else {
             if (lastX[i] != -1 || lastY[i] != -1)
-                nativeOnTouchRelease(&jni, NULL, 0,lastX[i], lastY[i],i==0);
+                nativeOnTouchRelease(&jni, NULL, i==0,lastX[i], lastY[i],0);
             lastX[i] = -1;
             lastY[i] = -1;
         }
