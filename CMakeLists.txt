@@ -27,11 +27,6 @@ set(SO_PATH "${DATA_PATH}libacrodea_runtime.so" CACHE STRING "Path to .so")
 
 add_definitions(-DDATA_PATH="${DATA_PATH}" -DSO_PATH="${SO_PATH}")
 
-option(USE_SCELIBC_IO "Use SceLibcBridge for IO and some other std functions" OFF)
-if (USE_SCELIBC_IO)
-  add_definitions(-DUSE_SCELIBC_IO)
-endif()
-
 #add_definitions(-DDEBUG_FILE)
 
 set(SHADER_FORMAT "CG" CACHE STRING "Preferred shader format (one of 'GLSL', 'CG', 'GXP')")
@@ -102,26 +97,26 @@ add_executable(${CMAKE_PROJECT_NAME}
   source/utils/settings.c
   source/utils/utils.c
 
-  lib/falso_jni/FalsoJNI.c
-  lib/falso_jni/FalsoJNI_ImplBridge.c
-  lib/falso_jni/FalsoJNI_Logger.c
-  lib/so_util/so_util.c
-  lib/fios/fios.c
-  lib/sha1/sha1.c
-  lib/md5/md5.c
-)
-
-if (USE_SCELIBC_IO)
-  add_subdirectory(lib/libc_bridge)
-  add_dependencies(${CMAKE_PROJECT_NAME} SceLibcBridge)
-endif()
-
-target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM
-  PUBLIC ${CMAKE_SOURCE_DIR}/lib
+  deps/falso_jni/FalsoJNI.c
+  deps/falso_jni/FalsoJNI_ImplBridge.c
+  deps/falso_jni/FalsoJNI_Logger.c
+  deps/so_util/so_util.c
+  deps/sha1/sha1.c
+  deps/md5/md5.c
 )
 
 target_include_directories(${CMAKE_PROJECT_NAME}
   PUBLIC ${CMAKE_SOURCE_DIR}/source
+)
+
+target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM
+  PUBLIC ${CMAKE_SOURCE_DIR}/source
+  PUBLIC ${CMAKE_SOURCE_DIR}/libs/include
+  PUBLIC ${CMAKE_SOURCE_DIR}/deps
+)
+
+target_link_directories (${CMAKE_PROJECT_NAME}
+  PUBLIC ${CMAKE_SOURCE_DIR}/libs/lib
 )
 
 target_link_libraries(${CMAKE_PROJECT_NAME}
@@ -129,19 +124,15 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
   stdc++
   vitaGL
   vitashark
-  SceShaccCgExt
-  taihen_stub
-  SceShaccCg_stub
   z
   m
   png16
-  ScePgf_stub
+  sqlite3
   mathneon
+  SceShaccCgExt
+  SceShaccCg_stub
+  taihen_stub
   kubridge_stub
-  ${CMAKE_SOURCE_DIR}/lib_stub/vitaSQLite3.a
-  # ${CMAKE_BINARY_DIR}/lib/libc_bridge/stubs/libSceLibcBridge_stub.a
-  ${CMAKE_SOURCE_DIR}/lib_stub/libSceLibcBridge_stub.a
-  # SceLibcBridge_stub
   SceHid_stub
   SceTouch_stub
   SceMotion_stub

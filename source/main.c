@@ -12,9 +12,6 @@
 
 #define RES_PATH "/com.acrodea.gamecenter/res"
 
-#ifdef USE_SCELIBC_IO
-int sceLibcHeapSize = 4 * 1024 * 1024;
-#endif
 int _newlib_heap_size_user = 128 * 1024 * 1024;
 #define SCREEN_W 960
 #define SCREEN_H 544

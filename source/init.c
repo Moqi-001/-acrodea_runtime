@@ -10,7 +10,6 @@
 #include <string.h>
 
 #include <falso_jni/FalsoJNI.h>
-#include <fios/fios.h>
 #include <psp2/appmgr.h>
 #include <psp2/apputil.h>
 #include <psp2/kernel/clib.h>
@@ -46,11 +45,6 @@ void soloader_init_all() {
     scePowerSetBusClockFrequency(222);
     scePowerSetGpuClockFrequency(222);
     scePowerSetGpuXbarClockFrequency(166);
-
-#ifdef USE_SCELIBC_IO
-    if (fios_init(DATA_PATH) == 0)
-        l_success("FIOS initialized.");
-#endif
 
     if (!module_loaded("kubridge")) {
         l_fatal("kubridge is not loaded.");

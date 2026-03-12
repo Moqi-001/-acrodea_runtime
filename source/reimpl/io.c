@@ -17,10 +17,6 @@
 #include <sys/stat.h>
 #include <sys/unistd.h>
 
-#ifdef USE_SCELIBC_IO
-#include <libc_bridge/libc_bridge.h>
-#endif
-
 #include "utils/logger.h"
 #include "utils/utils.h"
 
@@ -40,11 +36,7 @@ void replace(char str[], char old, char new, int count) {
 FILE *fopen_soloader(const char *filename, const char *mode) {
     debugPrintf("fopen_soloader:%s", filename);
     // TODO: 判断文件名称, 帮他引导到 DATA_PATH/filename 下去 open
-#ifdef USE_SCELIBC_IO
-    FILE *ret = sceLibcBridge_fopen(filename, mode);
-#else
     FILE *ret = fopen(filename, mode);
-#endif
 
     if (ret) {
         l_debug("fopen(%s, %s): %p", filename, mode, ret);
@@ -68,12 +60,8 @@ size_t fread_soloader(void *data, size_t _size, size_t _n, FILE *fd) {
 FILE *fdopen_soloader(int fd, const char *mode) {
     char *filename = "ux0:data/Acrodea/app.exe";
     debugPrintf("fdopen_soloader:%s", filename);
-#ifdef USE_SCELIBC_IO
-    FILE *ret = sceLibcBridge_fopen(filename, mode);
-#else
-    FILE *ret = fopen(filename, mode);
-#endif
 
+    FILE *ret = fopen(filename, mode);
     if (ret) {
         l_debug("fdopen(%s, %s): %p", filename, mode, ret);
     } else {
@@ -174,12 +162,7 @@ int stat_soloader(const char *path, stat64_bionic *buf) {
 }
 
 int fclose_soloader(FILE *f) {
-#ifdef USE_SCELIBC_IO
-    int ret = sceLibcBridge_fclose(f);
-#else
     int ret = fclose(f);
-#endif
-
     l_debug("fclose(%p): %i", f, ret);
     return ret;
 }

@@ -48,10 +48,6 @@
 
 #include <sqlite3/sqlite3.h>
 
-#ifdef USE_SCELIBC_IO
-#include <libc_bridge/libc_bridge.h>
-#endif
-
 #include "md5/md5.h"
 #include "reimpl/android/SharedBuffer.h"
 #include "reimpl/android/String8.h"
@@ -671,35 +667,6 @@ so_default_dynlib default_dynlib[] = {
     {"stat", (uintptr_t)&stat_soloader},
     {"utime", (uintptr_t)&utime},
     {"ftime", (uintptr_t)&ftime},
-
-#ifdef USE_SCELIBC_IO
-    {"fdopen", (uintptr_t)&fdopen_soloader},
-    {"feof", (uintptr_t)&sceLibcBridge_feof},
-    {"ferror", (uintptr_t)&sceLibcBridge_ferror},
-    {"fflush", (uintptr_t)&sceLibcBridge_fflush},
-    {"fgetc", (uintptr_t)&sceLibcBridge_fgetc},
-    {"fgetpos", (uintptr_t)&sceLibcBridge_fgetpos},
-    {"fgets", (uintptr_t)&sceLibcBridge_fgets},
-    {"fileno", (uintptr_t)&sceLibcBridge_fileno},
-    {"fputc", (uintptr_t)&sceLibcBridge_fputc},
-    {"fputs", (uintptr_t)&sceLibcBridge_fputs},
-    {"fread", (uintptr_t)&sceLibcBridge_fread},
-    {"freopen", (uintptr_t)&sceLibcBridge_freopen},
-    {"fseek", (uintptr_t)&sceLibcBridge_fseek},
-    {"fsetpos", (uintptr_t)&sceLibcBridge_fsetpos},
-    {"ftell", (uintptr_t)&sceLibcBridge_ftell},
-    {"fwide", (uintptr_t)&sceLibcBridge_fwide},
-    {"fwrite", (uintptr_t)&sceLibcBridge_fwrite},
-    {"getc", (uintptr_t)&sceLibcBridge_getc},
-    {"getwc", (uintptr_t)&sceLibcBridge_getwc},
-    {"putc", (uintptr_t)&sceLibcBridge_putc},
-    {"putchar", (uintptr_t)&sceLibcBridge_putchar},
-    {"puts", (uintptr_t)&sceLibcBridge_puts},
-    {"putwc", (uintptr_t)&sceLibcBridge_putwc},
-    {"setvbuf", (uintptr_t)&sceLibcBridge_setvbuf},
-    {"ungetc", (uintptr_t)&sceLibcBridge_ungetc},
-    {"ungetwc", (uintptr_t)&sceLibcBridge_ungetwc},
-#else
     {"fdopen", (uintptr_t)&fdopen_soloader},
     {"feof", (uintptr_t)&feof},
     {"ferror", (uintptr_t)&ferror},
@@ -726,8 +693,6 @@ so_default_dynlib default_dynlib[] = {
     {"setvbuf", (uintptr_t)&setvbuf},
     {"ungetc", (uintptr_t)&ungetc},
     {"ungetwc", (uintptr_t)&ungetwc},
-#endif
-
     {"access", (uintptr_t)&access},
     {"basename", (uintptr_t)&basename},
     {"chdir", (uintptr_t)&chdir_wrap},
@@ -763,18 +728,10 @@ so_default_dynlib default_dynlib[] = {
     {"vswprintf", (uintptr_t)&vswprintf},
     {"printf", (uintptr_t)&sceClibPrintf},
     {"swprintf", (uintptr_t)&swprintf},
-
-#ifdef USE_SCELIBC_IO
-    {"fprintf", (uintptr_t)&sceLibcBridge_fprintf},
-    {"fscanf", (uintptr_t)&sceLibcBridge_fscanf},
-    {"sscanf", (uintptr_t)&sceLibcBridge_sscanf},
-    {"vfprintf", (uintptr_t)&sceLibcBridge_vfprintf},
-#else
     {"fprintf", (uintptr_t)&fprintf0},
     {"fscanf", (uintptr_t)&fscanf},
     {"sscanf", (uintptr_t)&sscanf},
     {"vfprintf", (uintptr_t)&vfprintf},
-#endif
 
     // EGL
     {"eglBindAPI", (uintptr_t)&eglBindAPI},
@@ -1291,16 +1248,9 @@ so_default_dynlib default_dynlib[] = {
     {"strtoull", (uintptr_t)&strtoull},
     {"strtoumax", (uintptr_t)&strtoumax},
     {"usleep", (uintptr_t)&usleep},
-
-#ifdef USE_SCELIBC_IO
-    {"qsort", (uintptr_t)&sceLibcBridge_qsort},
-    {"rand", (uintptr_t)&sceLibcBridge_rand},
-    {"srand", (uintptr_t)&sceLibcBridge_srand},
-#else
     {"qsort", (uintptr_t)&qsort},
     {"rand", (uintptr_t)&rand},
     {"srand", (uintptr_t)&srand},
-#endif
 
     // Env
     {"getenv", (uintptr_t)&getenv_soloader},
