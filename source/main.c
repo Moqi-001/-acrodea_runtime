@@ -115,8 +115,9 @@ int main() {
     SceUID thid = sceKernelCreateThread("controls_thread", (SceKernelThreadEntry)controls_thread, 0x40,2* 128 * 1024, 0, 0, NULL);
     sceKernelStartThread(thid, 0, NULL);
 
-    //marketlaunch(&jni, appId, SDK_INT, Surface, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, JobjectArray);
-    //debugPrintf("marketlaunch over %p\n", marketlaunch);
+    marketlaunch(&jni, appId, SDK_INT, Surface, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, JobjectArray);
+    debugPrintf("marketlaunch over %p\n", marketlaunch);
+    return 0;
     
     char* bw[0];
     launch(&jni,appId,15,0,
