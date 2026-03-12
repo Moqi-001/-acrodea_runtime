@@ -162,14 +162,14 @@ jmethodID getMethodIdByName(const char* name) {
     debugPrintf("GetMethodIdByName:%s",name);
     for (int i = 0; i < nameToMethodId_size() / sizeof(NameToMethodID); i++) {
         if (strcmp(name, nameToMethodId[i].name) == 0) {
-            return (jmethodID) nameToMethodId[i].id;
+            return (jmethodID) i;
         }
     }
     return NULL;
 }
 
 jobject methodObjectCall(jmethodID id, va_list args) {
-    int index=(int)id-1;
+    int index=(int)id;
     if(nameToMethodId[index].Method!=NULL)
     {
        return nameToMethodId[index].Method(id, args);
@@ -185,7 +185,7 @@ jobject methodObjectCall(jmethodID id, va_list args) {
 }
 
 void methodVoidCall(jmethodID id, va_list args) {
-    int index=(int)id-1;
+    int index=(int)id;
     if(nameToMethodId[index].Method!=NULL)
     {
        return nameToMethodId[index].Method(id, args);
@@ -200,7 +200,7 @@ void methodVoidCall(jmethodID id, va_list args) {
 }
 
 jboolean methodBooleanCall(jmethodID id, va_list args) {
-    int index=(int)id-1;
+    int index=(int)id;
     if(nameToMethodId[index].Method!=NULL)
     {
        return nameToMethodId[index].Method(id, args);
@@ -216,7 +216,7 @@ jboolean methodBooleanCall(jmethodID id, va_list args) {
 }
 
 jbyte methodByteCall(jmethodID id, va_list args) {
-    int index=(int)id-1;
+    int index=(int)id;
     if(nameToMethodId[index].Method!=NULL)
     {
        return nameToMethodId[index].Method(id, args);
@@ -232,7 +232,7 @@ jbyte methodByteCall(jmethodID id, va_list args) {
 }
 
 jshort methodShortCall(jmethodID id, va_list args) {
-    int index=(int)id-1;
+    int index=(int)id;
     if(nameToMethodId[index].Method!=NULL)
     {
        return nameToMethodId[index].Method(id, args);
@@ -259,7 +259,7 @@ jdouble methodDoubleCall(jmethodID id, va_list args) {
 }
 
 jchar methodCharCall(jmethodID id, va_list args) {
-    int index=(int)id-1;
+    int index=(int)id;
     if(nameToMethodId[index].Method!=NULL)
     {
        return nameToMethodId[index].Method(id, args);
@@ -301,7 +301,7 @@ jlong methodLongCall(jmethodID id, va_list args) {
 }
 
 jint methodIntCall(jmethodID id, va_list args) {
-    int index=(int)id-1;
+    int index=(int)id;
     if(nameToMethodId[index].Method!=NULL)
     {
        jint value=nameToMethodId[index].Method(id, args);

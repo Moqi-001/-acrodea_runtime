@@ -309,7 +309,26 @@ jint MyHttp_destroy(jmethodID id, va_list args)
     return 0;
 }
 
+jint getMutedState(jmethodID id, va_list args)
+{
+    debugPrintf("setMessage()");
+    return 0;
+}
+
+jobject getExtensonByName(jmethodID id, va_list args)
+{
+    debugPrintf("getExtensonByName()");
+    return "MyExtensionInterface";
+}
+
+jint NULLMethod(jmethodID id, va_list args)
+{
+    debugPrintf("NULLMethod()");
+    return 0;
+}
+
 NameToMethodID nameToMethodId[] = {
+    {0, "Null", METHOD_TYPE_VOID, NULLMethod},                                      // ()V
     {1, "Native_Exit", METHOD_TYPE_VOID, Native_Exit},                              // ()V
     {2, "vibrate", METHOD_TYPE_VOID, vibrate},                                      // ()V
     {3, "launchRuntime", METHOD_TYPE_VOID, launchRuntime},                          // (I)V
@@ -338,8 +357,11 @@ NameToMethodID nameToMethodId[] = {
     {24, "connect", METHOD_TYPE_INT, MyHttp_obj_connect},
     {25, "destroy", METHOD_TYPE_INT, MyHttp_destroy},
     
-    {26, "getImei", METHOD_TYPE_INT, getImei},
-    {27, "setMessage", METHOD_TYPE_INT, setMessage},
+    {26, "getImei", METHOD_TYPE_OBJECT, getImei},
+    {27, "setMessage", METHOD_TYPE_VOID, setMessage},
+    {28, "getMutedState", METHOD_TYPE_VOID, getMutedState},
+    {29, "getExtensonByName", METHOD_TYPE_OBJECT, getExtensonByName},
+
 };
 
 MethodsBoolean methodsBoolean[] = {};

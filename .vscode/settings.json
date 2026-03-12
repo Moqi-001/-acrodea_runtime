@@ -51,6 +51,7 @@
         "ld_patch.h": "c",
         "patch.h": "c",
         "time.h": "c",
-        "resource.h": "c"
+        "resource.h": "c",
+        "random": "cpp"
     }
 }

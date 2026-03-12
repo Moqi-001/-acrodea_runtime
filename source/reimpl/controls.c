@@ -7,6 +7,7 @@
 #include <falso_jni/FalsoJNI.h>
 #include "utils/logger.h"
 #include "utils/settings.h"
+#include "config.h"
 
 #define SCREEN_W 960
 #define SCREEN_H 544
@@ -69,7 +70,7 @@ float touchRx_base = 662;
 float touchRy_base = 237;
 
 int (* nativeOnTouchPress)(void *env, void *obj, int action, int x, int y, int index);
-int (* nativeOnTouchMove)(void *env, void *obj, int action, int x, int y, int index);
+int (* nativeOnTouchMove)(void *env, void *obj, int action, int x, int y);
 int (* nativeOnTouchRelease)(void *env, void *obj, int action, int x, int y, int index);
 
 // extern void (*CheckInputKey)(int keycode, int action,int repeats,int scancode);
@@ -128,9 +129,9 @@ void controls_init() {
     sceTouchSetSamplingState(SCE_TOUCH_PORT_FRONT, 1);
     sceTouchEnableTouchForce(SCE_TOUCH_PORT_FRONT);
 
-    //nativeOnTouchPress = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativeTouchPress");
-    //nativeOnTouchMove = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativeTouchMove");
-    //nativeOnTouchRelease = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativeTouchRelease");
+    nativeOnTouchPress = (void *)(LOAD_ADDRESS + 0x401D0+1);
+    nativeOnTouchMove = (void *)(LOAD_ADDRESS + 0x401FC+1);
+    nativeOnTouchRelease = (void *)(LOAD_ADDRESS + 0x401A4+1);
 }
 
 int combo1_active = 0;
@@ -152,17 +153,18 @@ void controls_poll() {
             int y = (int)((float)touch.report[i].y * (float)SCREEN_H / 1088.0f);
 
             if (lastX[i] == -1 || lastY[i] == -1) {
-                //sceClibPrintf("touchdown x %i y %i \n", x, y);
-                nativeOnTouchPress(&jni, NULL, touch.reportNum,i, x, y );
+                debugPrintf("touchdown x %i y %i \n", x, y);
+                debugPrintf("touch.reportNum %d \n",touch.reportNum);
+                nativeOnTouchPress(&jni, NULL, 0, x, y, i==0);
             }
             else if (lastX[i] != x || lastY[i] != y)
-                nativeOnTouchMove(&jni, NULL, touch.reportNum,i, x, y);
+                nativeOnTouchMove(&jni, NULL, 0, x, y);
             lastX[i] = x;
             lastY[i] = y;
             reportNum=touch.reportNum;
         } else {
             if (lastX[i] != -1 || lastY[i] != -1)
-                nativeOnTouchRelease(&jni, NULL, reportNum,i, lastX[i], lastY[i]);
+                nativeOnTouchRelease(&jni, NULL, 0,lastX[i], lastY[i],i==0);
             lastX[i] = -1;
             lastY[i] = -1;
         }
@@ -308,22 +310,22 @@ void controls_poll() {
 
         if (pressed_buttons & SCE_CTRL_UP) {
             nativeOnTouchRelease(&jni, NULL, 0, touchLx_base, touchLy_base, 20 + SCE_CTRL_UP);
-            nativeOnTouchMove(&jni, NULL, 0, touchLx_base, touchLy_base - touchLy_radius, 20 + SCE_CTRL_UP);
+            nativeOnTouchMove(&jni, NULL, 0, touchLx_base, touchLy_base - touchLy_radius);
         }
 
         if (pressed_buttons & SCE_CTRL_DOWN) {
             nativeOnTouchRelease(&jni, NULL, 0, touchLx_base, touchLy_base, 20 + SCE_CTRL_DOWN);
-            nativeOnTouchMove(&jni, NULL, 0, touchLx_base, touchLy_base + touchLy_radius, 20 + SCE_CTRL_DOWN);
+            nativeOnTouchMove(&jni, NULL, 0, touchLx_base, touchLy_base + touchLy_radius);
         }
 
         if (pressed_buttons & SCE_CTRL_LEFT) {
             nativeOnTouchRelease(&jni, NULL, 0, touchLx_base, touchLy_base, 20 + SCE_CTRL_LEFT);
-            nativeOnTouchMove(&jni, NULL, 0, touchLx_base - touchLx_radius, touchLy_base, 20 + SCE_CTRL_LEFT);
+            nativeOnTouchMove(&jni, NULL, 0, touchLx_base - touchLx_radius, touchLy_base);
         }
 
         if (pressed_buttons & SCE_CTRL_RIGHT) {
             nativeOnTouchRelease(&jni, NULL, 0, touchLx_base, touchLy_base, 20 + SCE_CTRL_RIGHT);
-            nativeOnTouchMove(&jni, NULL, 0, touchLx_base + touchLx_radius, touchLy_base, 20 + SCE_CTRL_RIGHT);
+            nativeOnTouchMove(&jni, NULL, 0, touchLx_base + touchLx_radius, touchLy_base);
         }
 
         if (released_buttons & SCE_CTRL_UP) {
@@ -382,7 +384,7 @@ void controls_poll() {
 
     if ((fabsf(rx) > 0.f || fabsf(ry) > 0.f) && !rDown) {
         nativeOnTouchRelease(&jni, NULL, 1, touchRx_base, touchRy_base, fingerIdR+1);
-        nativeOnTouchMove(&jni, NULL, 2, touchRx, touchRy, fingerIdR+1);
+        nativeOnTouchMove(&jni, NULL, 2, touchRx, touchRy);
         rDown = 1;
     }
 
