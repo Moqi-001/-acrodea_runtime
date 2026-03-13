@@ -10,6 +10,7 @@
 #include "reimpl/libKD/kd.h"
 #include "reimpl/libLD/ld.h"
 #include "utils/logger.h"
+#include "reimpl/controls.h"
 
 #define _DWORD uintptr_t
 extern so_module so_mod;
@@ -86,7 +87,8 @@ void plugin_gles_procaddress_terminate() {
 }
 
 void so_patch(void) {
-    // Sample hook
+    so_patch_controls(&so_mod);
+
     // hook_addr((uintptr_t)so_symbol(&so_mod, "kdExit"), (uintptr_t)&kdExit);
     hook_addr((uintptr_t)so_symbol(&so_mod, "__kdMapFilename"), (uintptr_t)&__kdMapFilename);
     // hook_addr((uintptr_t)so_symbol(&so_mod, "__kdFlushICache"), (uintptr_t)&__kdFlushICache);

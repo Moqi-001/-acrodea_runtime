@@ -26,21 +26,6 @@ int controls_thread(SceSize args, void *argp) {
     {
        controls_poll();
     }
-    /*
-    int      fpsLock          = 33;
-    uint32_t last_render_time = sceKernelGetProcessTimeLow();
-    uint32_t delta            = (1000000 / (fpsLock + 1));
-
-    while (1) {
-        controls_poll();
-
-        while (sceKernelGetProcessTimeLow() - last_render_time < delta) {
-            sched_yield();
-        }
-
-        last_render_time = sceKernelGetProcessTimeLow();
-    }
-    */
 
     return 0;
 }
