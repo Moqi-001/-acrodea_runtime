@@ -46,69 +46,60 @@ void _log_print(int t, const char *fmt, ...) {
     }
     sceKernelLockLwMutex(&_log_mutex, 1, NULL);
 
+    va_list list;
+    va_start(list, fmt);
+    sceClibVsnprintf(buffer_a, sizeof(buffer_a), fmt, list);
+    va_end(list);
+
+#ifdef DEBUG_LOGFILE
+    SceUID fd = sceIoOpen(LOG_PATH, SCE_O_WRONLY | SCE_O_CREAT | SCE_O_APPEND, 0777);
+    if (fd >= 0) {
+        sceIoWrite(fd, buffer_a, strlen(buffer_a));
+        sceIoWrite(fd, "\n", 1);
+        sceIoClose(fd);
+    }
+#endif
+
     switch (t) {
         case LT_DEBUG:
-            sceClibSnprintf(buffer_a, sizeof(buffer_a), " %s• debug%s    %s\n",
-                            COLOR_PINK, COLOR_END, fmt);
+            sceClibSnprintf(buffer_b, sizeof(buffer_b), " %s• debug%s    %s\n",
+                            COLOR_PINK, COLOR_END, buffer_a);
             break;
         case LT_INFO:
-            sceClibSnprintf(buffer_a, sizeof(buffer_a), " %sℹ info%s     %s\n",
-                            COLOR_BLUE, COLOR_END, fmt);
+            sceClibSnprintf(buffer_b, sizeof(buffer_b), " %sℹ info%s     %s\n",
+                            COLOR_BLUE, COLOR_END, buffer_a);
             break;
         case LT_WARN:
-            sceClibSnprintf(buffer_a, sizeof(buffer_a), " %s⚠ warning%s  %s\n",
-                            COLOR_ORANGE, COLOR_END, fmt);
+            sceClibSnprintf(buffer_b, sizeof(buffer_b), " %s⚠ warning%s  %s\n",
+                            COLOR_ORANGE, COLOR_END, buffer_a);
             break;
         case LT_ERROR:
-            sceClibSnprintf(buffer_a, sizeof(buffer_a), " %s⨯ error%s    %s\n",
-                            COLOR_RED, COLOR_END, fmt);
+            sceClibSnprintf(buffer_b, sizeof(buffer_b), " %s⨯ error%s    %s\n",
+                            COLOR_RED, COLOR_END, buffer_a);
             break;
         case LT_FATAL:
-            sceClibSnprintf(buffer_a, sizeof(buffer_a), " %s! fatal%s    %s\n",
-                            COLOR_RED, COLOR_END, fmt);
+            sceClibSnprintf(buffer_b, sizeof(buffer_b), " %s! fatal%s    %s\n",
+                            COLOR_RED, COLOR_END, buffer_a);
             break;
         case LT_SUCCESS:
-            sceClibSnprintf(buffer_a, sizeof(buffer_a), " %s! success%s  %s\n",
-                            COLOR_GREEN, COLOR_END, fmt);
+            sceClibSnprintf(buffer_b, sizeof(buffer_b), " %s! success%s  %s\n",
+                            COLOR_GREEN, COLOR_END, buffer_a);
             break;
         case LT_WAIT:
-            sceClibSnprintf(buffer_a, sizeof(buffer_a), " %s… waiting%s  %s\n",
-                            COLOR_CYAN, COLOR_END, fmt);
+            sceClibSnprintf(buffer_b, sizeof(buffer_b), " %s… waiting%s  %s\n",
+                            COLOR_CYAN, COLOR_END, buffer_a);
             break;
         default:
+            sceClibPrintf(buffer_a);
             if (atomic_load_explicit(&_log_mutex_ready, memory_order_relaxed)) {
                 sceKernelUnlockLwMutex(&_log_mutex, 1);
             }
             return;
     }
 
-    va_list list;
-    va_start(list, fmt);
-    sceClibVsnprintf(buffer_b, sizeof(buffer_b), buffer_a, list);
-    va_end(list);
     sceClibPrintf(buffer_b);
 
     if (atomic_load_explicit(&_log_mutex_ready, memory_order_relaxed)) {
         sceKernelUnlockLwMutex(&_log_mutex, 1);
     }
-}
-
-void debugPrintf(const char *text, ...) {
-#ifdef DEBUG_FILE
-    char    string[4096];
-    va_list list;
-    va_start(list, text);
-    vsprintf(string, text, list);
-    va_end(list);
-
-    printf("%s\n", string);
-
-    SceUID fd = sceIoOpen(LOG_PATH, SCE_O_WRONLY | SCE_O_CREAT | SCE_O_APPEND, 0777);
-    if (fd >= 0) {
-        int len     = strlen(string);
-        string[len] = '\n';
-        sceIoWrite(fd, string, len + 1);
-        sceIoClose(fd);
-    }
-#endif
 }

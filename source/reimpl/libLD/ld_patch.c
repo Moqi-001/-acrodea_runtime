@@ -14,15 +14,15 @@
 
 int sub_52860(int a1)
 {
-    debugPrintf("sub_52860(%d)",a1);
+    l_debug("sub_52860(%d)",a1);
     return 0;
 }
 
 void* objc_calloc(size_t a1,size_t a2)
 {
-    debugPrintf("objc_calloc(%u,%u)",a1,a2);
+    l_debug("objc_calloc(%u,%u)",a1,a2);
     void* p= calloc(a1,a2);
-    debugPrintf("objc_calloc() retutn:%p",p);
+    l_debug("objc_calloc() retutn:%p",p);
 
     return p;
 }

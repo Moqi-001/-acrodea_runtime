@@ -7,26 +7,26 @@
 extern "C" {
 #endif
 
-typedef struct String8 String8;
+typedef struct AString8 AString8;
 
-int  android_String8_init(String8 *str8);
-int  android_String8_initFromCstring(String8 *str8, const char *s);
-int  android_String8_initFromString8(String8 *str8, const String8 *src);
-void android_String8_term(String8 *str8);
+int  AString8_construct(AString8 *self);
+int  AString8_constructFromCstr(AString8 *self, const char *cstr);
+int  AString8_constructFromOther(AString8 *self, const AString8 *other);
+void AString8_destruct(AString8 *self);
 
-int android_String8_setTo(String8 *str8, const String8 *src);
-int android_String8_setToCstring(String8 *str8, const char *s);
-int android_String8_append(String8 *str8, const String8 *src);
-int android_String8_appendCstring(String8 *str8, const char *s);
-int android_String8_appendPath(String8 *str8, const String8 *src);
-int android_String8_appendPathCstring(String8 *str8, const char *s);
-int android_String8_getPathDir(String8 *str8, const String8 *src);
-int android_String8_walkPath(String8 *str8, const String8 *src, String8 *out_remains);
-int android_String8_empty(String8 *str8);
+int AString8_setTo(AString8 *self, const AString8 *other);
+int AString8_setToCstr(AString8 *self, const char *cstr);
+int AString8_append(AString8 *self, const AString8 *other);
+int AString8_appendCstr(AString8 *self, const char *cstr);
+int AString8_appendPath(AString8 *self, const AString8 *other);
+int AString8_appendPathCstr(AString8 *self, const char *cstr);
+int AString8_getPathDir(AString8 *self, const AString8 *other);
+int AString8_walkPath(AString8 *self, const AString8 *other, AString8 *out_remains);
+int AString8_empty(AString8 *self);
 
-const char *android_String8_string(String8 *str8);
-size_t      android_String8_length(String8 *str8);
-int         android_String8_isEmpty(String8 *str8);
+const char *AString8_string(AString8 *self);
+size_t      AString8_length(AString8 *self);
+int         AString8_isEmpty(AString8 *self);
 
 #ifdef __cplusplus
 }

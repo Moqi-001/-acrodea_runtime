@@ -19,211 +19,110 @@
 #include <math.h>
 #include <netdb.h>
 #include <poll.h>
-#include <psp2/kernel/clib.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <utime.h>
 #include <wchar.h>
 #include <wctype.h>
-#include <zlib.h>
+#include <zconf.h>
 
+#include <psp2/kernel/clib.h>
+#include <sys/resource.h>
+#include <sys/signal.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/unistd.h>
 
 #include <so_util/so_util.h>
-#include <utime.h>
-
-#include "utils/glutil.h"
-#include "utils/logger.h"
-#include "utils/utils.h"
-
-#include <jerror.h>
-#include <png.h>
-#include <pngconf.h>
-#include <pnglibconf.h>
-#include <zconf.h>
-#include <sys/resource.h>
-
 #include <sqlite3/sqlite3.h>
 
 #include "md5/md5.h"
+#include "reimpl/android/asset_manager.h"
+#include "reimpl/android/AudioRecord.h"
+#include "reimpl/android/AudioTrack.h"
+#include "reimpl/android/log.h"
+#include "reimpl/android/nativehelper.h"
+#include "reimpl/android/RefBase.h"
 #include "reimpl/android/SharedBuffer.h"
 #include "reimpl/android/String8.h"
-#include "reimpl/asset_manager.h"
+#include "reimpl/android/Thread.h"
 #include "reimpl/egl.h"
 #include "reimpl/errno.h"
 #include "reimpl/io.h"
 #include "reimpl/libKD/kd.h"
 #include "reimpl/libLD/ld.h"
-#include "reimpl/log.h"
 #include "reimpl/mem.h"
 #include "reimpl/pthr.h"
 #include "reimpl/sys.h"
 #include "reimpl/time64.h"
-const unsigned int __page_size = PAGE_SIZE;
+#include "utils/glutil.h"
+#include "utils/logger.h"
+#include "utils/utils.h"
 
-// RefBase 的简化实现
-typedef struct
-{
-    int   strong_refs;
-    int   weak_refs;
-    void *extensions;
-} RefBaseImpl;
-
-// RefBase 构造函数
-void _ZN7android7RefBaseC2Ev(void *self) {
-    l_debug("_ZN7android7RefBaseC2Ev: %p", self);
-    //    RefBaseImpl* ref = (RefBaseImpl*)self;
-    //    ref->strong_refs = 0;
-    //    ref->weak_refs = 0;
-    //    ref->extensions = NULL;
-}
-
-// RefBase 析构函数
-void _ZN7android7RefBaseD2Ev(void *self) {
-    l_debug("_ZN7android7RefBaseD2Ev: %p", self);
-    //    RefBaseImpl* ref = (RefBaseImpl*)self;
-    //    if (ref->extensions) {
-    //        free(ref->extensions);
-    //    }
-}
-
-void _ZN7android7RefBase10onFirstRefEv(void *self) {
-    l_debug("_ZN7android7RefBase10onFirstRefEv: %p", self);
-}
-
-void _ZN7android7RefBase15onLastStrongRefEPKv(void *self, const void *id) {
-    l_debug("_ZN7android7RefBase15onLastStrongRefEPKv: %p, id = %d", self, id);
-}
-
-void _ZN7android7RefBase13onLastWeakRefEPKv(void *self, const void *id) {
-    l_debug("_ZN7android7RefBase13onLastWeakRefEPKv: %p, id = %d", self, id);
-}
-
-int _ZN7android7RefBase20onIncStrongAttemptedEjPKv(void *self, unsigned int flags, const void *id) {
-    l_debug("_ZN7android7RefBase20onIncStrongAttemptedEjPKv: %p, flags = %d, id = %d", self, flags, id);
-    return 1;
-}
-
-// Thread 类的完全空实现
-void _ZN7android6ThreadC2Eb(void *self, int canCallJava) {
-    l_debug("[Thread] Constructor (EMPTY): %p, canCallJava: %d", self, canCallJava);
-}
-
-void _ZN7android6ThreadD0Ev(void *self) {
-    l_debug("[Thread] D0 destructor (EMPTY): %p", self);
-}
-
-void _ZN7android6ThreadD1Ev(void *self) {
-    l_debug("[Thread] D1 destructor (EMPTY): %p", self);
-}
-
-void _ZN7android6ThreadD2Ev(void *self) {
-    l_debug("[Thread] D2 destructor (EMPTY): %p", self);
-}
-
-int _ZN7android6Thread10readyToRunEv(void *self) {
-    l_debug("[Thread] readyToRun (EMPTY): %p", self);
-    return 1;
-}
-
-void _ZN7android6Thread11requestExitEv(void *self) {
-    l_debug("[Thread] requestExit (EMPTY): %p", self);
-}
-
-int _ZN7android6Thread3runEPKcij(void *self, const char *name, int priority, size_t stack) {
-    l_debug("[Thread] run (EMPTY): %p, name: %s, priority: %d, stack: %zu",
-            self, name ? name : "NULL", priority, stack);
-    return 1;
-}
-
-typedef struct
-{
-    int ref_count;  // 简单的引用计数
-} SimpleRefBase;
-
-void _ZNK7android7RefBase9incStrongEPKv(void *self, const void *id) {
-    SimpleRefBase *ref = (SimpleRefBase *)self;
-    ref->ref_count++;
-    l_debug("[RefBase] incStrong: %p -> count=%d", self, ref->ref_count);
-}
-
-void _ZNK7android7RefBase9decStrongEPKv(void *self, const void *id) {
-    SimpleRefBase *ref = (SimpleRefBase *)self;
-    ref->ref_count--;
-    l_debug("[RefBase] decStrong: %p -> count=%d", self, ref->ref_count);
-}
-
-int chdir_wrap(const char *__path) {
-    l_debug("chdir invoke %s", __path);
-    // return chdir(__path);
-    return chdir(DATA_PATH);
-}
-
-// additional aeabi extern
-extern void *__aeabi_i2f;
-extern void *__aeabi_i2d;
-extern void *__aeabi_fmul;
-extern void *__aeabi_f2iz;
-extern void *__aeabi_lmul;
-
-extern void *__aeabi_ui2f;
-extern void *__aeabi_fcmplt;
-extern void *__aeabi_dsub;
-extern void *__aeabi_d2uiz;
-extern void *__aeabi_fcmpgt;
-extern void *__aeabi_fcmpeq;
-extern void *__aeabi_fadd;
-extern void *__aeabi_fdiv;
-extern void *__aeabi_fcmple;
-extern void *__aeabi_f2d;
-extern void *__aeabi_d2iz;
-
-extern void *_ZNSt9exceptionD2Ev;
-extern void *_ZSt17__throw_bad_allocv;
-extern void *_ZSt9terminatev;
 extern void *_ZdaPv;
 extern void *_ZdlPv;
 extern void *_Znaj;
-extern void *__cxa_allocate_exception;
-extern void *__cxa_begin_catch;
-extern void *__cxa_end_catch;
-extern void *__cxa_free_exception;
-extern void *__cxa_rethrow;
-extern void *__cxa_throw;
-extern void *__gxx_personality_v0;
-extern void *_ZNSt8bad_castD1Ev;
+extern void *_Znwj;
 extern void *_ZTISt8bad_cast;
 extern void *_ZTISt9exception;
+extern void *_ZNSt8bad_castD1Ev;
+extern void *_ZNSt9exceptionD2Ev;
+extern void *_ZSt9terminatev;
+extern void *_ZSt17__throw_bad_allocv;
 extern void *_ZTVN10__cxxabiv117__class_type_infoE;
 extern void *_ZTVN10__cxxabiv120__si_class_type_infoE;
 extern void *_ZTVN10__cxxabiv121__vmi_class_type_infoE;
-extern void *_Znwj;
+
 extern void *__aeabi_atexit;
+extern void *__aeabi_d2f;
 extern void *__aeabi_d2lz;
+extern void *__aeabi_d2iz;
+extern void *__aeabi_d2uiz;
 extern void *__aeabi_d2ulz;
 extern void *__aeabi_dadd;
+extern void *__aeabi_dcmpeq;
 extern void *__aeabi_dcmpgt;
+extern void *__aeabi_dcmple;
 extern void *__aeabi_dcmplt;
 extern void *__aeabi_ddiv;
 extern void *__aeabi_dmul;
+extern void *__aeabi_dsub;
+extern void *__aeabi_f2d;
+extern void *__aeabi_f2iz;
 extern void *__aeabi_f2lz;
 extern void *__aeabi_f2ulz;
+extern void *__aeabi_fadd;
+extern void *__aeabi_fcmpeq;
+extern void *__aeabi_fcmpge;
+extern void *__aeabi_fcmpgt;
+extern void *__aeabi_fcmple;
+extern void *__aeabi_fcmplt;
+extern void *__aeabi_fdiv;
+extern void *__aeabi_fmul;
+extern void *__aeabi_fsub;
+extern void *__aeabi_i2f;
 extern void *__aeabi_i2d;
 extern void *__aeabi_idiv;
 extern void *__aeabi_idivmod;
 extern void *__aeabi_l2d;
 extern void *__aeabi_l2f;
 extern void *__aeabi_ldivmod;
+extern void *__aeabi_lmul;
+extern void *__aeabi_llsl;
 extern void *__aeabi_memclr;
+extern void *__aeabi_memclr4;
+extern void *__aeabi_memclr8;
 extern void *__aeabi_memcpy;
+extern void *__aeabi_memcpy4;
+extern void *__aeabi_memcpy8;
 extern void *__aeabi_memmove;
 extern void *__aeabi_memset4;
 extern void *__aeabi_memset8;
 extern void *__aeabi_memset;
 extern void *__aeabi_ui2d;
+extern void *__aeabi_ui2f;
 extern void *__aeabi_uidiv;
 extern void *__aeabi_uidivmod;
 extern void *__aeabi_ul2d;
@@ -231,249 +130,210 @@ extern void *__aeabi_ul2f;
 extern void *__aeabi_uldivmod;
 extern void *__aeabi_unwind_cpp_pr0;
 extern void *__aeabi_unwind_cpp_pr1;
+
 extern void *__cxa_atexit;
 extern void *__cxa_call_unexpected;
 extern void *__cxa_finalize;
 extern void *__cxa_guard_acquire;
 extern void *__cxa_guard_release;
 extern void *__cxa_pure_virtual;
+extern void *__cxa_allocate_exception;
+extern void *__cxa_begin_catch;
+extern void *__cxa_end_catch;
+extern void *__cxa_free_exception;
+extern void *__cxa_rethrow;
+extern void *__cxa_throw;
+
+extern void *__gxx_personality_v0;
 extern void *__gnu_ldivmod_helper;
 extern void *__gnu_unwind_frame;
 extern void *__srget;
 extern void *__stack_chk_guard;
 extern void *__swbuf;
 
-extern void *__aeabi_llsl;
-
 extern const char  *BIONIC_ctype_;
 extern const short *BIONIC_tolower_tab_;
 extern const short *BIONIC_toupper_tab_;
 
 static FILE        __sF_fake[3];
+const unsigned int __page_size = PAGE_SIZE;
+
 so_default_dynlib *default_dynlib_m;
 int                size_default_dynlib;
 
-void *dlsym_soloader(void *handle, const char *symbol) {
-    // Usage example:
-    // if (strcmp("AMotionEvent_getAxisValue", symbol) == 0)
-    //    return &AMotionEvent_getAxisValue;
+int chdir_soloader(const char *dir) {
+    const char *_dir = dir;
+    char        buf[1024];
+    if (strcmp(dir, "/runtime") == 0) {
+        snprintf(buf, sizeof(buf), "%sruntime/", DATA_PATH);
+        _dir = buf;
+    }
 
-    int   size_default_dynlib_type = sizeof(so_default_dynlib);
-    void *result                   = NULL;
-    for (int j = 0; j < size_default_dynlib / size_default_dynlib_type; j++) {
+    if (_dir != dir)
+        l_debug("chdir(%s): -> %s", dir, _dir);
+
+    int ret = chdir(_dir);
+    l_debug("chdir(%s): %d", _dir, ret);
+    return ret;
+}
+
+void *dlopen_soloader(const char *filename, int flag) {
+    void *res = default_dynlib_m;
+    l_debug("dlopen(%s,0x%x): %p", filename, flag, default_dynlib_m);
+    return res;
+}
+
+void *dlsym_soloader(void *handle, const char *symbol) {
+    for (int j = 0; j < size_default_dynlib / sizeof(so_default_dynlib); j++) {
         if (strcmp(symbol, default_dynlib_m[j].symbol) == 0) {
-            result = (void *)default_dynlib_m[j].func;
-            l_debug("find symbol \"%s\".  %p", symbol, result);
-            break;
+            l_debug("dlsym(%p,%s)", handle, symbol);
+            return (void *)default_dynlib_m[j].func;
         }
     }
-    if (!result)
-        l_error("dlsym: Unknown symbol \"%s\".", symbol);
-    return result;
+
+    l_debug("[Error] dlsym(%p,%s): failed!", handle, symbol);
+    return NULL;
 }
 
-void *dlopen_soloader(const char *file, int mode) {
-    l_debug("dlopen_soloader \"%s\".  mode:%p", file, mode);
+int fprintf_soloader(FILE *stream, const char *format, ...) {
+    char    buffer[1024];
+    va_list list;
+    va_start(list, format);
+    sceClibVsnprintf(buffer, sizeof(buffer), format, list);
+    va_end(list);
 
-    return default_dynlib_m;
-}
-
-int fprintf0(FILE *stream, const char *format, char *a1, int a3, char *a2) {
-    l_debug("fprintf");
-    l_debug(format, a1, a3, a2);
+    l_debug("fprintf: %s", buffer);
     return 0;
 }
 
-int libandroidfw(void) {
-    l_debug("libandroidfw");
+int AZipFile_fake(void) {
+    l_debug("[Error] Android ZipFile function called: unsupport!");
     return 0;
 }
 
-int libutils(void) {
-    l_debug("libutils");
+int AAudioRecord_fake(void) {
+    l_debug("[Error] Android AudioRecord function called: unsupport!");
     return 0;
 }
 
-int libmedia(void) {
-    l_debug("libmedia");
+int AAudioTrack_fake(void) {
+    l_debug("[Error] Android AudioTrack function called: unsupport!");
     return 0;
 }
 
-int setjmp0(jmp_buf v) {
-    l_debug("setjmp0");
+int AGgeeAudioTrack_fake(void) {
+    l_debug("[Error] Android GgeeAudioTrack function called: unsupport!");
+    return 0;
+}
+
+int setjmp_soloader(jmp_buf v) {
+    l_debug("setjmp(%p)", v);
     return setjmp(v);
 }
 
-int jniRegisterNativeMethods(int a1, int a2, int a3, int a4) {
-    l_debug("jniRegisterNativeMethods(%p,%s,%p,%d)", a1, a2, a3, a4);
-    char **a = (char **)a3;
-    l_debug("jniRegisterNativeMethods Methods:(%s,%s,%p)", a[0], a[1], a[2]);
-
+int symlink_soloader(const char *target, const char *linkpath) {
+    l_debug("symlink(%s, %s)", target, linkpath);
     return 0;
 }
 
-typedef int64_t nsecs_t;       // nano-seconds
+int statfs_soloader(const char *path, void *buf) {  // struct statfs *buf
+    l_debug("statfs(%s, %p)", path, buf);
+    return 0;
+}
 
-nsecs_t systemTime(int clock)
-{
+typedef int64_t nsecs_t;  // nano-seconds
+
+nsecs_t systemTime(int clock) {
     // l_debug("systemTime(%d)",clock);
 #if defined(HAVE_POSIX_CLOCKS)
     static const clockid_t clocks[] = {
-            CLOCK_REALTIME,
-            CLOCK_MONOTONIC,
-            CLOCK_PROCESS_CPUTIME_ID,
-            CLOCK_THREAD_CPUTIME_ID
-    };
+        CLOCK_REALTIME,
+        CLOCK_MONOTONIC,
+        CLOCK_PROCESS_CPUTIME_ID,
+        CLOCK_THREAD_CPUTIME_ID};
     struct timespec t;
     t.tv_sec = t.tv_nsec = 0;
     clock_gettime(clocks[clock], &t);
-    return nsecs_t(t.tv_sec)*1000000000LL + t.tv_nsec;
+    return nsecs_t(t.tv_sec) * 1000000000LL + t.tv_nsec;
 #else
     // we don't support the clocks here.
     struct timeval t;
     t.tv_sec = t.tv_usec = 0;
     gettimeofday(&t, NULL);
-    nsecs_t nanoSeconds = (nsecs_t)(t.tv_sec)*1000000000LL + (nsecs_t)(t.tv_usec)*1000LL;
+    nsecs_t nanoSeconds = (nsecs_t)(t.tv_sec) * 1000000000LL + (nsecs_t)(t.tv_usec) * 1000LL;
     // l_debug("systemTime => (%lld)", nanoSeconds);
     return nanoSeconds;
 #endif
 }
 
-int glLightModelx()
-{
+int glLightModelx() {
     l_debug("glLightModelx()");
     return 0;
 }
 
 so_default_dynlib default_dynlib[] = {
-    // MD5 Impl
-    {"MD5_Init", (uintptr_t)&MD5_Init},
-    {"MD5_Update", (uintptr_t)&MD5_Update},
-    {"MD5_Final", (uintptr_t)&MD5_Final},
-
-    // SQLite3
-    {"sqlite3_open", (uintptr_t)&sqlite3_open},
-    {"sqlite3_close", (uintptr_t)&sqlite3_close},
-    {"sqlite3_prepare_v2", (uintptr_t)&sqlite3_prepare_v2},
-    {"sqlite3_exec", (uintptr_t)&sqlite3_exec},
-    {"sqlite3_errmsg", (uintptr_t)&sqlite3_errmsg},
-    {"sqlite3_step", (uintptr_t)&sqlite3_step},
-    {"sqlite3_finalize", (uintptr_t)&sqlite3_finalize},
-    {"sqlite3_column_count", (uintptr_t)&sqlite3_column_count},
-    {"sqlite3_column_double", (uintptr_t)&sqlite3_column_double},
-    {"sqlite3_column_int", (uintptr_t)&sqlite3_column_int},
-    {"sqlite3_column_name", (uintptr_t)&sqlite3_column_name},
-    {"sqlite3_column_text", (uintptr_t)&sqlite3_column_text},
-    {"sqlite3_column_type", (uintptr_t)&sqlite3_column_type},
-
-    // additional aeabi hook
-    {"__aeabi_i2f", (uintptr_t)&__aeabi_i2f},
-    {"__aeabi_i2d", (uintptr_t)&__aeabi_i2d},
-    {"__aeabi_fmul", (uintptr_t)&__aeabi_fmul},
-    {"__aeabi_f2iz", (uintptr_t)&__aeabi_f2iz},
-    {"__aeabi_lmul", (uintptr_t)&__aeabi_lmul},
-    {"__aeabi_ui2f", (uintptr_t)&__aeabi_ui2f},
-    {"__aeabi_fcmplt", (uintptr_t)&__aeabi_fcmplt},
-    {"__aeabi_dsub", (uintptr_t)&__aeabi_dsub},
-    {"__aeabi_d2uiz", (uintptr_t)&__aeabi_d2uiz},
-    {"__aeabi_fcmpgt", (uintptr_t)&__aeabi_fcmpgt},
-    {"__aeabi_fcmpeq", (uintptr_t)&__aeabi_fcmpeq},
-    {"__aeabi_fadd", (uintptr_t)&__aeabi_fadd},
-    {"__aeabi_fdiv", (uintptr_t)&__aeabi_fdiv},
-    {"__aeabi_fcmple", (uintptr_t)&__aeabi_fcmple},
-    {"__aeabi_f2d", (uintptr_t)&__aeabi_f2d},
-    {"__aeabi_d2iz", (uintptr_t)&__aeabi_d2iz},
-
-    // Android String8
-    {"_ZN7android7String8C1Ev", (uintptr_t)&android_String8_init},
-    {"_ZN7android7String8C1EPKc", (uintptr_t)&android_String8_initFromCstring},
-    {"_ZN7android7String8C1ERKS0_", (uintptr_t)&android_String8_initFromString8},
-    {"_ZN7android7String8D1Ev", (uintptr_t)&android_String8_term},
-    {"_ZN7android7String85setToEPKc", (uintptr_t)&android_String8_setToCstring},
-    {"_ZN7android7String86appendEPKc", (uintptr_t)&android_String8_appendCstring},
-    {"_ZN7android7String86appendERKS0_", (uintptr_t)&android_String8_append},
-    {"_ZN7android7String810appendPathEPKc", (uintptr_t)&android_String8_appendPathCstring},
-    {"_ZNK7android7String810getPathDirEv", (uintptr_t)&android_String8_getPathDir},
-    {"_ZNK7android7String88walkPathEPS0_", (uintptr_t)&android_String8_walkPath},
-
-    // Android SharedBuffer
-    {"_ZNK7android12SharedBuffer7acquireEv", (uintptr_t)&android_SharedBuffer_acquire},
-    {"_ZN7android12SharedBuffer5allocEj", (uintptr_t)&android_SharedBuffer_alloc},
-    {"_ZNK7android12SharedBuffer11attemptEditEv", (uintptr_t)&android_SharedBuffer_attemptEdit},
-    {"_ZN7android12SharedBuffer7deallocEPKS0_", (uintptr_t)&android_SharedBuffer_dealloc},
-    {"_ZNK7android12SharedBuffer10editResizeEj", (uintptr_t)&android_SharedBuffer_editResize},
-    {"_ZNK7android12SharedBuffer7releaseEj", (uintptr_t)&android_SharedBuffer_release},
-
-    // Android RefBase
-    {"_ZN7android7RefBaseC2Ev", (uintptr_t)&_ZN7android7RefBaseC2Ev},
-    {"_ZN7android7RefBaseD2Ev", (uintptr_t)&_ZN7android7RefBaseD2Ev},
-    {"_ZN7android7RefBase10onFirstRefEv", (uintptr_t)&_ZN7android7RefBase10onFirstRefEv},
-    {"_ZN7android7RefBase15onLastStrongRefEPKv", (uintptr_t)&_ZN7android7RefBase15onLastStrongRefEPKv},
-    {"_ZN7android7RefBase13onLastWeakRefEPKv", (uintptr_t)&_ZN7android7RefBase13onLastWeakRefEPKv},
-    {"_ZN7android7RefBase20onIncStrongAttemptedEjPKv", (uintptr_t)&_ZN7android7RefBase20onIncStrongAttemptedEjPKv},
-
-    // Android Thread
-    {"_ZN7android6ThreadC2Eb", (uintptr_t)&_ZN7android6ThreadC2Eb},
-    {"_ZN7android6ThreadD0Ev", (uintptr_t)&_ZN7android6ThreadD0Ev},
-    {"_ZN7android6ThreadD1Ev", (uintptr_t)&_ZN7android6ThreadD1Ev},
-    {"_ZN7android6ThreadD2Ev", (uintptr_t)&_ZN7android6ThreadD2Ev},
-    {"_ZN7android6Thread10readyToRunEv", (uintptr_t)&_ZN7android6Thread10readyToRunEv},
-    {"_ZN7android6Thread11requestExitEv", (uintptr_t)&_ZN7android6Thread11requestExitEv},
-    {"_ZN7android6Thread3runEPKcij", (uintptr_t)&_ZN7android6Thread3runEPKcij},
-
-    // Android RefBase
-    {"_ZN7android7RefBaseC2Ev", (uintptr_t)&ret0},
-    {"_ZNK7android7RefBase9decStrongEPKv", (uintptr_t)&_ZNK7android7RefBase9incStrongEPKv},
-    {"_ZNK7android7RefBase9incStrongEPKv", (uintptr_t)&_ZNK7android7RefBase9incStrongEPKv},
-    {"_ZN7android7RefBase10onFirstRefEv", (uintptr_t)&ret0},
-    {"_ZN7android7RefBase20onIncStrongAttemptedEjPKv", (uintptr_t)&ret0},
-    {"_ZN7android7RefBase15onLastStrongRefEPKv", (uintptr_t)&ret0},
-    {"_ZN7android7RefBase13onLastWeakRefEPKv", (uintptr_t)&ret0},
-    {"_ZN7android7RefBaseD2Ev", (uintptr_t)&ret0},
-
-    {"_ZNSt8bad_castD1Ev", (uintptr_t)&_ZNSt8bad_castD1Ev},
-    {"_ZNSt9exceptionD2Ev", (uintptr_t)&_ZNSt9exceptionD2Ev},
-    {"_ZSt17__throw_bad_allocv", (uintptr_t)&_ZSt17__throw_bad_allocv},
-    {"_ZSt9terminatev", (uintptr_t)&_ZSt9terminatev},
-    {"_ZTISt8bad_cast", (uintptr_t)&_ZTISt8bad_cast},
-    {"_ZTISt9exception", (uintptr_t)&_ZTISt9exception},
-    {"_ZTVN10__cxxabiv117__class_type_infoE", (uintptr_t)&_ZTVN10__cxxabiv117__class_type_infoE},
-    {"_ZTVN10__cxxabiv120__si_class_type_infoE", (uintptr_t)&_ZTVN10__cxxabiv120__si_class_type_infoE},
-    {"_ZTVN10__cxxabiv121__vmi_class_type_infoE", (uintptr_t)&_ZTVN10__cxxabiv121__vmi_class_type_infoE},
     {"_ZdaPv", (uintptr_t)&_ZdaPv},
     {"_ZdlPv", (uintptr_t)&_ZdlPv},
     {"_Znaj", (uintptr_t)&_Znaj},
     {"_Znwj", (uintptr_t)&_Znwj},
+    {"_ZTISt8bad_cast", (uintptr_t)&_ZTISt8bad_cast},
+    {"_ZTISt9exception", (uintptr_t)&_ZTISt9exception},
+    {"_ZNSt8bad_castD1Ev", (uintptr_t)&_ZNSt8bad_castD1Ev},
+    {"_ZNSt9exceptionD2Ev", (uintptr_t)&_ZNSt9exceptionD2Ev},
+    {"_ZSt9terminatev", (uintptr_t)&_ZSt9terminatev},
+    {"_ZSt17__throw_bad_allocv", (uintptr_t)&_ZSt17__throw_bad_allocv},
+    {"_ZTVN10__cxxabiv117__class_type_infoE", (uintptr_t)&_ZTVN10__cxxabiv117__class_type_infoE},
+    {"_ZTVN10__cxxabiv120__si_class_type_infoE", (uintptr_t)&_ZTVN10__cxxabiv120__si_class_type_infoE},
+    {"_ZTVN10__cxxabiv121__vmi_class_type_infoE", (uintptr_t)&_ZTVN10__cxxabiv121__vmi_class_type_infoE},
+
     {"__aeabi_atexit", (uintptr_t)&__aeabi_atexit},
+    {"__aeabi_d2f", (uintptr_t)&__aeabi_d2f},
     {"__aeabi_d2lz", (uintptr_t)&__aeabi_d2lz},
+    {"__aeabi_d2iz", (uintptr_t)&__aeabi_d2iz},
+    {"__aeabi_d2uiz", (uintptr_t)&__aeabi_d2uiz},
     {"__aeabi_d2ulz", (uintptr_t)&__aeabi_d2ulz},
     {"__aeabi_dadd", (uintptr_t)&__aeabi_dadd},
+    {"__aeabi_dcmpeq", (uintptr_t)&__aeabi_dcmpeq},
     {"__aeabi_dcmpgt", (uintptr_t)&__aeabi_dcmpgt},
+    {"__aeabi_dcmple", (uintptr_t)&__aeabi_dcmple},
     {"__aeabi_dcmplt", (uintptr_t)&__aeabi_dcmplt},
     {"__aeabi_ddiv", (uintptr_t)&__aeabi_ddiv},
     {"__aeabi_dmul", (uintptr_t)&__aeabi_dmul},
+    {"__aeabi_dsub", (uintptr_t)&__aeabi_dsub},
+    {"__aeabi_f2d", (uintptr_t)&__aeabi_f2d},
+    {"__aeabi_f2iz", (uintptr_t)&__aeabi_f2iz},
     {"__aeabi_f2lz", (uintptr_t)&__aeabi_f2lz},
     {"__aeabi_f2ulz", (uintptr_t)&__aeabi_f2ulz},
+    {"__aeabi_fadd", (uintptr_t)&__aeabi_fadd},
+    {"__aeabi_fcmpeq", (uintptr_t)&__aeabi_fcmpeq},
+    {"__aeabi_fcmpge", (uintptr_t)&__aeabi_fcmpge},
+    {"__aeabi_fcmpgt", (uintptr_t)&__aeabi_fcmpgt},
+    {"__aeabi_fcmple", (uintptr_t)&__aeabi_fcmple},
+    {"__aeabi_fcmplt", (uintptr_t)&__aeabi_fcmplt},
+    {"__aeabi_fdiv", (uintptr_t)&__aeabi_fdiv},
+    {"__aeabi_fmul", (uintptr_t)&__aeabi_fmul},
+    {"__aeabi_fsub", (uintptr_t)&__aeabi_fsub},
+    {"__aeabi_i2f", (uintptr_t)&__aeabi_i2f},
     {"__aeabi_i2d", (uintptr_t)&__aeabi_i2d},
     {"__aeabi_idiv", (uintptr_t)&__aeabi_idiv},
     {"__aeabi_idivmod", (uintptr_t)&__aeabi_idivmod},
     {"__aeabi_l2d", (uintptr_t)&__aeabi_l2d},
     {"__aeabi_l2f", (uintptr_t)&__aeabi_l2f},
     {"__aeabi_ldivmod", (uintptr_t)&__aeabi_ldivmod},
+    {"__aeabi_lmul", (uintptr_t)&__aeabi_lmul},
     {"__aeabi_llsl", (uintptr_t)&__aeabi_llsl},
     {"__aeabi_memclr", (uintptr_t)&__aeabi_memclr},
-    {"__aeabi_memclr4", (uintptr_t)&__aeabi_memclr},
-    {"__aeabi_memclr8", (uintptr_t)&__aeabi_memclr},
-    {"__aeabi_memcpy", (uintptr_t)&sceClibMemcpy},
-    {"__aeabi_memcpy4", (uintptr_t)&sceClibMemcpy},
-    {"__aeabi_memcpy8", (uintptr_t)&sceClibMemcpy},
+    {"__aeabi_memclr4", (uintptr_t)&__aeabi_memclr4},
+    {"__aeabi_memclr8", (uintptr_t)&__aeabi_memclr8},
+    {"__aeabi_memcpy", (uintptr_t)&__aeabi_memcpy},
+    {"__aeabi_memcpy4", (uintptr_t)&__aeabi_memcpy4},
+    {"__aeabi_memcpy8", (uintptr_t)&__aeabi_memcpy8},
     {"__aeabi_memmove", (uintptr_t)&__aeabi_memmove},
-    {"__aeabi_memmove4", (uintptr_t)&__aeabi_memmove},
-    {"__aeabi_memmove8", (uintptr_t)&__aeabi_memmove},
-    {"__aeabi_memset", (uintptr_t)&__aeabi_memset},
     {"__aeabi_memset4", (uintptr_t)&__aeabi_memset4},
     {"__aeabi_memset8", (uintptr_t)&__aeabi_memset8},
+    {"__aeabi_memset", (uintptr_t)&__aeabi_memset},
     {"__aeabi_ui2d", (uintptr_t)&__aeabi_ui2d},
+    {"__aeabi_ui2f", (uintptr_t)&__aeabi_ui2f},
     {"__aeabi_uidiv", (uintptr_t)&__aeabi_uidiv},
     {"__aeabi_uidivmod", (uintptr_t)&__aeabi_uidivmod},
     {"__aeabi_ul2d", (uintptr_t)&__aeabi_ul2d},
@@ -481,10 +341,7 @@ so_default_dynlib default_dynlib[] = {
     {"__aeabi_uldivmod", (uintptr_t)&__aeabi_uldivmod},
     {"__aeabi_unwind_cpp_pr0", (uintptr_t)&__aeabi_unwind_cpp_pr0},
     {"__aeabi_unwind_cpp_pr1", (uintptr_t)&__aeabi_unwind_cpp_pr1},
-    {"__atomic_cmpxchg", (uintptr_t)&__atomic_cmpxchg},
-    {"__atomic_dec", (uintptr_t)&__atomic_dec},
-    {"__atomic_inc", (uintptr_t)&__atomic_inc},
-    {"__atomic_swap", (uintptr_t)&__atomic_swap},
+
     {"__cxa_allocate_exception", (uintptr_t)&__cxa_allocate_exception},
     {"__cxa_atexit", (uintptr_t)&__cxa_atexit},
     {"__cxa_begin_catch", (uintptr_t)&__cxa_begin_catch},
@@ -499,6 +356,7 @@ so_default_dynlib default_dynlib[] = {
     {"__cxa_rethrow", (uintptr_t)&__cxa_rethrow},
     {"__cxa_throw", (uintptr_t)&__cxa_throw},
     {"__cxa_type_match", (uintptr_t)&ret0},
+
     {"__gnu_Unwind_Find_exidx", (uintptr_t)&ret0},
     {"__gnu_ldivmod_helper", (uintptr_t)&__gnu_ldivmod_helper},
     {"__gnu_unwind_frame", (uintptr_t)&__gnu_unwind_frame},
@@ -513,6 +371,12 @@ so_default_dynlib default_dynlib[] = {
     {"__stack_chk_guard", (uintptr_t)&__stack_chk_guard},
     {"__swbuf", (uintptr_t)&__swbuf},
     {"__system_property_get", (uintptr_t)&__system_property_get_soloader},
+
+    // atomic
+    {"__atomic_cmpxchg", (uintptr_t)&__atomic_cmpxchg},
+    {"__atomic_dec", (uintptr_t)&__atomic_dec},
+    {"__atomic_inc", (uintptr_t)&__atomic_inc},
+    {"__atomic_swap", (uintptr_t)&__atomic_swap},
 
     // ctype
     {"_ctype_", (uintptr_t)&BIONIC_ctype_},
@@ -531,23 +395,6 @@ so_default_dynlib default_dynlib[] = {
     {"isxdigit", (uintptr_t)&isxdigit},
     {"tolower", (uintptr_t)&tolower},
     {"toupper", (uintptr_t)&toupper},
-
-    // Android SDK standard logging
-    {"__android_log_assert", (uintptr_t)&__android_log_assert},
-    {"__android_log_print", (uintptr_t)&__android_log_print},
-    {"__android_log_vprint", (uintptr_t)&__android_log_vprint},
-    {"__android_log_write", (uintptr_t)&__android_log_write},
-
-    // AAssetManager
-    {"AAsset_close", (uintptr_t)&AAsset_close},
-    {"AAsset_getLength", (uintptr_t)&AAsset_getLength},
-    {"AAsset_getRemainingLength", (uintptr_t)&AAsset_getRemainingLength},
-    {"AAsset_read", (uintptr_t)&AAsset_read},
-    {"AAsset_seek", (uintptr_t)&AAsset_seek},
-    {"AAssetDir_close", (uintptr_t)&AAssetDir_close},
-    {"AAssetManager_fromJava", (uintptr_t)&ret1},
-    {"AAssetManager_open", (uintptr_t)&AAssetManager_open},
-    {"AAssetManager_openDir", (uintptr_t)&AAssetManager_openDir},
 
     // Math
     {"acos", (uintptr_t)&acos},
@@ -613,6 +460,7 @@ so_default_dynlib default_dynlib[] = {
     {"gethostbyaddr", (uintptr_t)&gethostbyaddr},
     {"gethostbyname", (uintptr_t)&gethostbyname},
     {"gethostname", (uintptr_t)&gethostname},
+    {"getnameinfo", (uintptr_t)&ret0},
     {"getpeername", (uintptr_t)&getpeername},
     {"getservbyname", (uintptr_t)&getservbyname},
     {"getsockname", (uintptr_t)&getsockname},
@@ -695,7 +543,7 @@ so_default_dynlib default_dynlib[] = {
     {"ungetwc", (uintptr_t)&ungetwc},
     {"access", (uintptr_t)&access},
     {"basename", (uintptr_t)&basename},
-    {"chdir", (uintptr_t)&chdir_wrap},
+    {"chdir", (uintptr_t)&chdir_soloader},
     // { "chdir", (uintptr_t)&chdir },
     {"chmod", (uintptr_t)&chmod},
     {"dup", (uintptr_t)&dup_soloader},
@@ -728,10 +576,237 @@ so_default_dynlib default_dynlib[] = {
     {"vswprintf", (uintptr_t)&vswprintf},
     {"printf", (uintptr_t)&sceClibPrintf},
     {"swprintf", (uintptr_t)&swprintf},
-    {"fprintf", (uintptr_t)&fprintf0},
+    {"fprintf", (uintptr_t)&fprintf_soloader},
     {"fscanf", (uintptr_t)&fscanf},
     {"sscanf", (uintptr_t)&sscanf},
     {"vfprintf", (uintptr_t)&vfprintf},
+
+    // <sys/resource.h>
+    {"getpriority", (uintptr_t)&getpriority},
+
+    // <sys/vfs.h>
+    {"statfs", (uintptr_t)&statfs_soloader},
+
+    // Pthread
+    {"__pthread_cleanup_push", (uintptr_t)&ret0},
+    {"__pthread_cleanup_pop", (uintptr_t)&ret0},
+
+    {"pthread_create", (uintptr_t)&pthread_create_soloader},
+    {"pthread_detach", (uintptr_t)&pthread_detach_soloader},
+    {"pthread_equal", (uintptr_t)&pthread_equal_soloader},
+    {"pthread_exit", (uintptr_t)&pthread_exit},
+    {"pthread_getschedparam", (uintptr_t)&pthread_getschedparam_soloader},
+    {"pthread_getspecific", (uintptr_t)&pthread_getspecific_soloader},
+    {"pthread_join", (uintptr_t)&pthread_join_soloader},
+    {"pthread_key_create", (uintptr_t)&pthread_key_create},
+    {"pthread_key_delete", (uintptr_t)&pthread_key_delete},
+    {"pthread_kill", (uintptr_t)&pthread_kill_soloader},
+    {"pthread_once", (uintptr_t)&pthread_once_soloader},
+    {"pthread_self", (uintptr_t)&pthread_self_soloader},
+    {"pthread_setname_np", (uintptr_t)&pthread_setname_np_soloader},
+    {"pthread_setschedparam", (uintptr_t)&pthread_setschedparam_soloader},
+    {"pthread_setspecific", (uintptr_t)&pthread_setspecific},
+    {"pthread_sigmask", (uintptr_t)&ret0},
+    {"pthread_mutex_destroy", (uintptr_t)&pthread_mutex_destroy_soloader},
+    {"pthread_mutex_init", (uintptr_t)&pthread_mutex_init_soloader},
+    {"pthread_mutex_lock", (uintptr_t)&pthread_mutex_lock_soloader},
+    {"pthread_mutex_trylock", (uintptr_t)&pthread_mutex_trylock_soloader},
+    {"pthread_mutex_unlock", (uintptr_t)&pthread_mutex_unlock_soloader},
+    {"pthread_mutexattr_destroy", (uintptr_t)&pthread_mutexattr_destroy_soloader},
+    {"pthread_mutexattr_init", (uintptr_t)&pthread_mutexattr_init_soloader},
+    {"pthread_mutexattr_settype", (uintptr_t)&pthread_mutexattr_settype_soloader},
+    {"pthread_mutexattr_setpshared", (uintptr_t)&ret0},
+    {"pthread_cond_broadcast", (uintptr_t)&pthread_cond_broadcast_soloader},
+    {"pthread_cond_destroy", (uintptr_t)&pthread_cond_destroy_soloader},
+    {"pthread_cond_init", (uintptr_t)&pthread_cond_init_soloader},
+    {"pthread_cond_signal", (uintptr_t)&pthread_cond_signal_soloader},
+    {"pthread_cond_timedwait", (uintptr_t)&pthread_cond_timedwait_soloader},
+    {"pthread_cond_timedwait_relative_np", (uintptr_t)&pthread_cond_timedwait_soloader},
+    {"pthread_cond_wait", (uintptr_t)&pthread_cond_wait_soloader},
+    {"pthread_attr_destroy", (uintptr_t)&pthread_attr_destroy_soloader},
+    {"pthread_attr_init", (uintptr_t)&pthread_attr_init_soloader},
+    {"pthread_attr_setdetachstate", (uintptr_t)&pthread_attr_setdetachstate_soloader},
+    {"pthread_attr_setstacksize", (uintptr_t)&pthread_attr_setstacksize_soloader},
+    {"pthread_attr_setschedparam", (uintptr_t)&pthread_attr_setschedparam},
+    {"pthread_attr_getdetachstate", (uintptr_t)&pthread_attr_getdetachstate},
+
+    {"sem_destroy", (uintptr_t)&sem_destroy_soloader},
+    {"sem_getvalue", (uintptr_t)&sem_getvalue_soloader},
+    {"sem_init", (uintptr_t)&sem_init_soloader},
+    {"sem_post", (uintptr_t)&sem_post_soloader},
+    {"sem_timedwait", (uintptr_t)&sem_timedwait_soloader},
+    {"sem_trywait", (uintptr_t)&sem_trywait_soloader},
+    {"sem_wait", (uintptr_t)&sem_wait_soloader},
+
+    {"sched_get_priority_max", (uintptr_t)&sched_get_priority_max},
+    {"sched_get_priority_min", (uintptr_t)&sched_get_priority_min},
+    {"sched_yield", (uintptr_t)&sched_yield},
+
+    // wchar, wctype
+    {"btowc", (uintptr_t)&btowc},
+    {"iswalpha", (uintptr_t)&iswalpha},
+    {"iswcntrl", (uintptr_t)&iswcntrl},
+    {"iswctype", (uintptr_t)&iswctype},
+    {"iswdigit", (uintptr_t)&iswdigit},
+    {"iswdigit", (uintptr_t)&iswdigit},
+    {"iswlower", (uintptr_t)&iswlower},
+    {"iswprint", (uintptr_t)&iswprint},
+    {"iswpunct", (uintptr_t)&iswpunct},
+    {"iswspace", (uintptr_t)&iswspace},
+    {"iswupper", (uintptr_t)&iswupper},
+    {"iswxdigit", (uintptr_t)&iswxdigit},
+    {"mbrlen", (uintptr_t)&mbrlen},
+    {"mbrtowc", (uintptr_t)&mbrtowc},
+    {"towlower", (uintptr_t)&towlower},
+    {"towupper", (uintptr_t)&towupper},
+    {"wcrtomb", (uintptr_t)&wcrtomb},
+    {"wcscasecmp", (uintptr_t)&wcscasecmp},
+    {"wcscmp", (uintptr_t)&wcscmp},
+    {"wcscoll", (uintptr_t)&wcscoll},
+    {"wcscpy", (uintptr_t)&wcscpy},
+    {"wcsftime", (uintptr_t)&wcsftime},
+    {"wcslcat", (uintptr_t)&wcslcat},
+    {"wcslcpy", (uintptr_t)&wcslcpy},
+    {"wcslen", (uintptr_t)&wcslen},
+    {"wcsncasecmp", (uintptr_t)&wcsncasecmp},
+    {"wcsncpy", (uintptr_t)&wcsncpy},
+    {"wcstombs", (uintptr_t)&wcstombs},
+    {"wcsxfrm", (uintptr_t)&wcsxfrm},
+    {"wctob", (uintptr_t)&wctob},
+    {"wctype", (uintptr_t)&wctype},
+    {"wmemchr", (uintptr_t)&wmemchr},
+    {"wmemcmp", (uintptr_t)&wmemcmp},
+    {"wmemcpy", (uintptr_t)&wmemcpy},
+    {"wmemmove", (uintptr_t)&wmemmove},
+    {"wmemset", (uintptr_t)&wmemset},
+
+    // Errno
+    {"__errno", (uintptr_t)&__errno_soloader},
+    {"strerror", (uintptr_t)&strerror_soloader},
+    {"strerror_r", (uintptr_t)&strerror_r_soloader},
+
+    // Strings
+    {"memchr", (uintptr_t)&memchr},
+    {"memrchr", (uintptr_t)&memrchr},
+    {"strcasecmp", (uintptr_t)&strcasecmp},
+    {"strcat", (uintptr_t)&strcat},
+    {"strchr", (uintptr_t)&strchr},
+    {"strcmp", (uintptr_t)&strcmp},
+    {"strcoll", (uintptr_t)&strcoll},
+    {"strcpy", (uintptr_t)&strcpy},
+    {"strcspn", (uintptr_t)&strcspn},
+    {"strdup", (uintptr_t)&strdup},
+    {"strlcat", (uintptr_t)&strlcat},
+    {"strlcpy", (uintptr_t)&strlcpy},
+    {"strlen", (uintptr_t)&strlen},
+    {"strncasecmp", (uintptr_t)&strncasecmp},
+    {"strncat", (uintptr_t)&strncat},
+    {"strncmp", (uintptr_t)&strncmp},
+    {"strncpy", (uintptr_t)&strncpy},
+    {"strnlen", (uintptr_t)&strnlen},
+    {"strpbrk", (uintptr_t)&strpbrk},
+    {"strrchr", (uintptr_t)&strrchr},
+    {"strspn", (uintptr_t)&strspn},
+    {"strstr", (uintptr_t)&strstr},
+    {"strtok", (uintptr_t)&strtok},
+    {"strtok_r", (uintptr_t)&strtok_r},
+    {"strxfrm", (uintptr_t)&strxfrm},
+
+    // Syscalls
+    {"fork", (uintptr_t)&fork},
+    {"getpagesize", (uintptr_t)&getpagesize},
+    {"getpid", (uintptr_t)&getpid},
+    {"sbrk", (uintptr_t)&sbrk},
+    {"syscall", (uintptr_t)&syscall},
+    {"sysconf", (uintptr_t)&ret0},
+    {"system", (uintptr_t)&system},
+    {"waitpid", (uintptr_t)&ret0},
+
+    // Time
+    {"clock", (uintptr_t)&clock_soloader},
+    {"clock_getres", (uintptr_t)&clock_getres_soloader},
+    {"clock_gettime", (uintptr_t)&clock_gettime_soloader},
+    {"difftime", (uintptr_t)&difftime},
+    {"gettimeofday", (uintptr_t)&gettimeofday},
+    {"gmtime", (uintptr_t)&gmtime},
+    {"gmtime64", (uintptr_t)&gmtime64},
+    {"gmtime_r", (uintptr_t)&gmtime_r},
+    {"localtime", (uintptr_t)&localtime},
+    {"localtime64", (uintptr_t)&localtime64},
+    {"localtime_r", (uintptr_t)&localtime_r},
+    {"mktime", (uintptr_t)&mktime},
+    {"mktime64", (uintptr_t)&mktime64},
+    {"nanosleep", (uintptr_t)&nanosleep},
+    {"strftime", (uintptr_t)&strftime},
+    {"time", (uintptr_t)&time},
+    {"tzset", (uintptr_t)&tzset},
+
+    // Temp
+    {"mkstemp", (uintptr_t)&mkstemp},
+    {"mktemp", (uintptr_t)&mktemp},
+    {"tmpfile", (uintptr_t)&tmpfile},
+    {"tmpnam", (uintptr_t)&tmpnam},
+
+    // stdlib
+    {"abort", (uintptr_t)&abort_soloader},
+    {"atof", (uintptr_t)&atof},
+    {"atoi", (uintptr_t)&atoi},
+    {"atol", (uintptr_t)&atol},
+    {"atoll", (uintptr_t)&atoll},
+    {"exit", (uintptr_t)&exit_soloader},
+    {"lrand48", (uintptr_t)&lrand48},
+    {"prctl", (uintptr_t)&ret0},
+    {"sleep", (uintptr_t)&sleep},
+    {"srand48", (uintptr_t)&srand48},
+    {"strtod", (uintptr_t)&strtod},
+    {"strtof", (uintptr_t)&strtof},
+    {"strtoimax", (uintptr_t)&strtoimax},
+    {"strtol", (uintptr_t)&strtol},
+    {"strtold", (uintptr_t)&strtold},
+    {"strtoll", (uintptr_t)&strtoll},
+    {"strtoul", (uintptr_t)&strtoul},
+    {"strtoull", (uintptr_t)&strtoull},
+    {"strtoumax", (uintptr_t)&strtoumax},
+    {"usleep", (uintptr_t)&usleep},
+    {"qsort", (uintptr_t)&qsort},
+    {"rand", (uintptr_t)&rand},
+    {"srand", (uintptr_t)&srand},
+
+    // Env
+    {"getenv", (uintptr_t)&getenv_soloader},
+    {"setenv", (uintptr_t)&setenv_soloader},
+
+    // Jmp
+    {"setjmp", (uintptr_t)&setjmp_soloader},  // TODO: May have different struct size?
+    {"longjmp", (uintptr_t)&longjmp},         // TODO: May have different struct size?
+
+    // Signals
+    {"bsd_signal", (uintptr_t)&signal},
+    {"raise", (uintptr_t)&raise},
+    {"sigaction", (uintptr_t)&sigaction},
+
+    // <sys/signal.h>
+    {"kill", (uintptr_t)&kill},
+
+    // Locale
+    {"setlocale", (uintptr_t)&setlocale},
+
+    // Resource
+    {"setpriority", (uintptr_t)&setpriority},
+
+    {"symlink", (uintptr_t)&symlink_soloader},
+    {"systemTime", (uintptr_t)&systemTime},
+
+    // <sys/epoll.h>
+    {"epoll_create", (uintptr_t)&ret0},
+    {"epoll_ctl", (uintptr_t)&ret0},
+    {"epoll_wait", (uintptr_t)&ret0},
+
+    // libdl
+    {"dlopen", (uintptr_t)&dlopen_soloader},
+    {"dlclose", (uintptr_t)&ret0},
+    {"dlsym", (uintptr_t)&dlsym_soloader},
+    {"dlerror", (uintptr_t)&ret0},
 
     // EGL
     {"eglBindAPI", (uintptr_t)&eglBindAPI},
@@ -754,7 +829,6 @@ so_default_dynlib default_dynlib[] = {
     {"eglSwapBuffers", (uintptr_t)&eglSwapBuffers},
     {"eglTerminate", (uintptr_t)&eglTerminate},
 
-    // additional EGL Hook
     {"eglGetCurrentDisplay", (uintptr_t)&ret0},
     {"eglSwapInterval", (uintptr_t)&eglSwapInterval},
     {"eglCreatePbufferSurface", (uintptr_t)&ret0},
@@ -1025,7 +1099,6 @@ so_default_dynlib default_dynlib[] = {
     {"glViewport", (uintptr_t)&glViewport},
     {"glWeightPointerOES", (uintptr_t)&ret0},
 
-    // add gl
     {"glGetRenderbufferParameteriv", (uintptr_t)&ret0},
     {"glStencilMaskSeparate", (uintptr_t)&glStencilMaskSeparate},
     {"glGetUniformfv", (uintptr_t)&ret0},
@@ -1056,274 +1129,133 @@ so_default_dynlib default_dynlib[] = {
     {"glUniform3i", (uintptr_t)&glUniform3i},
     {"glUniform4i", (uintptr_t)&glUniform4i},
 
-    // Pthread
-    {"__pthread_cleanup_push", (uintptr_t)&ret0},
-    {"__pthread_cleanup_pop", (uintptr_t)&ret0},
+    // MD5
+    {"MD5_Init", (uintptr_t)&MD5_Init},
+    {"MD5_Update", (uintptr_t)&MD5_Update},
+    {"MD5_Final", (uintptr_t)&MD5_Final},
 
-    {"pthread_attr_destroy", (uintptr_t)&pthread_attr_destroy_soloader},
-    {"pthread_attr_init", (uintptr_t)&pthread_attr_init_soloader},
-    {"pthread_attr_setdetachstate", (uintptr_t)&pthread_attr_setdetachstate_soloader},
-    {"pthread_attr_setstacksize", (uintptr_t)&pthread_attr_setstacksize_soloader},
-    {"pthread_attr_setschedparam", (uintptr_t)&ret0},
+    // SQLite3
+    {"sqlite3_open", (uintptr_t)&sqlite3_open},
+    {"sqlite3_close", (uintptr_t)&sqlite3_close},
+    {"sqlite3_prepare_v2", (uintptr_t)&sqlite3_prepare_v2},
+    {"sqlite3_exec", (uintptr_t)&sqlite3_exec},
+    {"sqlite3_errmsg", (uintptr_t)&sqlite3_errmsg},
+    {"sqlite3_step", (uintptr_t)&sqlite3_step},
+    {"sqlite3_finalize", (uintptr_t)&sqlite3_finalize},
+    {"sqlite3_column_count", (uintptr_t)&sqlite3_column_count},
+    {"sqlite3_column_double", (uintptr_t)&sqlite3_column_double},
+    {"sqlite3_column_int", (uintptr_t)&sqlite3_column_int},
+    {"sqlite3_column_name", (uintptr_t)&sqlite3_column_name},
+    {"sqlite3_column_text", (uintptr_t)&sqlite3_column_text},
+    {"sqlite3_column_type", (uintptr_t)&sqlite3_column_type},
 
-    {"pthread_cond_broadcast", (uintptr_t)&pthread_cond_broadcast_soloader},
-    {"pthread_cond_destroy", (uintptr_t)&pthread_cond_destroy_soloader},
-    {"pthread_cond_init", (uintptr_t)&pthread_cond_init_soloader},
-    {"pthread_cond_signal", (uintptr_t)&pthread_cond_signal_soloader},
-    {"pthread_cond_timedwait", (uintptr_t)&pthread_cond_timedwait_soloader},
-    {"pthread_cond_timedwait_relative_np", (uintptr_t)&pthread_cond_timedwait_soloader},
-    {"pthread_cond_wait", (uintptr_t)&pthread_cond_wait_soloader},
+    // Android SDK standard logging
+    {"__android_log_assert", (uintptr_t)&__android_log_assert},
+    {"__android_log_print", (uintptr_t)&__android_log_print},
+    {"__android_log_vprint", (uintptr_t)&__android_log_vprint},
+    {"__android_log_write", (uintptr_t)&__android_log_write},
 
-    {"pthread_create", (uintptr_t)&pthread_create_soloader},
-    {"pthread_detach", (uintptr_t)&pthread_detach_soloader},
-    {"pthread_equal", (uintptr_t)&pthread_equal_soloader},
-    {"pthread_exit", (uintptr_t)&pthread_exit},
-    {"pthread_getschedparam", (uintptr_t)&pthread_getschedparam_soloader},
-    {"pthread_getspecific", (uintptr_t)&pthread_getspecific_soloader},
-    {"pthread_join", (uintptr_t)&pthread_join_soloader},
-    {"pthread_key_create", (uintptr_t)&pthread_key_create},
-    {"pthread_key_delete", (uintptr_t)&pthread_key_delete},
-    {"pthread_kill", (uintptr_t)&pthread_kill_soloader},
-
-    {"pthread_mutex_destroy", (uintptr_t)&pthread_mutex_destroy_soloader},
-    {"pthread_mutex_init", (uintptr_t)&pthread_mutex_init_soloader},
-    {"pthread_mutex_lock", (uintptr_t)&pthread_mutex_lock_soloader},
-    {"pthread_mutex_trylock", (uintptr_t)&pthread_mutex_trylock_soloader},
-    {"pthread_mutex_unlock", (uintptr_t)&pthread_mutex_unlock_soloader},
-    {"pthread_mutexattr_destroy", (uintptr_t)&pthread_mutexattr_destroy_soloader},
-    {"pthread_mutexattr_init", (uintptr_t)&pthread_mutexattr_init_soloader},
-    {"pthread_mutexattr_settype", (uintptr_t)&pthread_mutexattr_settype_soloader},
-    {"pthread_mutexattr_setpshared", (uintptr_t)&ret0},
-    {"pthread_once", (uintptr_t)&pthread_once_soloader},
-
-    {"pthread_self", (uintptr_t)&pthread_self_soloader},
-    {"pthread_setname_np", (uintptr_t)&pthread_setname_np_soloader},
-    {"pthread_setschedparam", (uintptr_t)&pthread_setschedparam_soloader},
-    {"pthread_setspecific", (uintptr_t)&pthread_setspecific},
-    {"pthread_sigmask", (uintptr_t)&ret0},
-
-    {"pthread_sigmask", (uintptr_t)&ret0},
-
-    {"sem_destroy", (uintptr_t)&sem_destroy_soloader},
-    {"sem_getvalue", (uintptr_t)&sem_getvalue_soloader},
-    {"sem_init", (uintptr_t)&sem_init_soloader},
-    {"sem_post", (uintptr_t)&sem_post_soloader},
-    {"sem_timedwait", (uintptr_t)&sem_timedwait_soloader},
-    {"sem_trywait", (uintptr_t)&sem_trywait_soloader},
-    {"sem_wait", (uintptr_t)&sem_wait_soloader},
-
-    {"sched_get_priority_max", (uintptr_t)&sched_get_priority_max},
-    {"sched_get_priority_min", (uintptr_t)&sched_get_priority_min},
-    {"sched_yield", (uintptr_t)&sched_yield},
-
-    // wchar, wctype
-    {"btowc", (uintptr_t)&btowc},
-    {"iswalpha", (uintptr_t)&iswalpha},
-    {"iswcntrl", (uintptr_t)&iswcntrl},
-    {"iswctype", (uintptr_t)&iswctype},
-    {"iswdigit", (uintptr_t)&iswdigit},
-    {"iswdigit", (uintptr_t)&iswdigit},
-    {"iswlower", (uintptr_t)&iswlower},
-    {"iswprint", (uintptr_t)&iswprint},
-    {"iswpunct", (uintptr_t)&iswpunct},
-    {"iswspace", (uintptr_t)&iswspace},
-    {"iswupper", (uintptr_t)&iswupper},
-    {"iswxdigit", (uintptr_t)&iswxdigit},
-    {"mbrlen", (uintptr_t)&mbrlen},
-    {"mbrtowc", (uintptr_t)&mbrtowc},
-    {"towlower", (uintptr_t)&towlower},
-    {"towupper", (uintptr_t)&towupper},
-    {"wcrtomb", (uintptr_t)&wcrtomb},
-    {"wcscasecmp", (uintptr_t)&wcscasecmp},
-    {"wcscmp", (uintptr_t)&wcscmp},
-    {"wcscoll", (uintptr_t)&wcscoll},
-    {"wcscpy", (uintptr_t)&wcscpy},
-    {"wcsftime", (uintptr_t)&wcsftime},
-    {"wcslcat", (uintptr_t)&wcslcat},
-    {"wcslcpy", (uintptr_t)&wcslcpy},
-    {"wcslen", (uintptr_t)&wcslen},
-    {"wcsncasecmp", (uintptr_t)&wcsncasecmp},
-    {"wcsncpy", (uintptr_t)&wcsncpy},
-    {"wcstombs", (uintptr_t)&wcstombs},
-    {"wcsxfrm", (uintptr_t)&wcsxfrm},
-    {"wctob", (uintptr_t)&wctob},
-    {"wctype", (uintptr_t)&wctype},
-    {"wmemchr", (uintptr_t)&wmemchr},
-    {"wmemcmp", (uintptr_t)&wmemcmp},
-    {"wmemcpy", (uintptr_t)&wmemcpy},
-    {"wmemmove", (uintptr_t)&wmemmove},
-    {"wmemset", (uintptr_t)&wmemset},
-
-    // libdl
-    {"dlclose", (uintptr_t)&ret0},
-    {"dlerror", (uintptr_t)&ret0},
-    {"dlopen", (uintptr_t)&dlopen_soloader},
-    {"dlsym", (uintptr_t)&dlsym_soloader},
-
-    // Errno
-    {"__errno", (uintptr_t)&__errno_soloader},
-    {"strerror", (uintptr_t)&strerror_soloader},
-    {"strerror_r", (uintptr_t)&strerror_r_soloader},
-
-    // Strings
-    {"memchr", (uintptr_t)&memchr},
-    {"memrchr", (uintptr_t)&memrchr},
-    {"strcasecmp", (uintptr_t)&strcasecmp},
-    {"strcat", (uintptr_t)&strcat},
-    {"strchr", (uintptr_t)&strchr},
-    {"strcmp", (uintptr_t)&strcmp},
-    {"strcoll", (uintptr_t)&strcoll},
-    {"strcpy", (uintptr_t)&strcpy},
-    {"strcspn", (uintptr_t)&strcspn},
-    {"strdup", (uintptr_t)&strdup},
-    {"strlcat", (uintptr_t)&strlcat},
-    {"strlcpy", (uintptr_t)&strlcpy},
-    {"strlen", (uintptr_t)&strlen},
-    {"strncasecmp", (uintptr_t)&strncasecmp},
-    {"strncat", (uintptr_t)&strncat},
-    {"strncmp", (uintptr_t)&strncmp},
-    {"strncpy", (uintptr_t)&strncpy},
-    {"strnlen", (uintptr_t)&strnlen},
-    {"strpbrk", (uintptr_t)&strpbrk},
-    {"strrchr", (uintptr_t)&strrchr},
-    {"strspn", (uintptr_t)&strspn},
-    {"strstr", (uintptr_t)&strstr},
-    {"strtok", (uintptr_t)&strtok},
-    {"strtok_r", (uintptr_t)&strtok_r},
-    {"strxfrm", (uintptr_t)&strxfrm},
-
-    // Syscalls
-    {"fork", (uintptr_t)&fork},
-    {"getpagesize", (uintptr_t)&getpagesize},
-    {"getpid", (uintptr_t)&getpid},
-    {"sbrk", (uintptr_t)&sbrk},
-    {"syscall", (uintptr_t)&syscall},
-    {"sysconf", (uintptr_t)&ret0},
-    {"system", (uintptr_t)&system},
-    {"waitpid", (uintptr_t)&ret0},
-
-    // Time
-    {"clock", (uintptr_t)&clock_soloader},
-    {"clock_getres", (uintptr_t)&clock_getres_soloader},
-    {"clock_gettime", (uintptr_t)&clock_gettime_soloader},
-    {"difftime", (uintptr_t)&difftime},
-    {"gettimeofday", (uintptr_t)&gettimeofday},
-    {"gmtime", (uintptr_t)&gmtime},
-    {"gmtime64", (uintptr_t)&gmtime64},
-    {"gmtime_r", (uintptr_t)&gmtime_r},
-    {"localtime", (uintptr_t)&localtime},
-    {"localtime64", (uintptr_t)&localtime64},
-    {"localtime_r", (uintptr_t)&localtime_r},
-    {"mktime", (uintptr_t)&mktime},
-    {"mktime64", (uintptr_t)&mktime64},
-    {"nanosleep", (uintptr_t)&nanosleep},
-    {"strftime", (uintptr_t)&strftime},
-    {"time", (uintptr_t)&time},
-    {"tzset", (uintptr_t)&tzset},
-
-    // Temp
-    {"mkstemp", (uintptr_t)&mkstemp},
-    {"mktemp", (uintptr_t)&mktemp},
-    {"tmpfile", (uintptr_t)&tmpfile},
-    {"tmpnam", (uintptr_t)&tmpnam},
-
-    // stdlib
-    {"abort", (uintptr_t)&abort_soloader},
-    {"atof", (uintptr_t)&atof},
-    {"atoi", (uintptr_t)&atoi},
-    {"atol", (uintptr_t)&atol},
-    {"atoll", (uintptr_t)&atoll},
-    {"exit", (uintptr_t)&exit_soloader},
-    {"lrand48", (uintptr_t)&lrand48},
-    {"prctl", (uintptr_t)&ret0},
-    {"sleep", (uintptr_t)&sleep},
-    {"srand48", (uintptr_t)&srand48},
-    {"strtod", (uintptr_t)&strtod},
-    {"strtof", (uintptr_t)&strtof},
-    {"strtoimax", (uintptr_t)&strtoimax},
-    {"strtol", (uintptr_t)&strtol},
-    {"strtold", (uintptr_t)&strtold},
-    {"strtoll", (uintptr_t)&strtoll},
-    {"strtoul", (uintptr_t)&strtoul},
-    {"strtoull", (uintptr_t)&strtoull},
-    {"strtoumax", (uintptr_t)&strtoumax},
-    {"usleep", (uintptr_t)&usleep},
-    {"qsort", (uintptr_t)&qsort},
-    {"rand", (uintptr_t)&rand},
-    {"srand", (uintptr_t)&srand},
-
-    // Env
-    {"getenv", (uintptr_t)&getenv_soloader},
-    {"setenv", (uintptr_t)&setenv_soloader},
-
-    // Jmp
-    {"setjmp", (uintptr_t)&setjmp0},   // TODO: May have different struct size?
-    {"longjmp", (uintptr_t)&longjmp},  // TODO: May have different struct size?
-
-    // Signals
-    {"bsd_signal", (uintptr_t)&signal},
-    {"raise", (uintptr_t)&raise},
-    {"sigaction", (uintptr_t)&sigaction},
-
-    // Locale
-    {"setlocale", (uintptr_t)&setlocale},
-
-    // Resource
-    {"setpriority", (uintptr_t)&setpriority},
-
-    // zlib
-    // { "adler32", (uintptr_t)&adler32 },
-    // { "compress", (uintptr_t)&compress },
-    // { "compressBound", (uintptr_t)&compressBound },
-    // { "crc32", (uintptr_t)&crc32 },
-    // { "deflate", (uintptr_t)&deflate },
-    // { "deflateEnd", (uintptr_t)&deflateEnd },
-    // { "deflateInit2_", (uintptr_t)&deflateInit2_ },
-    // { "deflateInit_", (uintptr_t)&deflateInit_ },
-    // { "deflateReset", (uintptr_t)&deflateReset },
-    // { "gzclose", (uintptr_t)&gzclose },
-    // { "gzgets", (uintptr_t)&gzgets },
-    // { "gzopen", (uintptr_t)&gzopen },
-    // { "inflate", (uintptr_t)&inflate },
-    // { "inflateEnd", (uintptr_t)&inflateEnd },
-    // { "inflateInit2_", (uintptr_t)&inflateInit2_ },
-    // { "inflateInit_", (uintptr_t)&inflateInit_ },
-    // { "inflateReset", (uintptr_t)&inflateReset },
-    // { "uncompress", (uintptr_t)&uncompress },
-
-    {"symlink", (uintptr_t)&ret0},
-    {"systemTime", (uintptr_t)&systemTime},
+    // Android navitehelper
+    {"jniThrowException", (uintptr_t)&jniThrowException},
     {"jniRegisterNativeMethods", (uintptr_t)&jniRegisterNativeMethods},
-    {"epoll_create", (uintptr_t)&ret0},
 
-    {"_ZN7android10AudioTrack3setE19audio_stream_type_tj14audio_format_tji20audio_output_flags_tPFviPvS4_ES4_iRKNS_2spINS_7IMemoryEEEbi", (uintptr_t)&libmedia},
-    {"_ZN7android10AudioTrack3setE19audio_stream_type_tj14audio_format_tii20audio_output_flags_tPFviPvS4_ES4_iRKNS_2spINS_7IMemoryEEEbi", (uintptr_t)&libmedia},
-    {"_ZN7android10AudioTrack3setEijiiijPFviPvS1_ES1_iRKNS_2spINS_7IMemoryEEEbi", (uintptr_t)&libmedia},
-    {"_ZN7android10AudioTrack3setEijiiijPFviPvS1_ES1_iRKNS_2spINS_7IMemoryEEEb", (uintptr_t)&libmedia},
-    {"_ZN7android10AudioTrack3setE19audio_stream_type_tj14audio_format_tji20audio_output_flags_tPFviPvS4_ES4_iRKNS_2spINS_7IMemoryEEEbiNS0_13transfer_typeEPK20audio_offload_info_t", (uintptr_t)&libmedia},
-    {"_ZN7android10AudioTrack3setE19audio_stream_type_tj14audio_format_tji20audio_output_flags_tPFviPvS4_ES4_iRKNS_2spINS_7IMemoryEEEbiNS0_13transfer_typeEPK20audio_offload_info_ti", (uintptr_t)&libmedia},
-    {"_ZNK7android10AudioTrack9initCheckEv", (uintptr_t)&libmedia},
-    {"_ZN7android10AudioTrack5startEv", (uintptr_t)&libmedia},
-    {"_ZN7android10AudioTrackC1Ev", (uintptr_t)&libmedia},
-    {"_ZN7android10AudioTrackD1Ev", (uintptr_t)&libmedia},
-    {"_ZN7android10AudioTrack9setVolumeEff", (uintptr_t)&libmedia},
-    {"_ZN7android10AudioTrack5pauseEv", (uintptr_t)&libmedia},
-    {"_ZN7android10AudioTrack4stopEv", (uintptr_t)&libmedia},
-    {"_ZN7android14GgeeAudioTrack11writethreadEv", (uintptr_t)&libmedia},
-    {"_ZN7android14GgeeAudioTrackC2Ev", (uintptr_t)&libmedia},
-    {"_ZN7android14GgeeAudioTrackD2Ev", (uintptr_t)&libmedia},
-    {"_ZN7android11AudioRecord3setE14audio_source_tj14audio_format_tjiNS0_12record_flagsEPFviPvS4_ES4_ibi", (uintptr_t)&libmedia},
-    {"_ZN7android11AudioRecord3setEijijijPFviPvS1_ES1_ibi", (uintptr_t)&libmedia},
-    {"_ZN7android11AudioRecord3setEijijijPFviPvS1_ES1_ib", (uintptr_t)&libmedia},
-    {"_ZN7android11AudioRecord5startEv", (uintptr_t)&libmedia},
-    {"_ZN7android11AudioRecord3setE14audio_source_tj14audio_format_tjiPFviPvS3_ES3_ibiNS0_13transfer_typeE19audio_input_flags_t", (uintptr_t)&libmedia},
+    // Android AssetManager
+    {"AAssetManager_open", (uintptr_t)&AAssetManager_open},
+    {"AAsset_close", (uintptr_t)&AAsset_close},
+    {"AAsset_read", (uintptr_t)&AAsset_read},
+    {"AAsset_seek", (uintptr_t)&AAsset_seek},
+    {"AAsset_getLength", (uintptr_t)&AAsset_getLength},
+    {"AAsset_getRemainingLength", (uintptr_t)&AAsset_getRemainingLength},
+    {"AAssetManager_openDir", (uintptr_t)&AAssetManager_openDir},
+    {"AAssetDir_close", (uintptr_t)&AAssetDir_close},
+    {"AAssetManager_fromJava", (uintptr_t)&ret1},
 
-    {"_ZNK7android9ZipFileRO12getEntryInfoEPvPiPlS3_S3_S3_S3_", (uintptr_t)&libutils},
-    {"_ZNK7android9ZipFileRO12getEntryInfoEPvPiPjS3_PlS4_S4_", (uintptr_t)&libutils},
-    {"_ZNK7android9ZipFileRO12getEntryInfoEPvPiPjS3_PxPlS5_", (uintptr_t)&libutils},
-    {"_ZN7android9ZipFileRO4openEPKc", (uintptr_t)&libutils},
-    {"_ZNK7android9ZipFileRO15uncompressEntryEPvS1_", (uintptr_t)&libutils},
-    {"_ZNK7android9ZipFileRO15findEntryByNameEPKc", (uintptr_t)&libutils},
+    // Android String8
+    {"_ZN7android7String8C1Ev", (uintptr_t)&AString8_construct},
+    {"_ZN7android7String8C1EPKc", (uintptr_t)&AString8_constructFromCstr},
+    {"_ZN7android7String8C1ERKS0_", (uintptr_t)&AString8_constructFromOther},
+    {"_ZN7android7String8D1Ev", (uintptr_t)&AString8_destruct},
+    {"_ZN7android7String85setToEPKc", (uintptr_t)&AString8_setToCstr},
+    {"_ZN7android7String86appendEPKc", (uintptr_t)&AString8_appendCstr},
+    {"_ZN7android7String86appendERKS0_", (uintptr_t)&AString8_append},
+    {"_ZN7android7String810appendPathEPKc", (uintptr_t)&AString8_appendPathCstr},
+    {"_ZNK7android7String810getPathDirEv", (uintptr_t)&AString8_getPathDir},
+    {"_ZNK7android7String88walkPathEPS0_", (uintptr_t)&AString8_walkPath},
+
+    // Android SharedBuffer
+    {"_ZNK7android12SharedBuffer7acquireEv", (uintptr_t)&ASharedBuffer_acquire},
+    {"_ZN7android12SharedBuffer5allocEj", (uintptr_t)&ASharedBuffer_alloc},
+    {"_ZNK7android12SharedBuffer11attemptEditEv", (uintptr_t)&ASharedBuffer_attemptEdit},
+    {"_ZN7android12SharedBuffer7deallocEPKS0_", (uintptr_t)&ASharedBuffer_dealloc},
+    {"_ZNK7android12SharedBuffer10editResizeEj", (uintptr_t)&ASharedBuffer_editResize},
+    {"_ZNK7android12SharedBuffer7releaseEj", (uintptr_t)&ASharedBuffer_release},
+
+    // Android RefBase
+    {"_ZN7android7RefBaseC2Ev", (uintptr_t)&_ZN7android7RefBaseC2Ev},
+    {"_ZN7android7RefBaseD2Ev", (uintptr_t)&_ZN7android7RefBaseD2Ev},
+    {"_ZN7android7RefBase10onFirstRefEv", (uintptr_t)&_ZN7android7RefBase10onFirstRefEv},
+    {"_ZN7android7RefBase15onLastStrongRefEPKv", (uintptr_t)&_ZN7android7RefBase15onLastStrongRefEPKv},
+    {"_ZN7android7RefBase13onLastWeakRefEPKv", (uintptr_t)&_ZN7android7RefBase13onLastWeakRefEPKv},
+    {"_ZN7android7RefBase20onIncStrongAttemptedEjPKv", (uintptr_t)&_ZN7android7RefBase20onIncStrongAttemptedEjPKv},
+
+    // Android Thread
+    {"_ZN7android6ThreadC2Eb", (uintptr_t)&_ZN7android6ThreadC2Eb},
+    {"_ZN7android6ThreadD0Ev", (uintptr_t)&_ZN7android6ThreadD0Ev},
+    {"_ZN7android6ThreadD1Ev", (uintptr_t)&_ZN7android6ThreadD1Ev},
+    {"_ZN7android6ThreadD2Ev", (uintptr_t)&_ZN7android6ThreadD2Ev},
+    {"_ZTv0_n12_N7android6ThreadD0Ev", (uintptr_t)&_ZTv0_n12_N7android6ThreadD0Ev},
+    {"_ZTv0_n12_N7android6ThreadD1Ev", (uintptr_t)&_ZTv0_n12_N7android6ThreadD1Ev},
+    {"_ZN7android6Thread10readyToRunEv", (uintptr_t)&_ZN7android6Thread10readyToRunEv},
+    {"_ZN7android6Thread11requestExitEv", (uintptr_t)&_ZN7android6Thread11requestExitEv},
+    {"_ZN7android6Thread3runEPKcij", (uintptr_t)&_ZN7android6Thread3runEPKcij},
+
+    // Android RefBase
+    {"_ZN7android7RefBaseC2Ev", (uintptr_t)&ret0},
+    {"_ZNK7android7RefBase9decStrongEPKv", (uintptr_t)&_ZNK7android7RefBase9incStrongEPKv},
+    {"_ZNK7android7RefBase9incStrongEPKv", (uintptr_t)&_ZNK7android7RefBase9incStrongEPKv},
+    {"_ZN7android7RefBase10onFirstRefEv", (uintptr_t)&ret0},
+    {"_ZN7android7RefBase20onIncStrongAttemptedEjPKv", (uintptr_t)&ret0},
+    {"_ZN7android7RefBase15onLastStrongRefEPKv", (uintptr_t)&ret0},
+    {"_ZN7android7RefBase13onLastWeakRefEPKv", (uintptr_t)&ret0},
+    {"_ZN7android7RefBaseD2Ev", (uintptr_t)&ret0},
+
+    // Android AudioRecord
+    {"_ZN7android11AudioRecordC1Ev", (uintptr_t)&AAudioRecord_fake},
+    {"_ZN7android11AudioRecordD1Ev", (uintptr_t)&AAudioRecord_fake},
+    {"_ZN7android11AudioRecord5startEv", (uintptr_t)&AAudioRecord_fake},
+    {"_ZN7android11AudioRecord4stopEv", (uintptr_t)&AAudioRecord_fake},
+    {"_ZN7android11AudioRecord3setE14audio_source_tj14audio_format_tjiPFviPvS3_ES3_ibiNS0_13transfer_typeE19audio_input_flags_t", (uintptr_t)&AAudioRecord_fake},
+    {"_ZN7android11AudioRecord3setE14audio_source_tj14audio_format_tjiNS0_12record_flagsEPFviPvS4_ES4_ibi", (uintptr_t)&AAudioRecord_fake},
+    {"_ZN7android11AudioRecord3setEijijijPFviPvS1_ES1_ibi", (uintptr_t)&AAudioRecord_fake},
+    {"_ZN7android11AudioRecord3setEijijijPFviPvS1_ES1_ib", (uintptr_t)&AAudioRecord_fake},
+
+    // Android AudioTrack
+    {"_ZN7android10AudioTrackC1Ev", (uintptr_t)&AAudioTrack_fake},
+    {"_ZN7android10AudioTrackD1Ev", (uintptr_t)&AAudioTrack_fake},
+    {"_ZNK7android10AudioTrack9initCheckEv", (uintptr_t)&AAudioTrack_fake},
+    {"_ZN7android10AudioTrack5startEv", (uintptr_t)&AAudioTrack_fake},
+    {"_ZN7android10AudioTrack5pauseEv", (uintptr_t)&AAudioTrack_fake},
+    {"_ZN7android10AudioTrack4stopEv", (uintptr_t)&AAudioTrack_fake},
+    {"_ZN7android10AudioTrack9setVolumeEff", (uintptr_t)&AAudioTrack_fake},
+    {"_ZN7android10AudioTrack3setE19audio_stream_type_tj14audio_format_tji20audio_output_flags_tPFviPvS4_ES4_iRKNS_2spINS_7IMemoryEEEbi", (uintptr_t)&AAudioTrack_fake},
+    {"_ZN7android10AudioTrack3setE19audio_stream_type_tj14audio_format_tii20audio_output_flags_tPFviPvS4_ES4_iRKNS_2spINS_7IMemoryEEEbi", (uintptr_t)&AAudioTrack_fake},
+    {"_ZN7android10AudioTrack3setEijiiijPFviPvS1_ES1_iRKNS_2spINS_7IMemoryEEEbi", (uintptr_t)&AAudioTrack_fake},
+    {"_ZN7android10AudioTrack3setEijiiijPFviPvS1_ES1_iRKNS_2spINS_7IMemoryEEEb", (uintptr_t)&AAudioTrack_fake},
+    {"_ZN7android10AudioTrack3setE19audio_stream_type_tj14audio_format_tji20audio_output_flags_tPFviPvS4_ES4_iRKNS_2spINS_7IMemoryEEEbiNS0_13transfer_typeEPK20audio_offload_info_t", (uintptr_t)&AAudioTrack_fake},
+    {"_ZN7android10AudioTrack3setE19audio_stream_type_tj14audio_format_tji20audio_output_flags_tPFviPvS4_ES4_iRKNS_2spINS_7IMemoryEEEbiNS0_13transfer_typeEPK20audio_offload_info_ti", (uintptr_t)&AAudioTrack_fake},
+
+    // Android GgeeAudioTrack
+    {"_ZN7android14GgeeAudioTrack11writethreadEv", (uintptr_t)&AGgeeAudioTrack_fake},
+    {"_ZN7android14GgeeAudioTrackC2Ev", (uintptr_t)&AGgeeAudioTrack_fake},
+    {"_ZN7android14GgeeAudioTrackD2Ev", (uintptr_t)&AGgeeAudioTrack_fake},
+
+    // Android ZipFile
+    {"_ZNK7android9ZipFileRO12getEntryInfoEPvPiPlS3_S3_S3_S3_", (uintptr_t)&AZipFile_fake},
+    {"_ZNK7android9ZipFileRO12getEntryInfoEPvPiPjS3_PlS4_S4_", (uintptr_t)&AZipFile_fake},
+    {"_ZNK7android9ZipFileRO12getEntryInfoEPvPiPjS3_PxPlS5_", (uintptr_t)&AZipFile_fake},
+    {"_ZN7android9ZipFileRO4openEPKc", (uintptr_t)&AZipFile_fake},
+    {"_ZNK7android9ZipFileRO15uncompressEntryEPvS1_", (uintptr_t)&AZipFile_fake},
+    {"_ZNK7android9ZipFileRO15findEntryByNameEPKc", (uintptr_t)&AZipFile_fake},
 };
 
 void resolve_imports(so_module *mod) {

@@ -10,7 +10,7 @@
 #include "reimpl/libKD/kd.h"
 #include "reimpl/libLD/ld.h"
 #include "utils/logger.h"
-#include "reimpl/controls.h"
+#include "controls.h"
 
 #define _DWORD uintptr_t
 extern so_module so_mod;
@@ -28,7 +28,7 @@ int bootstrap_start_soloader(int argc, char *argv[], char *envp[]) {
     char *launch_argv[] = {
         // 主参数
         "com.acrodea.vividruntime.launcher",  // +0 程序名？
-        "launch",                             // +1 mode: 启动模式："launch", "marketlaunch", "rorequest", "install", "roinstall", "remove", "verify"
+        "launch",                             // +1 mode: 启动模式："launch", "navite_marketlaunch", "rorequest", "install", "roinstall", "remove", "verify"
         "/native/RuntimeApps",                // +2 RuntimeApps 路径
         "1760",                               // +3 app_id (会将RuntimeApps和这id拼接，鬼泣的id为1760)
         "debug",                              // +4 params: "debug", "reschk"(resource check)
@@ -42,7 +42,7 @@ int bootstrap_start_soloader(int argc, char *argv[], char *envp[]) {
 
     char *marketlaunch_argv[] = {
         "/native/com.acrodea.vividruntime.launcher",
-        "marketlaunch",
+        "navite_marketlaunch",
         "/native/RuntimeApps/",
         "1760",
         "/lib/com.acrodea.gamecenter/app.exe",
@@ -64,26 +64,18 @@ int bootstrap_start_soloader(int argc, char *argv[], char *envp[]) {
 
 int (*HttpResponse)(void *, int, int, int, void *, void *, void *);
 
-void HttpResponse_soloader(void *a1, int a2, int a3, int a4, void *a5, void *a6, void *a7)
-{
-    l_debug("HttpResponse(%p)", a7);
-    int ret = HttpResponse(a1,a2,a3,a4,a5,a6,a7);
-    l_debug("HttpResponse return %d", ret);
-
-}
-
 void SetRuntimeContext(int index,int value)
 {
     char *(*Get)(void *)         = (void *)so_symbol(&so_mod, "_ZN14RuntimeContext3GetEv");
     char *RuntimeContextInstance = Get(NULL);
     char *F=RuntimeContextInstance+index;
-    debugPrintf("SetRuntimeContext form(%d)",*F);
+    l_debug("SetRuntimeContext form(%d)",*F);
     *(F)=value;
-    debugPrintf("SetRuntimeContext to(%d)",*F);
+    l_debug("SetRuntimeContext to(%d)",*F);
 }
 
 void plugin_gles_procaddress_terminate() {
-    debugPrintf("plugin_gles_procaddress_terminate()");
+    l_debug("plugin_gles_procaddress_terminate()");
 }
 
 void so_patch(void) {
@@ -119,5 +111,5 @@ void so_patch(void) {
     // *GVfs = malloc(60);
     // //**GVfs = 0;
     // memset(*GVfs,0,60);
-    // debugPrintf("set GVfs over");
+    // l_debug("set GVfs over");
 }

@@ -95,7 +95,6 @@ typedef struct {
     int id;
     char *name;
     METHOD_TYPE f;
-    void* (*Method)(jmethodID id, va_list args);
 } NameToMethodID;
 
 typedef struct { int id; void (*Method)(jmethodID id, va_list args); }      MethodsVoid;

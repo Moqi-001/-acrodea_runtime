@@ -15,20 +15,20 @@ enum {
 
 typedef struct SharedBuffer SharedBuffer;
 
-SharedBuffer *android_SharedBuffer_alloc(size_t size);
-int           android_SharedBuffer_dealloc(SharedBuffer *sb);
-SharedBuffer *android_SharedBuffer_attemptEdit(SharedBuffer *sb);
-SharedBuffer *android_SharedBuffer_edit(SharedBuffer *sb);
-SharedBuffer *android_SharedBuffer_editResize(SharedBuffer *sb, size_t new_size);
-SharedBuffer *android_SharedBuffer_reset(SharedBuffer *sb, size_t new_size);
-void          android_SharedBuffer_acquire(SharedBuffer *sb);
-int32_t       android_SharedBuffer_release(SharedBuffer *sb, uint32_t flags);
+SharedBuffer *ASharedBuffer_alloc(size_t size);
+int           ASharedBuffer_dealloc(SharedBuffer *sb);
+SharedBuffer *ASharedBuffer_attemptEdit(SharedBuffer *sb);
+SharedBuffer *ASharedBuffer_edit(SharedBuffer *sb);
+SharedBuffer *ASharedBuffer_editResize(SharedBuffer *sb, size_t new_size);
+SharedBuffer *ASharedBuffer_reset(SharedBuffer *sb, size_t new_size);
+void          ASharedBuffer_acquire(SharedBuffer *sb);
+int32_t       ASharedBuffer_release(SharedBuffer *sb, uint32_t flags);
 
-size_t        android_SharedBuffer_size(SharedBuffer *sb);
-void         *android_SharedBuffer_data(SharedBuffer *sb);
-SharedBuffer *android_SharedBuffer_bufferFromData(void *data);
-size_t        android_SharedBuffer_sizeFromData(void *data);
-bool          android_SharedBuffer_onlyOwner(SharedBuffer *sb);
+size_t        ASharedBuffer_size(SharedBuffer *sb);
+void         *ASharedBuffer_data(SharedBuffer *sb);
+SharedBuffer *ASharedBuffer_bufferFromData(void *data);
+size_t        ASharedBuffer_sizeFromData(void *data);
+bool          ASharedBuffer_onlyOwner(SharedBuffer *sb);
 
 #ifdef __cplusplus
 }

@@ -83,11 +83,11 @@ int __android_log_vprint(int prio, const char *tag, const char *fmt, va_list ap)
  * including the source filename and line number more conveniently than this
  * function.
  */
-void __android_log_assert(const char* cond, const char* tag, const char* fmt, ...)
-__attribute__((__noreturn__)) __attribute__((__format__(printf, 3, 4)));
+void __android_log_assert(const char *cond, const char *tag, const char *fmt, ...)
+    __attribute__((__noreturn__)) __attribute__((__format__(printf, 3, 4)));
 
 #ifdef __cplusplus
 };
 #endif
 
-#endif // SOLOADER_LOG_H
+#endif  // SOLOADER_LOG_H

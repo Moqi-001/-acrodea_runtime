@@ -7,8 +7,8 @@
 #include "config.h"
 #include "ld.h"
 #include "ld_mem.h"
-#include "patch.h"
 #include "ld_patch.h"
+#include "patch.h"
 #include "utils/logger.h"
 
 uintptr_t (*ldModuleGetSymbol)(LdModule *in_mod, const char *sym_name, uint32_t sym_hash, int type,
@@ -76,11 +76,11 @@ int ldModuleAllocAndLoadImage(LdModule *mod, const char *path, const char *err_m
         return -1;
 
     if (!mod->load_base) {
-        l_debug("ldModuleAllocAndLoadImage(%p): name=%s, load_base is empty", mod, mod->mod_name);
+        l_debug("ldModuleAllocAndLoadImage(%p,%s): No need to execute", mod, path);
         return 0;
     }
 
-    l_debug("ldModuleAllocAndLoadImage(%p): name=%s", mod, mod->mod_name);
+    l_debug("ldModuleAllocAndLoadImage(%p,%s)", mod, path);
 
     load_addr        = LOAD_ADDRESS;
     mem_context      = NULL;
@@ -128,7 +128,7 @@ LOAD:
     }
 
     free(file_mem);
-    l_debug("ldModuleAllocAndLoadImage success!");
+    l_debug("ldModuleAllocAndLoadImage(%p,%s) success: mod_name=%s, load_base=0x%x", mod, path, mod->mod_name, mod->load_base);
     return 0;
 
 FAILED:
@@ -138,20 +138,20 @@ FAILED:
     }
 
     if (failed_count < 100) {  // 如果失败次数<50，将映射地址递增，重新尝试
-        l_debug("ldModuleAllocAndLoadImage(%p) failed on addr 0x%x, will retry!", mod, load_addr);
+        // l_debug("ldModuleAllocAndLoadImage(%p) failed on addr 0x%x, will retry!", mod, load_addr);
         failed_count++;
         load_addr += 0x01000000;
         goto LOAD;
     }
 
     free(file_mem);
-    l_debug("ldModuleAllocAndLoadImage(%p) failed!", mod);
+    l_debug("ldModuleAllocAndLoadImage(%p,%s) failed!", mod, path);
     return -1;
 }
 
 void ldModuleDestroyImage(LdModule *mod) {
     if (mod && mod->load_base) {
-        l_debug("ldModuleDestroyImage(%p): name=%s", mod, mod->mod_name);
+        l_debug("ldModuleDestroyImage(%p): %s", mod, mod->mod_name);
         ldLoadMemDestroyContext(ldLoadMemGetContextFromData(mod->load_base));
         mod->load_base = NULL;
         mod->load_size = 0;
@@ -220,7 +220,7 @@ static int ldModuleRelocateCore2(LdModule *mod, Elf32_Rel *rel_tab, size_t rel_n
 
             if (!sym_addr) {
                 if (ELF32_ST_BIND(mod->symtab[rel_sym].st_info) == STB_WEAK) {
-                    l_debug("Weak symbol '%s' not found, skipping", sym_name);
+                    l_debug("    Weak symbol '%s' not found, skipping", sym_name);
                     continue;
                 } else {
                     if (vna_name)
@@ -229,7 +229,7 @@ static int ldModuleRelocateCore2(LdModule *mod, Elf32_Rel *rel_tab, size_t rel_n
                         strncpy(error_msg, sym_name, 255);
                     error_code = 0xE030100;
                     ldSetErrorCode(mod->context, error_code, error_msg);
-                    l_debug("ldModuleRelocateCore2(%p): %s failed!", mod, mod->mod_name);
+                    l_debug("[Error] ldModuleRelocateCore2(%p): '%s' failed!", mod, mod->mod_name);
                     return -1;
                 }
             }

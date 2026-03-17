@@ -24,10 +24,11 @@ set(PARSECOREPATH "$ENV{PARSECOREPATH}" CACHE STRING "vita-parse-core main.py")
 # Game-specific definitions
 set(DATA_PATH "ux0:data/Acrodea/" CACHE STRING "Path to data (with trailing /)")
 set(SO_PATH "${DATA_PATH}libacrodea_runtime.so" CACHE STRING "Path to .so")
+set(LOG_PATH "${DATA_PATH}log.txt" CACHE STRING "Path to log.txt")
 
-add_definitions(-DDATA_PATH="${DATA_PATH}" -DSO_PATH="${SO_PATH}")
-
-#add_definitions(-DDEBUG_FILE)
+add_definitions(-DDATA_PATH="${DATA_PATH}" -DSO_PATH="${SO_PATH}" -DLOG_PATH="${LOG_PATH}")
+add_definitions(-DDEBUG_FILE)
+add_definitions(-DDEBUG_SOLOADER)
 
 set(SHADER_FORMAT "CG" CACHE STRING "Preferred shader format (one of 'GLSL', 'CG', 'GXP')")
 if (${SHADER_FORMAT} STREQUAL "GLSL")
@@ -66,14 +67,20 @@ set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=gnu++20 -Wno-write-strings -Wno-psabi
 
 add_executable(${CMAKE_PROJECT_NAME}
   source/main.c
+  source/controls.c
   source/dynlib.c
-  source/java.c
   source/patch.c
   source/init.c
 
+  source/reimpl/android/asset_manager.cpp
   source/reimpl/android/atomic.c
+  source/reimpl/android/AudioTrack.c
+  source/reimpl/android/log.c
+  source/reimpl/android/nativehelper.c
+  source/reimpl/android/RefBase.c
   source/reimpl/android/SharedBuffer.c
   source/reimpl/android/String8.c
+  source/reimpl/android/Thread.c
   source/reimpl/libGgee/ggee.c
   source/reimpl/libKD/kd.c
   source/reimpl/libLD/ld.c
@@ -83,18 +90,19 @@ add_executable(${CMAKE_PROJECT_NAME}
   source/reimpl/egl.c
   source/reimpl/errno.c
   source/reimpl/io.c
-  source/reimpl/log.c
   source/reimpl/mem.c
   source/reimpl/pthr.c
   source/reimpl/sys.c
   source/reimpl/time64.c
-  source/reimpl/controls.c
-  source/reimpl/asset_manager.cpp
+
+  source/java/java.c
+  source/java/Runtime.c
+  source/java/extension/ExtensionManager.c
+  source/java/extension/MyDevice.c
 
   source/utils/dialog.c
   source/utils/glutil.c
   source/utils/logger.c
-  source/utils/settings.c
   source/utils/utils.c
 
   deps/falso_jni/FalsoJNI.c

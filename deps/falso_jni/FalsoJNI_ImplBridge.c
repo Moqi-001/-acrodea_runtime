@@ -16,19 +16,19 @@
 
 #include "FalsoJNI_ImplBridge.h"
 
-#include <string.h>
 #include <malloc.h>
 #include <pthread.h>
+#include <string.h>
 
-JavaDynArray* javaDynArrays = NULL;
-pthread_mutex_t* javaDynArrays_mutex = NULL;
-size_t javaDynArrays_free = 0;
-size_t javaDynArrays_taken = 0;
+JavaDynArray    *javaDynArrays       = NULL;
+pthread_mutex_t *javaDynArrays_mutex = NULL;
+size_t           javaDynArrays_free  = 0;
+size_t           javaDynArrays_taken = 0;
 
-jfieldID getFieldIdByName(const char* name) {
+jfieldID getFieldIdByName(const char *name) {
     for (int i = 0; i < nameToFieldId_size() / sizeof(NameToFieldID); i++) {
         if (strcmp(name, nameToFieldId[i].name) == 0) {
-            return (jfieldID) nameToFieldId[i].id;
+            return (jfieldID)nameToFieldId[i].id;
         }
     }
 
@@ -36,7 +36,7 @@ jfieldID getFieldIdByName(const char* name) {
     return NULL;
 }
 
-const char* fieldTypeToStr(FIELD_TYPE t) {
+const char *fieldTypeToStr(FIELD_TYPE t) {
     switch (t) {
         case FIELD_TYPE_INT:
             return "FIELD_TYPE_INT";
@@ -158,22 +158,16 @@ void setDoubleFieldValueById(jfieldID id, jdouble value) {
     setFieldValueById(jdouble, FIELD_TYPE_DOUBLE, FieldsDouble, fieldsDouble, fieldsDouble_size, id, value);
 }
 
-jmethodID getMethodIdByName(const char* name) {
-    debugPrintf("GetMethodIdByName:%s",name);
+jmethodID getMethodIdByName(const char *name) {
     for (int i = 0; i < nameToMethodId_size() / sizeof(NameToMethodID); i++) {
         if (strcmp(name, nameToMethodId[i].name) == 0) {
-            return (jmethodID) i;
+            return (jmethodID)nameToMethodId[i].id;
         }
     }
     return NULL;
 }
 
 jobject methodObjectCall(jmethodID id, va_list args) {
-    int index=(int)id;
-    if(nameToMethodId[index].Method!=NULL)
-    {
-       return nameToMethodId[index].Method(id, args);
-    }
     for (int i = 0; i < methodsObject_size() / sizeof(MethodsObject); i++) {
         if (methodsObject[i].id == (int)id) {
             return methodsObject[i].Method(id, args);
@@ -185,11 +179,6 @@ jobject methodObjectCall(jmethodID id, va_list args) {
 }
 
 void methodVoidCall(jmethodID id, va_list args) {
-    int index=(int)id;
-    if(nameToMethodId[index].Method!=NULL)
-    {
-       return nameToMethodId[index].Method(id, args);
-    }
     for (int i = 0; i < methodsVoid_size() / sizeof(MethodsVoid); i++) {
         if (methodsVoid[i].id == (int)id) {
             return methodsVoid[i].Method(id, args);
@@ -200,11 +189,6 @@ void methodVoidCall(jmethodID id, va_list args) {
 }
 
 jboolean methodBooleanCall(jmethodID id, va_list args) {
-    int index=(int)id;
-    if(nameToMethodId[index].Method!=NULL)
-    {
-       return nameToMethodId[index].Method(id, args);
-    }
     for (int i = 0; i < methodsBoolean_size() / sizeof(MethodsBoolean); i++) {
         if (methodsBoolean[i].id == (int)id) {
             return methodsBoolean[i].Method(id, args);
@@ -216,11 +200,6 @@ jboolean methodBooleanCall(jmethodID id, va_list args) {
 }
 
 jbyte methodByteCall(jmethodID id, va_list args) {
-    int index=(int)id;
-    if(nameToMethodId[index].Method!=NULL)
-    {
-       return nameToMethodId[index].Method(id, args);
-    }
     for (int i = 0; i < methodsByte_size() / sizeof(MethodsByte); i++) {
         if (methodsByte[i].id == (int)id) {
             return methodsByte[i].Method(id, args);
@@ -232,11 +211,6 @@ jbyte methodByteCall(jmethodID id, va_list args) {
 }
 
 jshort methodShortCall(jmethodID id, va_list args) {
-    int index=(int)id;
-    if(nameToMethodId[index].Method!=NULL)
-    {
-       return nameToMethodId[index].Method(id, args);
-    }
     for (int i = 0; i < methodsShort_size() / sizeof(MethodsShort); i++) {
         if (methodsShort[i].id == (int)id) {
             return methodsShort[i].Method(id, args);
@@ -259,11 +233,6 @@ jdouble methodDoubleCall(jmethodID id, va_list args) {
 }
 
 jchar methodCharCall(jmethodID id, va_list args) {
-    int index=(int)id;
-    if(nameToMethodId[index].Method!=NULL)
-    {
-       return nameToMethodId[index].Method(id, args);
-    }
     for (int i = 0; i < methodsChar_size() / sizeof(MethodsChar); i++) {
         if (methodsChar[i].id == (int)id) {
             return methodsChar[i].Method(id, args);
@@ -275,21 +244,6 @@ jchar methodCharCall(jmethodID id, va_list args) {
 }
 
 jlong methodLongCall(jmethodID id, va_list args) {
-    // int index=(int)id-1;
-    // if(nameToMethodId[index].Method!=NULL)
-    // {
-    //     int64_t value=(int64_t)nameToMethodId[index].Method(id, args);
-    //     debugPrintf("methodLongCall return value:%d",value);
-    //    return value;
-    // }
-    // for (int i = 0; i < methodsLong_size() / sizeof(MethodsLong); i++) {
-    //     if (methodsLong[i].id == (int)id) {
-    //         int64_t value=(int64_t)methodsLong[i].Method(id, args);
-    //         debugPrintf("methodLongCall return value:%d",value);
-    //         return value;
-    //     }
-    // }
-
     for (int i = 0; i < methodsLong_size() / sizeof(MethodsLong); i++) {
         if (methodsLong[i].id == (int)id) {
             return methodsLong[i].Method(id, args);
@@ -301,13 +255,6 @@ jlong methodLongCall(jmethodID id, va_list args) {
 }
 
 jint methodIntCall(jmethodID id, va_list args) {
-    int index=(int)id;
-    if(nameToMethodId[index].Method!=NULL)
-    {
-       jint value=nameToMethodId[index].Method(id, args);
-       debugPrintf("methodIntCall return value:%d",value);
-       return value;
-    }
     for (int i = 0; i < methodsInt_size() / sizeof(MethodsInt); i++) {
         if (methodsInt[i].id == (int)id) {
             return methodsInt[i].Method(id, args);
@@ -319,7 +266,6 @@ jint methodIntCall(jmethodID id, va_list args) {
 }
 
 jfloat methodFloatCall(jmethodID id, va_list args) {
-
     for (int i = 0; i < methodsFloat_size() / sizeof(MethodsFloat); i++) {
         if (methodsFloat[i].id == (int)id) {
             return methodsFloat[i].Method(id, args);
@@ -360,11 +306,11 @@ jboolean jda_tryinit() {
 
         for (int i = 0; i < 16; ++i) {
             javaDynArrays[i].array = NULL;
-            javaDynArrays[i].len = -1;
-            javaDynArrays[i].type = FIELD_TYPE_UNKNOWN;
+            javaDynArrays[i].len   = -1;
+            javaDynArrays[i].type  = FIELD_TYPE_UNKNOWN;
         }
 
-        javaDynArrays_free = 16;
+        javaDynArrays_free  = 16;
         javaDynArrays_taken = 0;
     }
 
@@ -379,15 +325,15 @@ jboolean jda_extend() {
         if (javaDynArrays == NULL)
             return JNI_FALSE;
 
-        javaDynArrays = realloc(javaDynArrays, (sizeof(JavaDynArray) * (javaDynArrays_taken+16)));
+        javaDynArrays = realloc(javaDynArrays, (sizeof(JavaDynArray) * (javaDynArrays_taken + 16)));
 
         if (javaDynArrays == NULL)
             return JNI_FALSE;
 
-        for (int i = javaDynArrays_taken; i < javaDynArrays_taken+16; ++i) {
+        for (int i = javaDynArrays_taken; i < javaDynArrays_taken + 16; ++i) {
             javaDynArrays[i].array = NULL;
-            javaDynArrays[i].len = -1;
-            javaDynArrays[i].type = FIELD_TYPE_UNKNOWN;
+            javaDynArrays[i].len   = -1;
+            javaDynArrays[i].type  = FIELD_TYPE_UNKNOWN;
         }
 
         javaDynArrays_free = 16;
@@ -395,10 +341,10 @@ jboolean jda_extend() {
     return JNI_TRUE;
 }
 
-JavaDynArray * jda_alloc(jsize len, FIELD_TYPE type) {
+JavaDynArray *jda_alloc(jsize len, FIELD_TYPE type) {
     jda_lock();
 
-    void * array = malloc(len * getFieldTypeSize(type));
+    void *array = malloc(len * getFieldTypeSize(type));
     if (!array) {
         jda_unlock();
         return NULL;
@@ -411,7 +357,7 @@ JavaDynArray * jda_alloc(jsize len, FIELD_TYPE type) {
     }
 
     int index = -1;
-    for (int i = 0; i < (javaDynArrays_taken+javaDynArrays_free); ++i) {
+    for (int i = 0; i < (javaDynArrays_taken + javaDynArrays_free); ++i) {
         if (javaDynArrays[i].array == NULL) {
             index = i;
         }
@@ -424,18 +370,18 @@ JavaDynArray * jda_alloc(jsize len, FIELD_TYPE type) {
     }
 
     javaDynArrays[index].array = array;
-    javaDynArrays[index].len = len;
-    javaDynArrays[index].type = type;
+    javaDynArrays[index].len   = len;
+    javaDynArrays[index].type  = type;
 
     javaDynArrays_taken++;
     javaDynArrays_free--;
 
-    JavaDynArray * ret = &javaDynArrays[index];
+    JavaDynArray *ret = &javaDynArrays[index];
     jda_unlock();
     return ret;
 }
 
-jsize jda_sizeof(JavaDynArray * jda) {
+jsize jda_sizeof(JavaDynArray *jda) {
     if (!jda) return -1;
     if (!javaDynArrays) return -1;
 
@@ -445,7 +391,7 @@ jsize jda_sizeof(JavaDynArray * jda) {
         return -1;
     }
 
-    for (int i = 0; i < (javaDynArrays_taken+javaDynArrays_free); i++) {
+    for (int i = 0; i < (javaDynArrays_taken + javaDynArrays_free); i++) {
         if (jda == &javaDynArrays[i]) {
             if (javaDynArrays[i].array == NULL) {
                 jda_unlock();
@@ -461,7 +407,7 @@ jsize jda_sizeof(JavaDynArray * jda) {
     return -1;
 }
 
-jboolean jda_free(JavaDynArray * jda) {
+jboolean jda_free(JavaDynArray *jda) {
     if (!jda) return JNI_FALSE;
     if (!javaDynArrays) return JNI_FALSE;
 
@@ -472,7 +418,7 @@ jboolean jda_free(JavaDynArray * jda) {
     }
 
     int index = -1;
-    for (int i = 0; i < (javaDynArrays_taken+javaDynArrays_free); ++i) {
+    for (int i = 0; i < (javaDynArrays_taken + javaDynArrays_free); ++i) {
         if (jda == &javaDynArrays[i]) {
             index = i;
         }
@@ -485,8 +431,8 @@ jboolean jda_free(JavaDynArray * jda) {
 
     free(javaDynArrays[index].array);
     javaDynArrays[index].array = NULL;
-    javaDynArrays[index].type = FIELD_TYPE_UNKNOWN;
-    javaDynArrays[index].len = 0;
+    javaDynArrays[index].type  = FIELD_TYPE_UNKNOWN;
+    javaDynArrays[index].len   = 0;
 
     javaDynArrays_taken--;
     javaDynArrays_free++;
@@ -494,7 +440,7 @@ jboolean jda_free(JavaDynArray * jda) {
     return JNI_TRUE;
 }
 
-JavaDynArray * jda_find(void * arr) {
+JavaDynArray *jda_find(void *arr) {
     if (!arr) return NULL;
     if (!javaDynArrays) return NULL;
 
@@ -504,13 +450,13 @@ JavaDynArray * jda_find(void * arr) {
         return NULL;
     }
 
-    for (int i = 0; i < (javaDynArrays_taken+javaDynArrays_free); ++i) {
+    for (int i = 0; i < (javaDynArrays_taken + javaDynArrays_free); ++i) {
         if (arr == &javaDynArrays[i]) {
             if (javaDynArrays[i].array == NULL) {
                 jda_unlock();
                 return NULL;
             }
-            JavaDynArray * ret = &javaDynArrays[i];
+            JavaDynArray *ret = &javaDynArrays[i];
             jda_unlock();
             return ret;
         }

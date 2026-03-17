@@ -17,13 +17,12 @@
 #include <so_util/so_util.h>
 
 #include "config.h"
+#include "controls.h"
 #include "init.h"
 #include "utils/dialog.h"
 #include "utils/glutil.h"
 #include "utils/logger.h"
-#include "utils/settings.h"
 #include "utils/utils.h"
-#include "reimpl/controls.h"
 
 extern so_module so_mod;
 
@@ -64,12 +63,8 @@ void soloader_init_all() {
         l_fatal("SO could not be loaded.");
         fatal_error("Error: could not load %s.", SO_PATH);
     }
+    l_debug("SO loaded: text_base=%p", so_mod.text_base);
 
-    l_debug("SO text base: %p", so_mod.text_base);
-    l_debug("SO text size: %u", so_mod.text_size);
-
-    settings_load();
-    l_success("Settings loaded.");
     so_relocate(&so_mod);
     l_success("SO relocated.");
 

@@ -1,16 +1,15 @@
-#include <falso_jni/FalsoJNI.h>
 #include <math.h>
+#include <stdint.h>
+
 #include <psp2/ctrl.h>
 #include <psp2/kernel/clib.h>
 #include <psp2/touch.h>
+
+#include <falso_jni/FalsoJNI.h>
 #include <so_util/so_util.h>
-#include <stdint.h>
+
 #include "config.h"
 #include "utils/logger.h"
-#include "utils/settings.h"
-
-#define SCREEN_W 960
-#define SCREEN_H 544
 
 #define AKEYCODE_DPAD_UP       19
 #define AKEYCODE_DPAD_DOWN     20
@@ -59,7 +58,7 @@ int (*navite_keyDown)(void *env, void *obj, int keyCode, int unicodeChar, int re
 int (*navite_keyUp)(void *env, void *obj, int keyCode, int unicodeChar, int repeatCount);
 
 void controls_init() {
-	sceCtrlSetSamplingMode(SCE_CTRL_MODE_ANALOG_WIDE);
+    sceCtrlSetSamplingMode(SCE_CTRL_MODE_ANALOG_WIDE);
     sceTouchSetSamplingState(SCE_TOUCH_PORT_FRONT, SCE_TOUCH_SAMPLING_STATE_START);
     sceTouchEnableTouchForce(SCE_TOUCH_PORT_FRONT);
 }

@@ -34,10 +34,8 @@ void replace(char str[], char old, char new, int count) {
     }
 }
 FILE *fopen_soloader(const char *filename, const char *mode) {
-    debugPrintf("fopen_soloader:%s", filename);
     // TODO: 判断文件名称, 帮他引导到 DATA_PATH/filename 下去 open
     FILE *ret = fopen(filename, mode);
-
     if (ret) {
         l_debug("fopen(%s, %s): %p", filename, mode, ret);
     } else {
@@ -48,24 +46,24 @@ FILE *fopen_soloader(const char *filename, const char *mode) {
 }
 
 int dup_soloader(int fd) {
-    debugPrintf("dup_soloader:%d", fd);
+    l_debug("dup_soloader:%d", fd);
     return fd;
 }
 
 size_t fread_soloader(void *data, size_t _size, size_t _n, FILE *fd) {
-    debugPrintf("fread:%x  _size:%d  _n:%d", fd, _size, _n);
+    l_debug("fread:%x  _size:%d  _n:%d", fd, _size, _n);
     return fread(data, _size, _n, fd);
 }
 
 FILE *fdopen_soloader(int fd, const char *mode) {
     char *filename = "ux0:data/Acrodea/app.exe";
-    debugPrintf("fdopen_soloader:%s", filename);
+    l_debug("fdopen_soloader:%s", filename);
 
     FILE *ret = fopen(filename, mode);
     if (ret) {
         l_debug("fdopen(%s, %s): %p", filename, mode, ret);
     } else {
-        debugPrintf("fdopen_soloader not find file:%s", filename);
+        l_debug("fdopen_soloader not find file:%s", filename);
         l_warn("fdopen(%s, %s): %p", filename, mode, ret);
     }
 
@@ -73,14 +71,14 @@ FILE *fdopen_soloader(int fd, const char *mode) {
 }
 
 long ftell_soloader(FILE *stream) {
-    long v=ftell(stream);
-    debugPrintf("ftell(%p) return:%ld",stream,v);
+    long v = ftell(stream);
+    l_debug("ftell(%p) return:%ld", stream, v);
     return v;
 }
 
 int fseek_soloader(FILE *stream, long l, int i) {
-    int v=fseek(stream,l,i);
-    debugPrintf("fseek(%p,%ld,%d) return:%d",stream, l,i,v);
+    int v = fseek(stream, l, i);
+    l_debug("fseek(%p,%ld,%d) return:%d", stream, l, i, v);
     return v;
 }
 
@@ -94,11 +92,10 @@ uint64_t xorshift() {
 }
 
 uint8_t buf[256];
-void *random_writer(void *arg) {
+void   *random_writer(void *arg) {
     int fd = *(int *)arg;
-    
-    for (int i = 0; i < sizeof(buf); i += 8) 
-    {
+
+    for (int i = 0; i < sizeof(buf); i += 8) {
         uint64_t r = xorshift();
         memcpy(buf + i, &r, 8);
     }
@@ -108,19 +105,7 @@ void *random_writer(void *arg) {
 }
 
 int open_soloader(const char *path, int oflag, ...) {
-    debugPrintf("open_soloader:%s", path);
-    if (strcmp(path, "/proc/cpuinfo") == 0) {
-        return open_soloader("app0:/cpuinfo", oflag);
-    } else if (strcmp(path, "/proc/meminfo") == 0) {
-        return open_soloader("app0:/meminfo", oflag);
-    }else if (strcmp(path, "/dev/urandom") == 0) {
-        int pipefd[2];
-        pipe(pipefd);
-        random_writer(&pipefd[1]);
-        debugPrintf("open_soloader() return %d",pipefd[0]);
-        return pipefd[0];
-    }
-
+    int    ret;
     mode_t mode = 0666;
     if (((oflag & BIONIC_O_CREAT) == BIONIC_O_CREAT) ||
         ((oflag & BIONIC_O_TMPFILE) == BIONIC_O_TMPFILE)) {
@@ -130,8 +115,22 @@ int open_soloader(const char *path, int oflag, ...) {
         va_end(args);
     }
 
-    oflag   = oflags_bionic_to_newlib(oflag);
-    int ret = open(path, oflag, mode);
+    oflag = oflags_bionic_to_newlib(oflag);
+
+    if (strcmp(path, "/proc/cpuinfo") == 0) {
+        ret = open("app0:/cpuinfo", oflag, mode);
+    } else if (strcmp(path, "/proc/meminfo") == 0) {
+        ret = open("app0:/cpuinfo", oflag, mode);
+    } else if (strcmp(path, "/dev/urandom") == 0) {
+        int pipefd[2];
+        pipe(pipefd);
+        random_writer(&pipefd[1]);
+        ret = pipefd[0];
+    } else {
+        ret = open(path, oflag, mode);
+    }
+
+exit_return:
     if (ret >= 0)
         l_debug("open(%s, %x): %i", path, oflag, ret);
     else

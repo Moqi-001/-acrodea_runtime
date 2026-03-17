@@ -5,52 +5,67 @@
 #include <so_util/so_util.h>
 
 #include "config.h"
+#include "controls.h"
 #include "init.h"
-#include "reimpl/controls.h"
 #include "utils/glutil.h"
 #include "utils/logger.h"
 
 #define RES_PATH "/com.acrodea.gamecenter/res"
 
-int _newlib_heap_size_user = 128 * 1024 * 1024;
-#define SCREEN_W 960
-#define SCREEN_H 544
+int       _newlib_heap_size_user = MEMORY_NEWLIB_MB * 1024 * 1024;
 so_module so_mod;
 
-jobjectArray JobjectArray;
-int          StartOffset;
-char        *dspUserID;
-
 int controls_thread(SceSize args, void *argp) {
-    while (1)
-    {
-       controls_poll();
+    while (1) {
+        controls_poll();
+        sceKernelDelayThread(10 * 1000);
     }
 
+    sceKernelExitThread(0);
     return 0;
 }
 
-int (*marketlaunch)(void *, int, int, int, int, int, int, int, int, int, int, int, int, int, int);
-int (*launch)(void *, int, int, int, int, int, int, int, char, int, int, int);
-int (*surfaceChanged)(void *, int, int, int);
-int (*extensionInit)(void *, int, int);
-int (*mediaManagerInit)(void);
-int (*focusChanged)(void *, int, int);
+void (*navite_surfaceChanged)(JNIEnv *env, jobject thiz, jint width, jint height);
+void (*navite_focusChanged)(JNIEnv *env, jobject thiz, jboolean hasFocus);
 
-jobjectArray JobjectArray;
+jint (*navite_launch)(JNIEnv *env, jobject thiz, jint sdkVersion, jobject surface, jstring bootstrapPath, jstring apkPath,
+                      jstring rootDir, jstring appId, jstring params, jstring fromManager, jstring args, jstring serverEnvId);
+jint (*navite_marketlaunch)(JNIEnv *env, jobject thiz, jint sdkVersion, jobject surface, jstring str1, jstring str2, jstring str3, jstring str4,
+                            jstring str5, jstring str6, jstring str7, jstring str8, jint arg2, jstring str9, jobjectArray strArray);
+void (*navite_ExtensionInit)(JNIEnv *env, jobject thiz, jobject obj);
+void (*navite_MediaManagerInit)(JNIEnv *env, jobject thiz, jobject obj);
 
 int Launch(void *this, int a2) {
-    void *(*Get)(void *)         = (void *)so_symbol(&so_mod, "_ZN14RuntimeContext3GetEv");
-    void *RuntimeContextInstance = Get(NULL);
-    debugPrintf("RuntimeContextInstance  %p \n", RuntimeContextInstance);
+    void *(*RuntimeContext_Get)() = (void *)so_symbol(&so_mod, "_ZN14RuntimeContext3GetEv");
+    void *RuntimeContext_Instance = RuntimeContext_Get();
+    l_debug("RuntimeContext_Instance: %p", RuntimeContext_Instance);
 
-    int (*threadLoop)(void *)   = (void *)so_symbol(&so_mod, "_ZN13RuntimeThread10threadLoopEv");
-    int   addr                  = *((int *)(RuntimeContextInstance + 208));
-    void *RuntimeThreadInstance = (void *)(addr);
-    debugPrintf("RuntimeThreadInstance  %p \n", RuntimeThreadInstance);
+    int (*RuntimeThread_threadLoop)(void *) = (void *)so_symbol(&so_mod, "_ZN13RuntimeThread10threadLoopEv");
+    void *RuntimeThread_Instance            = *(void **)((uintptr_t)RuntimeContext_Instance + 208);
+    l_debug("RuntimeThread_Instance: %p", RuntimeThread_Instance);
 
-    int value = threadLoop(RuntimeThreadInstance);
-    debugPrintf("threadLoop over %d\n", value);
+    int ret = RuntimeThread_threadLoop(RuntimeThread_Instance);
+    l_debug("RuntimeThread_threadLoop: %d", ret);
+}
+
+int main_thread(SceSize args, void *argp) {
+    int ret = navite_launch(&jni,
+                            NULL,
+                            10,
+                            NULL,
+                            "/runtime/",
+                            "/app/com.acrodea.vividruntime.launcher.apk",
+                            "/RuntimeApps",
+                            "1760",
+                            NULL,
+                            "from_manager:log_print",
+                            NULL,
+                            0);
+
+    l_debug("navite_launch over: return %d\n", ret);
+
+    sceKernelExitThread(0);
+    return ret;
 }
 
 int main() {
@@ -58,75 +73,39 @@ int main() {
     soloader_init_all();
     int (*JNI_OnLoad)(void *jvm, int reserved) = (void *)so_symbol(&so_mod, "JNI_OnLoad");
     JNI_OnLoad(&jvm, 0);
-    debugPrintf("JNI_OnLoad over \n");
+    l_debug("JNI_OnLoad over \n");
 
     hook_addr((uintptr_t)so_symbol(&so_mod, "_ZN18RuntimeContextBase6LaunchEb"), (uintptr_t)&Launch);
 
     gl_init();
     eglSwapInterval(0, 2);
 
-    marketlaunch = (void *)(LOAD_ADDRESS + 0x416CD);
-    launch       = (void *)(LOAD_ADDRESS + 0x413F9);
-    surfaceChanged= (void *)(LOAD_ADDRESS + 0x40291);
-    focusChanged = (void *)(LOAD_ADDRESS + 0x40269);
+    navite_marketlaunch   = (void *)(LOAD_ADDRESS + 0x416CD);
+    navite_launch         = (void *)(LOAD_ADDRESS + 0x413F9);
+    navite_surfaceChanged = (void *)(LOAD_ADDRESS + 0x40291);
+    navite_focusChanged   = (void *)(LOAD_ADDRESS + 0x40269);
 
-    extensionInit = (void *)(LOAD_ADDRESS + 0x41221);
-    mediaManagerInit = (void *)(LOAD_ADDRESS + 0x41285);
+    navite_ExtensionInit    = (void *)(LOAD_ADDRESS + 0x41221);
+    navite_MediaManagerInit = (void *)(LOAD_ADDRESS + 0x41285);
 
-    extensionInit(&jni,0,"");
-    debugPrintf("extensionInit over \n");
+    navite_ExtensionInit(&jni, NULL, "");
+    l_debug("navite_ExtensionInit over \n");
 
-    mediaManagerInit();
-    debugPrintf("mediaManagerInit over \n");
+    navite_MediaManagerInit(&jni, NULL, NULL);
+    l_debug("navite_MediaManagerInit over \n");
 
-    int ret = focusChanged(jni,0,1);
-    debugPrintf("FocusChanged return %p", ret);
+    navite_focusChanged(&jni, 0, 1);
+    l_debug("navite_focusChanged over");
 
-    surfaceChanged(NULL,0,SCREEN_W,SCREEN_H);
-    debugPrintf("surfaceChanged over %p\n", surfaceChanged);
+    navite_surfaceChanged(NULL, 0, SCREEN_W, SCREEN_H);
+    l_debug("navite_surfaceChanged over %p\n", navite_surfaceChanged);
 
-    SceUID thid = sceKernelCreateThread("controls_thread", (SceKernelThreadEntry)controls_thread, 0x40,2* 128 * 1024, 0, 0, NULL);
-    sceKernelStartThread(thid, 0, NULL);
+    SceUID controls_thid = sceKernelCreateThread("controls_thread", (SceKernelThreadEntry)controls_thread, 0x40, 128 * 1024, 0, 0, NULL);
+    sceKernelStartThread(controls_thid, 0, NULL);
 
-    char *appId   = "com.acrodea.gamecenter";
-    /*
-    debugPrintf("marketlaunch start %p\n", marketlaunch);
-    
-    int   SDK_INT = 10;
-    int   Surface = 0;
-    char *a5      = "/runtime/";
-    char *a6      = "/com.acrodea.vividruntime.launcher";
-    char *a7      = "/RuntimeApps/";
-    char *a8      = "1760";
-    char *a9      = "/lib/com.acrodea.gamecenter/app.exe";
-    char *a10     = "/com.acrodea.gamecenter/res";
-    char *a11     = "/com.acrodea.gamecenter/data";
-    char *a12     = "/com.acrodea.gamecenter/.tmp";
-    int   a13     = 1;
-    char *a14     = "from_manager:log_print";
-    int   len     = 2;
-    char *a15[]   = {"http://","boot_from=1760"};
-    JobjectArray  = NewObjectArray(&jni, len, "a15", NULL);
-    for (size_t i = 0; i < len; i++) {
-        SetObjectArrayElement(&jni, JobjectArray, i, a15[i]);
-    }
+    SceUID main_thid = sceKernelCreateThread("main_thread", (SceKernelThreadEntry)main_thread, 0x40, 128 * 1024, 0, 0, NULL);
+    sceKernelStartThread(main_thid, 0, NULL);
+    sceKernelWaitThreadEnd(main_thid, NULL, NULL);
 
-    marketlaunch(&jni, appId, SDK_INT, Surface, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, JobjectArray);
-    debugPrintf("marketlaunch over %p\n", marketlaunch);
-    */
-
-    char* bw[0];
-    launch(&jni,appId,10,0,
-    "/runtime/",
-    "/com.acrodea.vividruntime.launcher",
-    "/RuntimeApps", 
-    "1760",
-    1,
-    "from_manager:log_print",
-    bw,
-    0);
-    debugPrintf("launch over %p\n",launch);
-
-    // ... do some initialization
     return 0;
 }
