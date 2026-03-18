@@ -45,7 +45,7 @@ int main() {
     
     jni_init(); // Initializes jvm and jni objects
 
-    int (*JNI_OnLoad)(JavaVM* jvm) = (void*)so_symbol(&so_mod,"JNI_OnLoad");
+    int (*JNI_OnLoad)(JavaVM* jvm) = (void*)so_find_symbol(&so_mod,"JNI_OnLoad");
     JNI_OnLoad(&jvm);
 
     // ...

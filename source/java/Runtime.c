@@ -6,62 +6,62 @@
 #include "utils/logger.h"
 
 /*
- * 类名: com/acrodea/vividruntime/launcher/Runtime
+ * 包名: com/acrodea/vividruntime/launcher/Runtime
  */
 
 // "vibrate", "(Z)V"
 void Runtime_vibrate(jmethodID id, va_list args) {
     jboolean value = va_arg(args, int);
-    l_debug("[JNI] vibrate(%d)", value);
+    l_debug("[JNI] Runtime::vibrate(%d)", value);
 }
 
 // "getLocale", "()Ljava/lang/String;"
 jobject Runtime_getLocale(jmethodID id, va_list args) {
     const char *res = "en";
-    l_debug("[JNI] getLocale(): %s", res);
+    l_debug("[JNI] Runtime::getLocale(): %s", res);
     return (jobject)jni->NewStringUTF(&jni, res);
 }
 
 // "launchRuntime", "(Ljava/lang/String;)V"
 void Runtime_launchRuntime(jmethodID id, va_list args) {
     const char *value = va_arg(args, char *);
-    l_debug("[JNI] launchRuntime(%s)", value);
+    l_debug("[JNI] Runtime::launchRuntime(%s)", value);
 }
 
 // "trialSetTime", "(I)V"
 void Runtime_trialSetTime(jmethodID id, va_list args) {
     int time = va_arg(args, int);
-    l_debug("[JNI] trialSetTime(%d)", time);
+    l_debug("[JNI] Runtime::trialSetTime(%d)", time);
 }
 
 // "appFinish", "()V"
 void Runtime_appFinish(jmethodID id, va_list args) {
-    l_debug("[JNI] appFinish()");
+    l_debug("[JNI] Runtime::appFinish()");
 }
 
 // "updateResourceCheck", "(Ljava/lang/String;[F)V"
 void Runtime_updateResourceCheck(jmethodID id, va_list args) {
     const char *value  = va_arg(args, char *);
     float       value2 = va_arg(args, double);
-    l_debug("[JNI] updateResourceCheck(%s,%f)", value, value2);
+    l_debug("[JNI] Runtime::updateResourceCheck(%s,%f)", value, value2);
 }
 
 // "invisibleRuntimeLogo", "()V"
 void Runtime_invisibleRuntimeLogo(jmethodID id, va_list args) {
-    l_debug("[JNI] invisibleRuntimeLogo()");
+    l_debug("[JNI] Runtime::invisibleRuntimeLogo()");
 }
 
 // "isUseRecord", "()Z"
 jboolean Runtime_isUseRecord(jmethodID id, va_list args) {
     jboolean res = 0;
-    l_debug("[JNI] isUseRecord(): %u", res);
+    l_debug("[JNI] Runtime::isUseRecord(): %u", res);
     return res;
 }
 
 // "getCommonDir", "()Ljava/lang/String;"
 jobject Runtime_getCommonDir(jmethodID id, va_list args) {
     const char *res = "ggee/";
-    l_debug("[JNI] getCommonDir(): %s", res);
+    l_debug("[JNI] Runtime::getCommonDir(): %s", res);
     return (jobject)jni->NewStringUTF(&jni, res);
 }
 
@@ -69,7 +69,7 @@ jobject Runtime_getCommonDir(jmethodID id, va_list args) {
 jobject Runtime_getCommonAppDir(jmethodID id, va_list args) {
     const char *res   = DATA_PATH;
     const char *value = va_arg(args, char *);
-    l_debug("[JNI] getCommonAppDir(%s): %s", res);
+    l_debug("[JNI] Runtime::getCommonAppDir(%s): %s", res);
     return (jobject)jni->NewStringUTF(&jni, res);
 }
 
@@ -90,57 +90,59 @@ jobject Runtime_getEnv(jmethodID id, va_list args) {
         res = "Adreno";
     }
 
-    l_debug("[JNI] getEnv(%s): %s", value, res);
+    l_debug("[JNI] Runtime::getEnv(%s): %s", value, res);
     return (jobject)jni->NewStringUTF(&jni, res);
 }
 
 // "jniTrackerSetPage", "(Ljava/lang/String;)V"
 void Runtime_jniTrackerSetPage(jmethodID id, va_list args) {
     const char *value = va_arg(args, char *);
-    l_debug("[JNI] jniTrackerSetPage(%s)", value);
+    l_debug("[JNI] Runtime::jniTrackerSetPage(%s)", value);
 }
 
 // "jniTrackerEvent", "(Ljava/lang/String;Ljava/lang/String;)V"
 void Runtime_jniTrackerEvent(jmethodID id, va_list args) {
     const char *value  = va_arg(args, char *);
     const char *value2 = va_arg(args, char *);
-    l_debug("[JNI] jniTrackerEvent(%s,%s)", value, value2);
+    l_debug("[JNI] Runtime::jniTrackerEvent(%s,%s)", value, value2);
 }
 
 // "jniTrackerAssignAttribute", "(ILjava/lang/String;)V"
 void Runtime_jniTrackerAssignAttribute(jmethodID id, va_list args) {
-    const char *value = va_arg(args, char *);
-    l_debug("[JNI] jniTrackerAssignAttribute(%s)", value);
+    int         value  = va_arg(args, int);
+    const char *value2 = va_arg(args, char *);
+    l_debug("[JNI] Runtime::jniTrackerSetAttribute(%d,%s)", value, value2);
 }
 
 // "jniTrackerRemoveAttribute", "(I)V"
 void Runtime_jniTrackerRemoveAttribute(jmethodID id, va_list args) {
     int value = va_arg(args, int);
-    l_debug("[JNI] jniTrackerRemoveAttribute(%d)", value);
+    l_debug("[JNI] Runtime::jniTrackerRemoveAttribute(%d)", value);
 }
 
 // "jniTrackerSetAttribute", "(ILjava/lang/String;)V"
 void Runtime_jniTrackerSetAttribute(jmethodID id, va_list args) {
-    const char *value = va_arg(args, char *);
-    l_debug("[JNI] jniTrackerSetAttribute(%s)", value);
+    int         value  = va_arg(args, int);
+    const char *value2 = va_arg(args, char *);
+    l_debug("[JNI] Runtime::jniTrackerSetAttribute(%d,%s)", value, value2);
 }
 
 // "stereoIsAvailability", "()I"
 jint Runtime_stereoIsAvailability(jmethodID id, va_list args) {
     int res = 1;
-    l_debug("[JNI] stereoIsAvailability(): %d", res);
+    l_debug("[JNI] Runtime::stereoIsAvailability(): %d", res);
     return (jint)res;
 }
 
 // "stereoSetView", "(Z)V"
 void Runtime_stereoSetView(jmethodID id, va_list args) {
-    int value = va_arg(args, int);
-    l_debug("[JNI] stereoSetView(%u)", value);
+    jboolean value = va_arg(args, int);
+    l_debug("[JNI] Runtime::stereoSetView(%u)", value);
 }
 
 // "stereoGetDepth", "()F"
 jfloat Runtime_stereoGetDepth(jmethodID id, va_list args) {
     float res = 1.0;
-    l_debug("[JNI] stereoGetDepth(): %f", res);
+    l_debug("[JNI] Runtime::stereoGetDepth(): %f", res);
     return res;
 }

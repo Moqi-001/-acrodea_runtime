@@ -18,7 +18,7 @@
 
 #include "config.h"
 #include "controls.h"
-#include "init.h"
+#include "loader.h"
 #include "utils/dialog.h"
 #include "utils/glutil.h"
 #include "utils/logger.h"
@@ -26,7 +26,7 @@
 
 extern so_module so_mod;
 
-void soloader_init_all() {
+void soloader_init() {
     // Launch `app0:configurator.bin` on `-config` init param
     sceAppUtilInit(&(SceAppUtilInitParam){}, &(SceAppUtilBootParam){});
     SceAppUtilAppEventParam eventParam;
@@ -71,7 +71,7 @@ void soloader_init_all() {
     resolve_imports(&so_mod);
     l_success("SO imports resolved.");
 
-    so_patch();
+    soloader_patch();
     l_success("SO patched.");
 
     so_flush_caches(&so_mod);

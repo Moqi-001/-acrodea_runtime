@@ -8,7 +8,7 @@
 #include "reimpl/android/SharedBuffer.h"
 #include "utils/logger.h"
 
-struct SharedBuffer {
+struct ASharedBuffer {
     int32_t  refs;
     size_t   size;
     uint32_t reserved[2];
@@ -17,10 +17,10 @@ struct SharedBuffer {
 #define onlyOwner(sb) (sb->refs == 1)
 #define getData(sb)   ((void *)(sb + 1))
 
-SharedBuffer *ASharedBuffer_alloc(size_t size) {
+ASharedBuffer *ASharedBuffer_alloc(size_t size) {
     l_debug("[Android] ASharedBuffer_alloc(%u)", size);
 
-    SharedBuffer *sb = (SharedBuffer *)malloc(sizeof(SharedBuffer) + size);
+    ASharedBuffer *sb = (ASharedBuffer *)malloc(sizeof(ASharedBuffer) + size);
     if (!sb) {
         l_debug("[Android] ASharedBuffer_alloc failed: cannot alloc memory");
         return NULL;
@@ -29,11 +29,11 @@ SharedBuffer *ASharedBuffer_alloc(size_t size) {
     sb->refs = 1;
     sb->size = size;
 
-    l_debug("[Android] ASharedBuffer_alloc over: sb=%p,data=%p", sb, getData(sb));
+    l_debug("[Android] ASharedBuffer_alloc over: %p", sb);
     return sb;
 }
 
-int ASharedBuffer_dealloc(SharedBuffer *sb) {
+int ASharedBuffer_dealloc(ASharedBuffer *sb) {
     l_debug("[Android] ASharedBuffer_dealloc(%p)", sb);
 
     if (!sb) {
@@ -52,7 +52,7 @@ int ASharedBuffer_dealloc(SharedBuffer *sb) {
     return 0;
 }
 
-SharedBuffer *ASharedBuffer_attemptEdit(SharedBuffer *sb) {
+ASharedBuffer *ASharedBuffer_attemptEdit(ASharedBuffer *sb) {
     l_debug("[Android] ASharedBuffer_attemptEdit(%p)", sb);
 
     if (!sb) {
@@ -60,13 +60,13 @@ SharedBuffer *ASharedBuffer_attemptEdit(SharedBuffer *sb) {
         return NULL;
     }
 
-    SharedBuffer *buf = onlyOwner(sb) ? sb : NULL;
+    ASharedBuffer *buf = onlyOwner(sb) ? sb : NULL;
 
     l_debug("[Android] ASharedBuffer_attemptEdit over: %p", buf);
     return buf;
 }
 
-SharedBuffer *ASharedBuffer_edit(SharedBuffer *sb) {
+ASharedBuffer *ASharedBuffer_edit(ASharedBuffer *sb) {
     l_debug("[Android] ASharedBuffer_edit(%p)", sb);
 
     if (!sb) {
@@ -74,7 +74,7 @@ SharedBuffer *ASharedBuffer_edit(SharedBuffer *sb) {
         return NULL;
     }
 
-    SharedBuffer *buf;
+    ASharedBuffer *buf;
 
     if (onlyOwner(sb)) {
         buf = sb;
@@ -90,7 +90,7 @@ SharedBuffer *ASharedBuffer_edit(SharedBuffer *sb) {
     return sb;
 }
 
-SharedBuffer *ASharedBuffer_editResize(SharedBuffer *sb, size_t new_size) {
+ASharedBuffer *ASharedBuffer_editResize(ASharedBuffer *sb, size_t new_size) {
     l_debug("[Android] ASharedBuffer_editResize(%p,%u)", sb, new_size);
 
     if (!sb) {
@@ -98,12 +98,12 @@ SharedBuffer *ASharedBuffer_editResize(SharedBuffer *sb, size_t new_size) {
         return NULL;
     }
 
-    SharedBuffer *buf;
+    ASharedBuffer *buf;
 
     if (onlyOwner(sb)) {
         buf = sb;
         if (buf->size != new_size) {
-            buf = (SharedBuffer *)realloc(buf, sizeof(SharedBuffer) + new_size);
+            buf = (ASharedBuffer *)realloc(buf, sizeof(ASharedBuffer) + new_size);
             if (buf != NULL)
                 buf->size = new_size;
         }
@@ -119,11 +119,11 @@ SharedBuffer *ASharedBuffer_editResize(SharedBuffer *sb, size_t new_size) {
     return buf;
 }
 
-SharedBuffer *ASharedBuffer_reset(SharedBuffer *sb, size_t new_size) {
+ASharedBuffer *ASharedBuffer_reset(ASharedBuffer *sb, size_t new_size) {
     l_debug("[Android] ASharedBuffer_reset(%p,%u)", sb, new_size);
 
     // cheap-o-reset.
-    SharedBuffer *buf = ASharedBuffer_alloc(new_size);
+    ASharedBuffer *buf = ASharedBuffer_alloc(new_size);
     if (buf)
         ASharedBuffer_release(sb, 0);
 
@@ -131,7 +131,7 @@ SharedBuffer *ASharedBuffer_reset(SharedBuffer *sb, size_t new_size) {
     return buf;
 }
 
-void ASharedBuffer_acquire(SharedBuffer *sb) {
+void ASharedBuffer_acquire(ASharedBuffer *sb) {
     l_debug("[Android] ASharedBuffer_acquire(%p)", sb);
 
     if (!sb) {
@@ -144,7 +144,7 @@ void ASharedBuffer_acquire(SharedBuffer *sb) {
     l_debug("[Android] ASharedBuffer_acquire over: %d", sb->refs);
 }
 
-int32_t ASharedBuffer_release(SharedBuffer *sb, uint32_t flags) {
+int32_t ASharedBuffer_release(ASharedBuffer *sb, uint32_t flags) {
     l_debug("[Android] ASharedBuffer_release(%p,%u)", sb, flags);
 
     if (!sb) {
@@ -163,22 +163,22 @@ int32_t ASharedBuffer_release(SharedBuffer *sb, uint32_t flags) {
     return prev;
 }
 
-size_t ASharedBuffer_size(SharedBuffer *sb) {
+size_t ASharedBuffer_size(ASharedBuffer *sb) {
     return sb ? sb->size : 0;
 }
 
-void *ASharedBuffer_data(SharedBuffer *sb) {
+void *ASharedBuffer_data(ASharedBuffer *sb) {
     return sb ? (void *)(sb + 1) : NULL;
 }
 
-SharedBuffer *ASharedBuffer_bufferFromData(void *data) {
-    return data ? (SharedBuffer *)data - 1 : NULL;
+ASharedBuffer *ASharedBuffer_bufferFromData(void *data) {
+    return data ? (ASharedBuffer *)data - 1 : NULL;
 }
 
 size_t ASharedBuffer_sizeFromData(void *data) {
     return data ? (ASharedBuffer_bufferFromData(data))->size : 0;
 }
 
-bool ASharedBuffer_onlyOwner(SharedBuffer *sb) {
+bool ASharedBuffer_onlyOwner(ASharedBuffer *sb) {
     return sb ? sb->refs == 1 : false;
 }

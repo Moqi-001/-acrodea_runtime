@@ -6,16 +6,16 @@
 #include <so_util/so_util.h>
 #include "config.h"
 
+#include "controls.h"
 #include "reimpl/libGgee/ggee.h"
 #include "reimpl/libKD/kd.h"
 #include "reimpl/libLD/ld.h"
+#include "reimpl/libLD/ld_patch.h"
 #include "utils/logger.h"
-#include "controls.h"
 
 #define _DWORD uintptr_t
 extern so_module so_mod;
 
-LdModule *bootstrap_mod                                      = NULL;
 int (*bootstrap_start)(int argc, char *argv[], char *envp[]) = NULL;
 
 int bootstrap_start_soloader(int argc, char *argv[], char *envp[]) {
@@ -56,7 +56,7 @@ int bootstrap_start_soloader(int argc, char *argv[], char *envp[]) {
     // hook_addr((uintptr_t)(0x105D58+1+0x99000000), (uintptr_t)&sub_105D58);
     // hook_addr((uintptr_t)(0x10F07C+1+0x99000000), (uintptr_t)&sub_10F07C);
 
-    //int ret = bootstrap_start(sizeof(marketlaunch_argv) / sizeof(marketlaunch_argv[0]), marketlaunch_argv, envp);
+    // int ret = bootstrap_start(sizeof(marketlaunch_argv) / sizeof(marketlaunch_argv[0]), marketlaunch_argv, envp);
     int ret = bootstrap_start(argc, argv, envp);
     l_debug("bootstrap_start_soloader return %p", ret);
     return ret;
@@ -64,52 +64,31 @@ int bootstrap_start_soloader(int argc, char *argv[], char *envp[]) {
 
 int (*HttpResponse)(void *, int, int, int, void *, void *, void *);
 
-void SetRuntimeContext(int index,int value)
-{
-    char *(*Get)(void *)         = (void *)so_symbol(&so_mod, "_ZN14RuntimeContext3GetEv");
+void SetRuntimeContext(int index, int value) {
+    char *(*Get)(void *)         = (void *)so_find_symbol(&so_mod, "_ZN14RuntimeContext3GetEv");
     char *RuntimeContextInstance = Get(NULL);
-    char *F=RuntimeContextInstance+index;
-    l_debug("SetRuntimeContext form(%d)",*F);
-    *(F)=value;
-    l_debug("SetRuntimeContext to(%d)",*F);
+    char *F                      = RuntimeContextInstance + index;
+    l_debug("SetRuntimeContext form(%d)", *F);
+    *(F) = value;
+    l_debug("SetRuntimeContext to(%d)", *F);
 }
 
 void plugin_gles_procaddress_terminate() {
     l_debug("plugin_gles_procaddress_terminate()");
 }
 
-void so_patch(void) {
-    so_patch_controls(&so_mod);
+void soloader_patch(void) {
+    soloader_patch_controls(&so_mod);
+    soloader_patch_ld(&so_mod);
 
-    // hook_addr((uintptr_t)so_symbol(&so_mod, "kdExit"), (uintptr_t)&kdExit);
-    hook_addr((uintptr_t)so_symbol(&so_mod, "__kdMapFilename"), (uintptr_t)&__kdMapFilename);
-    // hook_addr((uintptr_t)so_symbol(&so_mod, "__kdFlushICache"), (uintptr_t)&__kdFlushICache);
-    hook_addr((uintptr_t)so_symbol(&so_mod, "__kdFlushICache"), (uintptr_t)&__kdFlushICache);
+    // hook_addr((uintptr_t)so_find_symbol(&so_mod, "kdExit"), (uintptr_t)&kdExit);
+    hook_addr((uintptr_t)so_find_symbol(&so_mod, "__kdMapFilename"), (uintptr_t)&__kdMapFilename);
+    hook_addr((uintptr_t)so_find_symbol(&so_mod, "__kdFlushICache"), (uintptr_t)&__kdFlushICache);
 
-    hook_addr((uintptr_t)so_symbol(&so_mod, "ldGetErrorMessage"), (uintptr_t)&ldGetErrorMessage);
-    hook_addr((uintptr_t)so_symbol(&so_mod, "ldModuleGetEntryPoint"), (uintptr_t)&ldModuleGetEntryPoint);
-    ldModuleGetSymbol    = (void *)so_symbol(&so_mod, "ldModuleGetSymbol");
-    ldModuleLookupSymbol = (void *)so_symbol(&so_mod, "ldModuleLookupSymbol");
-    hook_addr((uintptr_t)so_symbol(&so_mod, "ldModuleRelocate"), (uintptr_t)&ldModuleRelocate);
-    hook_addr((uintptr_t)so_symbol(&so_mod, "ldModuleAllocAndLoadImage"), (uintptr_t)&ldModuleAllocAndLoadImage);
-    hook_addr((uintptr_t)so_symbol(&so_mod, "ldModuleDestroyImage"), (uintptr_t)&ldModuleDestroyImage);
+    // hook_addr((uintptr_t)so_find_symbol(&so_mod, "plugin_gles_procaddress_terminate"), (uintptr_t)&plugin_gles_procaddress_terminate);
 
-    hook_addr((uintptr_t)so_symbol(&so_mod, "ldModuleInitialize"), (uintptr_t)&ldModuleInitialize);
-    hook_addr((uintptr_t)so_symbol(&so_mod, "ldModuleDeinitialize"), (uintptr_t)&ldModuleDeinitialize);
-    
-    // hook_addr((uintptr_t)so_symbol(&so_mod, "plugin_gles_procaddress_terminate"), (uintptr_t)&plugin_gles_procaddress_terminate);
-
-    ggeeLibExpand = (void *)so_symbol(&so_mod, "ggeeLibExpand");
-    HttpResponse = (void *)(LOAD_ADDRESS + 0x40FB4+1);
+    ggeeLibExpand = (void *)so_find_symbol(&so_mod, "ggeeLibExpand");
+    HttpResponse  = (void *)(LOAD_ADDRESS + 0x40FB4 + 1);
 
     // ggeeLibExpandFile("ux0:data/Acrodea/lib4_5_0/libc.so", "ux0:data/Acrodea/libc.so");
-
-    // int * UserConfirm = (int *) so_symbol(&so_mod, "_UserConfirm");
-    // * UserConfirm = 1;
-
-    // char ** GVfs = (char **) so_symbol(&so_mod, "GVfs");
-    // *GVfs = malloc(60);
-    // //**GVfs = 0;
-    // memset(*GVfs,0,60);
-    // l_debug("set GVfs over");
 }

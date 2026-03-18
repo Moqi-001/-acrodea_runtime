@@ -5,17 +5,17 @@ source
 1:main.c
 (1)int main()方法
     utils-init.c
-      soloader_init_all()；初始化配置
+      soloader_init()；初始化配置
       loadConfig();读取配置
       gl_init();gl初始化
 重点：
-    int (* OnNativeInitializeJNI)(void *) = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_ItarosActivity_OnNativeInitializeJNI");
-    int (* NativePath)(void *,int,char *) = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativePath");
-    int (* NativeInitialize)(void *) = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativeInitialize");
-    int (* NativeSize)(int,int,int,int) = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativeSize");
-    //int (* OnNativeCreateRenderer)() = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativeCreateRenderer");
+    int (* OnNativeInitializeJNI)(void *) = (void *)so_find_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_ItarosActivity_OnNativeInitializeJNI");
+    int (* NativePath)(void *,int,char *) = (void *)so_find_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativePath");
+    int (* NativeInitialize)(void *) = (void *)so_find_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativeInitialize");
+    int (* NativeSize)(int,int,int,int) = (void *)so_find_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativeSize");
+    //int (* OnNativeCreateRenderer)() = (void *)so_find_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativeCreateRenderer");
    
-    int (* VFSInitialize)(void *,int,int,int,int,int,int) = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnVFSInitialize");
+    int (* VFSInitialize)(void *,int,int,int,int,int,int) = (void *)so_find_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnVFSInitialize");
 
    调用so_symbol方法获取so里的游戏运行主逻辑的方法，游戏运行主逻辑的方法要在apk里的Java代码里查看，推荐工具jadxgui直接打开apk；在AndroidManifest.xml里找
 到入口com.Nexon.DnFSwordR.MainActivity，分析代码找到游戏的com.Nexon.DnFSwordR.ItarosActivity。这类Activity代码都是从onCreate方法进行分析的，
@@ -32,7 +32,7 @@ com.Nexon.DnFSwordR.ItarosActivity代码里分析得到有调用原生方法OnNa
 SceUID thid = sceKernelCreateThread("main_thread", (SceKernelThreadEntry)main_thread, 0x40,2* 128 * 1024, 0, 0, NULL);
 线程来循环调用。 
 (2) int main_thread()
-  int (* NativeFrame)(void) = (void *)so_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativeFrame");
+  int (* NativeFrame)(void) = (void *)so_find_symbol(&so_mod, "Java_com_Nexon_DnFSwordR_NativeClass_OnNativeFrame");
 由java代码里的 NativeClass设置的33帧，设置游戏更新帧数fpsLock为33；之后再调用NativeFrame进行so的更新。
  controls_poll();用于控制逻辑，需要每帧调用
 

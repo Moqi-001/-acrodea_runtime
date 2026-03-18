@@ -158,8 +158,8 @@ extern const short *BIONIC_toupper_tab_;
 static FILE        __sF_fake[3];
 const unsigned int __page_size = PAGE_SIZE;
 
-so_default_dynlib *default_dynlib_m;
-int                size_default_dynlib;
+so_dynlib *default_dynlib_m;
+int        size_default_dynlib;
 
 int chdir_soloader(const char *dir) {
     const char *_dir = dir;
@@ -184,10 +184,11 @@ void *dlopen_soloader(const char *filename, int flag) {
 }
 
 void *dlsym_soloader(void *handle, const char *symbol) {
-    for (int j = 0; j < size_default_dynlib / sizeof(so_default_dynlib); j++) {
+    for (int j = 0; j < size_default_dynlib / sizeof(so_dynlib); j++) {
         if (strcmp(symbol, default_dynlib_m[j].symbol) == 0) {
-            l_debug("dlsym(%p,%s)", handle, symbol);
-            return (void *)default_dynlib_m[j].func;
+            void *res = (void *)default_dynlib_m[j].func;
+            l_debug("dlsym(%p,%s): %p", handle, symbol, res);
+            return res;
         }
     }
 
@@ -232,46 +233,25 @@ int setjmp_soloader(jmp_buf v) {
 }
 
 int symlink_soloader(const char *target, const char *linkpath) {
-    l_debug("symlink(%s, %s)", target, linkpath);
+    l_debug("symlink(%s, %s): unsupport!", target, linkpath);
     return 0;
 }
 
 int statfs_soloader(const char *path, void *buf) {  // struct statfs *buf
-    l_debug("statfs(%s, %p)", path, buf);
+    l_debug("statfs(%s, %p): unsupport!", path, buf);
     return 0;
 }
 
-typedef int64_t nsecs_t;  // nano-seconds
-
-nsecs_t systemTime(int clock) {
-    // l_debug("systemTime(%d)",clock);
-#if defined(HAVE_POSIX_CLOCKS)
-    static const clockid_t clocks[] = {
-        CLOCK_REALTIME,
-        CLOCK_MONOTONIC,
-        CLOCK_PROCESS_CPUTIME_ID,
-        CLOCK_THREAD_CPUTIME_ID};
-    struct timespec t;
-    t.tv_sec = t.tv_nsec = 0;
-    clock_gettime(clocks[clock], &t);
-    return nsecs_t(t.tv_sec) * 1000000000LL + t.tv_nsec;
-#else
-    // we don't support the clocks here.
+int64_t systemTime(int clock) {
     struct timeval t;
     t.tv_sec = t.tv_usec = 0;
     gettimeofday(&t, NULL);
-    nsecs_t nanoSeconds = (nsecs_t)(t.tv_sec) * 1000000000LL + (nsecs_t)(t.tv_usec) * 1000LL;
-    // l_debug("systemTime => (%lld)", nanoSeconds);
+    int64_t nanoSeconds = (int64_t)(t.tv_sec) * 1000000000LL + (int64_t)(t.tv_usec) * 1000LL;
+    // l_debug("systemTime(%d): (%lld)", clock, nanoSeconds);
     return nanoSeconds;
-#endif
 }
 
-int glLightModelx() {
-    l_debug("glLightModelx()");
-    return 0;
-}
-
-so_default_dynlib default_dynlib[] = {
+so_dynlib default_dynlib[] = {
     {"_ZdaPv", (uintptr_t)&_ZdaPv},
     {"_ZdlPv", (uintptr_t)&_ZdlPv},
     {"_Znaj", (uintptr_t)&_Znaj},
@@ -990,7 +970,7 @@ so_default_dynlib default_dynlib[] = {
     {"glLightfv", (uintptr_t)&glLightfv},
     {"glLightModelf", (uintptr_t)&ret0},
     {"glLightModelfv", (uintptr_t)&glLightModelfv},
-    {"glLightModelx", (uintptr_t)&glLightModelx},
+    {"glLightModelx", (uintptr_t)&ret0},
     {"glLightModelxv", (uintptr_t)&glLightModelxv},
     {"glLightx", (uintptr_t)&ret0},
     {"glLightxv", (uintptr_t)&glLightxv},
@@ -1265,4 +1245,8 @@ void resolve_imports(so_module *mod) {
     default_dynlib_m    = default_dynlib;
     size_default_dynlib = sizeof(default_dynlib);
     so_resolve(mod, default_dynlib, size_default_dynlib, 0);
+}
+
+uintptr_t soloader_find_symbol_from_default_dynlib(const char *symbol) {
+    return so_find_symbol_from_dynlib(default_dynlib, size_default_dynlib, symbol);
 }

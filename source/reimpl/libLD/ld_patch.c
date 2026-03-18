@@ -9,32 +9,17 @@
 #include "ld.h"
 #include "ld_patch.h"
 #include "reimpl/io.h"
-#include "utils/logger.h"
 #include "reimpl/pthr.h"
+#include "utils/logger.h"
 
-int sub_52860(int a1)
-{
-    l_debug("sub_52860(%d)",a1);
-    return 0;
-}
-
-void* objc_calloc(size_t a1,size_t a2)
-{
-    l_debug("objc_calloc(%u,%u)",a1,a2);
-    void* p= calloc(a1,a2);
-    l_debug("objc_calloc() retutn:%p",p);
-
-    return p;
+static int sub_52860(int a1) {  // 某种验证，返回0为无错误
+    int res = 0;
+    l_debug("sub_52860(%d): %d", res);
+    return res;
 }
 
 static void patch_bootstrap(LdModule *mod) {
-    bootstrap_mod = mod;
-    // __ldModuleHookAddr(bootstrap_mod, 0x101154 + 1, (uintptr_t)&sub_101154);
-    __ldModuleHookAddr(bootstrap_mod, 0x52860 + 1, (uintptr_t)&sub_52860);
-}
-
-static void patch_libobjc(LdModule *mod) {
-    __ldModuleHookSymbol(mod, "objc_calloc", (uintptr_t)&objc_calloc);
+    __ldModuleHookAddr(mod, 0x52860 + 1, (uintptr_t)&sub_52860);
 }
 
 static void patch_libc(LdModule *mod) {
@@ -62,6 +47,10 @@ static void patch_libc(LdModule *mod) {
     __ldModuleHookSymbol(mod, "memalign", (uintptr_t)&memalign);
 }
 
+static void patch_DevilMayCry4(LdModule *mod) {
+    // do something if you need
+}
+
 void ldModuleInitialize_patch(LdModule *mod) {
     l_debug("ldModuleInitialize_patch(%p): %s", mod, mod->mod_name);
 
@@ -69,22 +58,22 @@ void ldModuleInitialize_patch(LdModule *mod) {
         patch_bootstrap(mod);
     } else if (strcmp(mod->mod_name, "libc.so") == 0) {
         patch_libc(mod);
-    }else if (strcmp(mod->mod_name, "libobjc.so") == 0) {
-        patch_libobjc(mod);
+    } else if (strcmp(mod->mod_name, "DevilMayCry4.so") == 0) {
+        patch_DevilMayCry4(mod);
     }
 }
 
-int so_patch_ld(so_module *mod) {
-    ldModuleGetSymbol    = (void *)so_symbol(mod, "ldModuleGetSymbol");
-    ldModuleLookupSymbol = (void *)so_symbol(mod, "ldModuleLookupSymbol");
+int soloader_patch_ld(so_module *mod) {
+    ldModuleGetSymbol    = (void *)so_find_symbol(mod, "ldModuleGetSymbol");
+    ldModuleLookupSymbol = (void *)so_find_symbol(mod, "ldModuleLookupSymbol");
 
-    hook_addr((uintptr_t)so_symbol(mod, "ldGetErrorMessage"), (uintptr_t)&ldGetErrorMessage);
-    hook_addr((uintptr_t)so_symbol(mod, "ldModuleGetEntryPoint"), (uintptr_t)&ldModuleGetEntryPoint);
-    hook_addr((uintptr_t)so_symbol(mod, "ldModuleRelocate"), (uintptr_t)&ldModuleRelocate);
-    hook_addr((uintptr_t)so_symbol(mod, "ldModuleAllocAndLoadImage"), (uintptr_t)&ldModuleAllocAndLoadImage);
-    hook_addr((uintptr_t)so_symbol(mod, "ldModuleDestroyImage"), (uintptr_t)&ldModuleDestroyImage);
-    hook_addr((uintptr_t)so_symbol(mod, "ldModuleInitialize"), (uintptr_t)&ldModuleInitialize);
-    hook_addr((uintptr_t)so_symbol(mod, "ldModuleDeinitialize"), (uintptr_t)&ldModuleDeinitialize);
+    hook_addr((uintptr_t)so_find_symbol(mod, "ldGetErrorMessage"), (uintptr_t)&ldGetErrorMessage);
+    hook_addr((uintptr_t)so_find_symbol(mod, "ldModuleGetEntryPoint"), (uintptr_t)&ldModuleGetEntryPoint);
+    hook_addr((uintptr_t)so_find_symbol(mod, "ldModuleRelocate"), (uintptr_t)&ldModuleRelocate);
+    hook_addr((uintptr_t)so_find_symbol(mod, "ldModuleAllocAndLoadImage"), (uintptr_t)&ldModuleAllocAndLoadImage);
+    hook_addr((uintptr_t)so_find_symbol(mod, "ldModuleDestroyImage"), (uintptr_t)&ldModuleDestroyImage);
+    hook_addr((uintptr_t)so_find_symbol(mod, "ldModuleInitialize"), (uintptr_t)&ldModuleInitialize);
+    hook_addr((uintptr_t)so_find_symbol(mod, "ldModuleDeinitialize"), (uintptr_t)&ldModuleDeinitialize);
 
     return 0;
 }

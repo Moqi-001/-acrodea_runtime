@@ -18,7 +18,7 @@ static int real_init(AString8 *self, const char *cstr, size_t len) {
     if (!self)
         return -1;
 
-    SharedBuffer *sb;
+    ASharedBuffer *sb;
     size_t        str8_len;
 
     if (!cstr || len == 0)  // 创建并写入空字符串
@@ -47,7 +47,7 @@ static int real_setTo(AString8 *self, const char *cstr, size_t len) {
     if (!self || !self->string)
         return -1;
 
-    SharedBuffer *sb       = getSharedBuffer(self);
+    ASharedBuffer *sb       = getSharedBuffer(self);
     size_t        str8_len = getLength(sb);
 
     if (!cstr || len == 0)  // 写入空字符串
@@ -79,7 +79,7 @@ static int real_append(AString8 *self, const char *cstr, size_t len) {
     if (!cstr || len == 0)
         return 0;
 
-    SharedBuffer *sb       = getSharedBuffer(self);
+    ASharedBuffer *sb       = getSharedBuffer(self);
     size_t        str8_len = getLength(sb);
     sb                     = ASharedBuffer_editResize(sb, str8_len + len + 1);
     if (!sb)
@@ -100,7 +100,7 @@ static int real_appendPath(AString8 *self, const char *cstr, size_t len) {
     if (!cstr || len == 0)
         return 0;
 
-    SharedBuffer *sb;
+    ASharedBuffer *sb;
     size_t        str8_len;
 
     if (cstr[0] != '/') {

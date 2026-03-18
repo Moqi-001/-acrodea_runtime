@@ -68,8 +68,8 @@ add_executable(${CMAKE_PROJECT_NAME}
   source/main.c
   source/controls.c
   source/dynlib.c
+  source/loader.c
   source/patch.c
-  source/init.c
 
   source/reimpl/android/asset_manager.cpp
   source/reimpl/android/atomic.c
@@ -98,6 +98,7 @@ add_executable(${CMAKE_PROJECT_NAME}
   source/java/Runtime.c
   source/java/extension/ExtensionManager.c
   source/java/extension/MyDevice.c
+  source/java/extension/MyErrorDialog.c
 
   source/utils/dialog.c
   source/utils/glutil.c

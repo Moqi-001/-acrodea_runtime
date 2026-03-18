@@ -8,6 +8,7 @@
 #include "ld.h"
 #include "ld_mem.h"
 #include "ld_patch.h"
+#include "loader.h"
 #include "patch.h"
 #include "utils/logger.h"
 
@@ -37,21 +38,17 @@ const char *ldGetErrorMessage(LdContext *context) {
 }
 
 void *ldModuleGetEntryPoint(LdModule *mod) {
-    l_debug("ldModuleGetEntryPoint(%p)", mod);
     if (mod && mod->ehdr && mod->ehdr->e_entry) {
         void *entry_point = (char *)mod->load_base + mod->load_offset + mod->ehdr->e_entry;
-        l_debug("mod_name=\"%s\", entry_point=%p", mod->mod_name, entry_point);
         if (strcmp(mod->mod_name, "bootstrap.exe") == 0) {
-            bootstrap_mod   = mod;
             bootstrap_start = entry_point;
             entry_point     = (void *)&bootstrap_start_soloader;
-
-            // hook
-            // __ldModuleHookAddr(mod, , );
         }
+        l_debug("ldModuleGetEntryPoint(%p): %s, return %p", mod->mod_name, entry_point);
         return entry_point;
     }
 
+    l_debug("ldModuleGetEntryPoint(%p): failed!", mod);
     return NULL;
 }
 
@@ -64,6 +61,35 @@ uint32_t ldModuleSymHash(const uint8_t *name) {
         h &= 0x0fffffff;
     }
     return h;
+}
+
+// 导出已解密的so文件 (在调用ldModuleAllocAndLoadImage函数时导出效为合适，否则之后原数据会被释放并被替换)
+static int ld_dump_so_file(LdModule *mod, const char *dst_dir) {
+    char dst_name[256];
+    char dst_path[1024];
+
+    const char *p = strrchr(mod->mod_name, '.');  // 把后缀合改为.so，因为有些.so文件以.exe后缀命名
+    if (!p) {
+        snprintf(dst_name, sizeof(dst_name), "%s.so", mod->mod_name);
+    } else {
+        size_t len = p - mod->mod_name;
+        strncpy(dst_name, mod->mod_name, len);
+        strcpy(dst_name + len, ".so");
+    }
+
+    snprintf(dst_path, sizeof(dst_path), "%s%s", dst_dir, dst_name);
+
+    FILE *f = fopen(dst_path, "wb");
+    if (!f) {
+        l_debug("[Error] Dump so file error: failed to fopen %s!\n", dst_path);
+        return -1;
+    }
+
+    fwrite(mod->load_base, 1, mod->load_size, f);
+    fclose(f);
+
+    l_debug("[DUMP] Dump so file '%s' success: -> '%s'\n", mod->mod_name, dst_path);
+    return 0;
 }
 
 int ldModuleAllocAndLoadImage(LdModule *mod, const char *path, const char *err_msg) {
@@ -80,7 +106,7 @@ int ldModuleAllocAndLoadImage(LdModule *mod, const char *path, const char *err_m
         return 0;
     }
 
-    l_debug("ldModuleAllocAndLoadImage(%p,%s)", mod, path);
+    // ld_dump_so_file(mod, DATA_PATH);  // 导出.so文件到 DATA_PATH 路径下
 
     load_addr        = LOAD_ADDRESS;
     mem_context      = NULL;
@@ -128,7 +154,7 @@ LOAD:
     }
 
     free(file_mem);
-    l_debug("ldModuleAllocAndLoadImage(%p,%s) success: mod_name=%s, load_base=0x%x", mod, path, mod->mod_name, mod->load_base);
+    l_debug("ldModuleAllocAndLoadImage(%p,%s) success: %s, load_base=0x%x", mod, path, mod->mod_name, mod->load_base);
     return 0;
 
 FAILED:
@@ -137,7 +163,7 @@ FAILED:
         mem_context = NULL;
     }
 
-    if (failed_count < 100) {  // 如果失败次数<50，将映射地址递增，重新尝试
+    if (failed_count < 100) {  // 如果失败次数<100，将映射地址递增，重新尝试
         // l_debug("ldModuleAllocAndLoadImage(%p) failed on addr 0x%x, will retry!", mod, load_addr);
         failed_count++;
         load_addr += 0x01000000;
@@ -217,6 +243,10 @@ static int ldModuleRelocateCore2(LdModule *mod, Elf32_Rel *rel_tab, size_t rel_n
                 sym_addr = ldModuleGetSymbol(mod->context->loaded_mods->mod, sym_name, sym_hash, 1, vna_name, vna_hash, &sym_mod);
 
             // printf("ldModuleRelocateCore2: sym_name=\"%s\", sym_addr=0x%x\n", sym_name, sym_addr);
+            
+            // 尝试从default_dynlib中查找
+            // if (!sym_addr)
+            //    sym_addr = soloader_find_symbol_from_default_dynlib(sym_name);
 
             if (!sym_addr) {
                 if (ELF32_ST_BIND(mod->symtab[rel_sym].st_info) == STB_WEAK) {
@@ -315,8 +345,6 @@ static int ldModuleRelocateCore(LdModule *mod) {
         return 0;
     }
 
-    l_debug("ldModuleRelocateCore(%p): %s", mod, mod->mod_name);
-
     uintptr_t   load_base    = (uintptr_t)mod->load_base + mod->load_offset;
     Elf32_Phdr *dynamic_phdr = mod->dynamic_phdr;
     Elf32_Dyn  *dynamic      = (Elf32_Dyn *)(load_base + dynamic_phdr->p_vaddr);
@@ -390,7 +418,7 @@ int ldModuleInitialize(LdModule *mod) {
         return -1;
 
     if (!mod->load_base) {
-        l_debug("ldModuleInitialize(%p): %s, load_base is empty", mod, mod->mod_name);
+        l_debug("ldModuleInitialize(%p): %s, no need to initialize", mod, mod->mod_name);
         return 0;
     }
 
@@ -398,8 +426,6 @@ int ldModuleInitialize(LdModule *mod) {
         l_debug("ldModuleInitialize(%p): %s is already initialized", mod, mod->mod_name);
         return 0;
     }
-
-    l_debug("ldModuleInitialize(%p): name=%s, load_addr=%p, status=%u", mod, mod->mod_name, mod->load_base, mod->status);
 
     Elf32_Phdr *dynamic_phdr = mod->dynamic_phdr;
     if (!dynamic_phdr)
@@ -446,8 +472,8 @@ int ldModuleInitialize(LdModule *mod) {
     }
 
     mod->status = LD_MODULE_STATUS_INITIALIZED;
-    ldModuleInitialize_patch(mod);
     l_debug("ldModuleInitialize(%p) %s success!", mod, mod->mod_name);
+    ldModuleInitialize_patch(mod);
     return 0;
 }
 

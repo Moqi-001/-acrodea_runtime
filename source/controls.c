@@ -122,7 +122,7 @@ void controls_poll() {
     }
 }
 
-int so_patch_controls(so_module *mod) {
+int soloader_patch_controls(so_module *mod) {
     navite_touchDown = (void *)(mod->text_base + 0x000401D0 + 1);
     navite_touchMove = (void *)(mod->text_base + 0x000401FC + 1);
     navite_touchUp   = (void *)(mod->text_base + 0x000401A4 + 1);

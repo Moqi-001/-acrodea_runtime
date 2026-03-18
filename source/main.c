@@ -6,7 +6,7 @@
 
 #include "config.h"
 #include "controls.h"
-#include "init.h"
+#include "loader.h"
 #include "utils/glutil.h"
 #include "utils/logger.h"
 
@@ -36,11 +36,11 @@ void (*navite_ExtensionInit)(JNIEnv *env, jobject thiz, jobject obj);
 void (*navite_MediaManagerInit)(JNIEnv *env, jobject thiz, jobject obj);
 
 int RuntimeContextBase_Launch(void *this, int a2) {
-    void *(*RuntimeContext_Get)() = (void *)so_symbol(&so_mod, "_ZN14RuntimeContext3GetEv");
+    void *(*RuntimeContext_Get)() = (void *)so_find_symbol(&so_mod, "_ZN14RuntimeContext3GetEv");
     void *RuntimeContext_Instance = RuntimeContext_Get();
     l_debug("RuntimeContext_Instance: %p", RuntimeContext_Instance);
 
-    int (*RuntimeThread_threadLoop)(void *) = (void *)so_symbol(&so_mod, "_ZN13RuntimeThread10threadLoopEv");
+    int (*RuntimeThread_threadLoop)(void *) = (void *)so_find_symbol(&so_mod, "_ZN13RuntimeThread10threadLoopEv");
     void *RuntimeThread_Instance            = *(void **)((uintptr_t)RuntimeContext_Instance + 208);
     l_debug("RuntimeThread_Instance: %p", RuntimeThread_Instance);
 
@@ -70,13 +70,13 @@ int main_thread(SceSize args, void *argp) {
 
 int main() {
     remove(LOG_PATH);
-    soloader_init_all();
+    soloader_init();
     
-    int (*JNI_OnLoad)(void *jvm, int reserved) = (void *)so_symbol(&so_mod, "JNI_OnLoad");
+    int (*JNI_OnLoad)(void *jvm, int reserved) = (void *)so_find_symbol(&so_mod, "JNI_OnLoad");
     JNI_OnLoad(&jvm, 0);
     l_debug("JNI_OnLoad over \n");
 
-    hook_addr((uintptr_t)so_symbol(&so_mod, "_ZN18RuntimeContextBase6LaunchEb"), (uintptr_t)&RuntimeContextBase_Launch);
+    hook_addr((uintptr_t)so_find_symbol(&so_mod, "_ZN18RuntimeContextBase6LaunchEb"), (uintptr_t)&RuntimeContextBase_Launch);
 
     navite_marketlaunch   = (void *)(LOAD_ADDRESS + 0x416CD);
     navite_launch         = (void *)(LOAD_ADDRESS + 0x413F9);

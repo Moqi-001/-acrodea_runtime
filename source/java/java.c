@@ -11,6 +11,7 @@
 
 #include "java/extension/ExtensionManager.h"
 #include "java/extension/MyDevice.h"
+#include "java/extension/MyErrorDialog.h"
 #include "java/Runtime.h"
 #include "patch.h"
 #include "utils/logger.h"
@@ -19,18 +20,6 @@
 /*
  * JNI Methods
  */
-
-// "setMessage", "(Ljava/lang/String;)V"
-void setMessage(jmethodID id, va_list args) {
-    const char *value = va_arg(args, char *);
-    l_debug("[JNI] setMessage(%s)", value);
-}
-
-jlong GetCurrentTime(jmethodID id, va_list args) {
-    int64_t res = current_timestamp_ms();
-    l_debug("[JNI] GetCurrentTime(): %lld", res);
-    return (jlong)res;
-}
 
 NameToMethodID nameToMethodId[] = {
     // com/acrodea/vividruntime/launcher/Runtime
@@ -59,14 +48,15 @@ NameToMethodID nameToMethodId[] = {
 
     // com/acrodea/vividruntime/launcher/extension/MyDevice
     {21, "getImei", METHOD_TYPE_OBJECT},
-    {22, "setNavigationHiddenEnable", METHOD_TYPE_INT},
-    {23, "getNavigationHiddenState", METHOD_TYPE_INT},
-    {24, "getPlatformInfo", METHOD_TYPE_OBJECT},
-    {25, "getMutedState", METHOD_TYPE_INT},
+    {22, "getImsi", METHOD_TYPE_OBJECT},
+    {23, "setNavigationHiddenEnable", METHOD_TYPE_INT},
+    {24, "getNavigationHiddenState", METHOD_TYPE_INT},
+    {25, "getPlatformInfo", METHOD_TYPE_OBJECT},
+    {26, "getMutedState", METHOD_TYPE_INT},
 
-    {26, "setMessage", METHOD_TYPE_VOID},
+    {27, "setMessage", METHOD_TYPE_VOID},
 
-    {27, "GetCurrentTime", METHOD_TYPE_LONG},
+    {28, "setCode", METHOD_TYPE_VOID},
 };
 
 MethodsBoolean methodsBoolean[] = {
@@ -81,13 +71,11 @@ MethodsFloat  methodsFloat[]  = {
 MethodsInt methodsInt[] = {
     {17, Runtime_stereoIsAvailability},
 
-    {22, MyDevice_setNavigationHiddenEnable},
-    {23, MyDevice_getNavigationHiddenState},
-    {25, MyDevice_getMutedState},
+    {23, MyDevice_setNavigationHiddenEnable},
+    {24, MyDevice_getNavigationHiddenState},
+    {26, MyDevice_getMutedState},
 };
-MethodsLong methodsLong[] = {
-    {27, GetCurrentTime},
-};
+MethodsLong   methodsLong[]   = {};
 MethodsObject methodsObject[] = {
     {2, Runtime_getLocale},
     {9, Runtime_getCommonDir},
@@ -96,7 +84,8 @@ MethodsObject methodsObject[] = {
 
     {20, ExtensionManager_getExtensonByName},
     {21, MyDevice_getImei},
-    {24, MyDevice_getPlatformInfo},
+    {22, MyDevice_getImsi},
+    {25, MyDevice_getPlatformInfo},
 
 };
 MethodsShort methodsShort[] = {};
@@ -114,7 +103,8 @@ MethodsVoid  methodsVoid[]  = {
     {16, Runtime_jniTrackerSetAttribute},
     {18, Runtime_stereoSetView},
 
-    {26, setMessage},
+    {27, MyErrorDialog_setMessage},
+    {28, MyErrorDialog_setCode},
 };
 
 /*
