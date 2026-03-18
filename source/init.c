@@ -88,4 +88,7 @@ void soloader_init_all() {
 
     controls_init();
     l_success("Controls initialized.");
+
+    gl_init();
+    // eglSwapInterval(0, 2);
 }

@@ -27,8 +27,6 @@ set(SO_PATH "${DATA_PATH}libacrodea_runtime.so" CACHE STRING "Path to .so")
 set(LOG_PATH "${DATA_PATH}log.txt" CACHE STRING "Path to log.txt")
 
 add_definitions(-DDATA_PATH="${DATA_PATH}" -DSO_PATH="${SO_PATH}" -DLOG_PATH="${LOG_PATH}")
-add_definitions(-DDEBUG_FILE)
-add_definitions(-DDEBUG_SOLOADER)
 
 set(SHADER_FORMAT "CG" CACHE STRING "Preferred shader format (one of 'GLSL', 'CG', 'GXP')")
 if (${SHADER_FORMAT} STREQUAL "GLSL")
@@ -53,7 +51,8 @@ endif()
 
 # Unique debug definition for loader's logging to not interfere with anything
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-  #add_definitions(-DDEBUG_SOLOADER)
+  add_definitions(-DDEBUG_LOGFILE)
+  add_definitions(-DDEBUG_SOLOADER)
   # Uncomment this for verbose FalsoJNI logging:
   #add_definitions(-DFALSOJNI_DEBUGLEVEL=0)
 endif()

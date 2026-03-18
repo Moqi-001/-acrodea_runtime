@@ -35,7 +35,7 @@ jint (*navite_marketlaunch)(JNIEnv *env, jobject thiz, jint sdkVersion, jobject 
 void (*navite_ExtensionInit)(JNIEnv *env, jobject thiz, jobject obj);
 void (*navite_MediaManagerInit)(JNIEnv *env, jobject thiz, jobject obj);
 
-int Launch(void *this, int a2) {
+int RuntimeContextBase_Launch(void *this, int a2) {
     void *(*RuntimeContext_Get)() = (void *)so_symbol(&so_mod, "_ZN14RuntimeContext3GetEv");
     void *RuntimeContext_Instance = RuntimeContext_Get();
     l_debug("RuntimeContext_Instance: %p", RuntimeContext_Instance);
@@ -71,14 +71,12 @@ int main_thread(SceSize args, void *argp) {
 int main() {
     remove(LOG_PATH);
     soloader_init_all();
+    
     int (*JNI_OnLoad)(void *jvm, int reserved) = (void *)so_symbol(&so_mod, "JNI_OnLoad");
     JNI_OnLoad(&jvm, 0);
     l_debug("JNI_OnLoad over \n");
 
-    hook_addr((uintptr_t)so_symbol(&so_mod, "_ZN18RuntimeContextBase6LaunchEb"), (uintptr_t)&Launch);
-
-    gl_init();
-    eglSwapInterval(0, 2);
+    hook_addr((uintptr_t)so_symbol(&so_mod, "_ZN18RuntimeContextBase6LaunchEb"), (uintptr_t)&RuntimeContextBase_Launch);
 
     navite_marketlaunch   = (void *)(LOAD_ADDRESS + 0x416CD);
     navite_launch         = (void *)(LOAD_ADDRESS + 0x413F9);
