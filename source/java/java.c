@@ -83,13 +83,13 @@ MethodsInt methodsInt[] = {
 
     {22, MyDevice_setNavigationHiddenEnable},
     {23, MyDevice_getNavigationHiddenState},
-    {24, MyDevice_getMutedState},
+    {25, MyDevice_getMutedState},
 };
 MethodsLong methodsLong[] = {
     {27, GetCurrentTime},
 };
 MethodsObject methodsObject[] = {
-    {3, Runtime_getLocale},
+    {2, Runtime_getLocale},
     {9, Runtime_getCommonDir},
     {10, Runtime_getCommonAppDir},
     {11, Runtime_getEnv},
