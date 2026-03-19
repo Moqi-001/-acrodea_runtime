@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <SLES/OpenSLES.h>
+#include <SLES/OpenSLES_Android.h>
 #include <so_util/so_util.h>
 
 #include "ld.h"
@@ -48,7 +50,7 @@ static void patch_libc(LdModule *mod) {
 }
 
 static void patch_DevilMayCry4(LdModule *mod) {
-    // do something if you need
+    // __ldModuleHookSymbol(mod, "slCreateEngine", (uintptr_t)&slCreateEngine);
 }
 
 void ldModuleInitialize_patch(LdModule *mod) {
@@ -74,6 +76,10 @@ int soloader_patch_ld(so_module *mod) {
     hook_addr((uintptr_t)so_find_symbol(mod, "ldModuleDestroyImage"), (uintptr_t)&ldModuleDestroyImage);
     hook_addr((uintptr_t)so_find_symbol(mod, "ldModuleInitialize"), (uintptr_t)&ldModuleInitialize);
     hook_addr((uintptr_t)so_find_symbol(mod, "ldModuleDeinitialize"), (uintptr_t)&ldModuleDeinitialize);
+
+    // hook_addr((uintptr_t)so_find_symbol(mod, "slCreateEngine"), (uintptr_t)&slCreateEngine);
+    // hook_addr((uintptr_t)so_find_symbol(mod, "slQueryNumSupportedEngineInterfaces"), (uintptr_t)&slQueryNumSupportedEngineInterfaces);
+    // hook_addr((uintptr_t)so_find_symbol(mod, "slQuerySupportedEngineInterfaces"), (uintptr_t)&slQuerySupportedEngineInterfaces);
 
     return 0;
 }

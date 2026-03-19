@@ -9,7 +9,7 @@
  */
 
 // "showDialog", "(Ljava/lang/String;)I"
-jint MyDialog_showDialog(jmethodID id, va_list args) {
+jint MyDialog_showDialog(jobject obj, jmethodID id, va_list args) {
     int         res   = 0;
     const char *value = va_arg(args, char *);
     l_debug("[JNI] MyDialog::showDialog(%s): %d", value, res);

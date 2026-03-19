@@ -9,7 +9,7 @@
  */
 
 // "addHeader", "(Ljava/lang/String;)I"
-jint MyHttp_addHeader(jmethodID id, va_list args) {
+jint MyHttp_addHeader(jobject obj, jmethodID id, va_list args) {
     int         res   = 0;
     const char *value = va_arg(args, char *);
     l_debug("[JNI] MyHttp::addHeader(%s): %d", value, res);
@@ -17,28 +17,28 @@ jint MyHttp_addHeader(jmethodID id, va_list args) {
 }
 
 // "setBoundaryBegin", "()I"
-jint MyHttp_setBoundaryBegin(jmethodID id, va_list args) {
+jint MyHttp_setBoundaryBegin(jobject obj, jmethodID id, va_list args) {
     int res = 0;
     l_debug("[JNI] MyHttp::setBoundaryBegin(): %d", res);
     return (jint)res;
 }
 
 // "setBoundaryEnd", "()I"
-jint MyHttp_setBoundaryEnd(jmethodID id, va_list args) {
+jint MyHttp_setBoundaryEnd(jobject obj, jmethodID id, va_list args) {
     int res = 0;
     l_debug("[JNI] MyHttp::setBoundaryEnd(): %d", res);
     return (jint)res;
 }
 
 // "setBoundaryBuffer", "([BI)I"
-jint MyHttp_setBoundaryBuffer(jmethodID id, va_list args) {
+jint MyHttp_setBoundaryBuffer(jobject obj, jmethodID id, va_list args) {
     int res = 0;
     l_debug("[JNI] MyHttp::setBoundaryBuffer(): %d", res);
     return (jint)res;
 }
 
 // "setBoundaryFile", "(Ljava/lang/String;)I"
-jint MyHttp_setBoundaryFile(jmethodID id, va_list args) {
+jint MyHttp_setBoundaryFile(jobject obj, jmethodID id, va_list args) {
     int         res   = 0;
     const char *value = va_arg(args, char *);
     l_debug("[JNI] MyHttp::setBoundaryFile(%s): %d", value, res);
@@ -46,7 +46,7 @@ jint MyHttp_setBoundaryFile(jmethodID id, va_list args) {
 }
 
 // "setBoundaryHeader", "(Ljava/lang/String;)I"
-jint MyHttp_setBoundaryHeader(jmethodID id, va_list args) {
+jint MyHttp_setBoundaryHeader(jobject obj, jmethodID id, va_list args) {
     int         res   = 0;
     const char *value = va_arg(args, char *);
     l_debug("[JNI] MyHttp::setBoundaryHeader(%s): %d", value, res);
@@ -54,55 +54,55 @@ jint MyHttp_setBoundaryHeader(jmethodID id, va_list args) {
 }
 
 // "connect", "()I"
-jint MyHttp_connect(jmethodID id, va_list args) {
+jint MyHttp_connect(jobject obj, jmethodID id, va_list args) {
     int res = 0;
     l_debug("[JNI] MyHttp::connect(): %d", res);
     return (jint)res;
 }
 
 // "<init>", "(I)V"
-void MyHttp_construct(jmethodID id, va_list args) {
+void MyHttp_construct(jobject obj, jmethodID id, va_list args) {
     int value = va_arg(args, int);
     l_debug("[JNI] MyHttp::<init>(%d)", value);
 }
 
 // "destroy", "()I"
-jint MyHttp_destroy(jmethodID id, va_list args) {
+jint MyHttp_destroy(jobject obj, jmethodID id, va_list args) {
     int res = 0;
     l_debug("[JNI] MyHttp::destroy(): %d", res);
     return (jint)res;
 }
 
 // "checkBody", "()I"
-jint MyHttp_checkBody(jmethodID id, va_list args) {
+jint MyHttp_checkBody(jobject obj, jmethodID id, va_list args) {
     int res = 0;
     l_debug("[JNI] MyHttp::checkBody(): %d", res);
     return (jint)res;
 }
 
 // "getBody", "()[B"
-jobject MyHttp_getBody(jmethodID id, va_list args) {
+jobject MyHttp_getBody(jobject obj, jmethodID id, va_list args) {
     int res = 0;
     l_debug("[JNI] MyHttp::getBody(): %d", res);
     return (jobject)res;
 }
 
 // "getResponseCode", "()I"
-jint MyHttp_getResponseCode(jmethodID id, va_list args) {
+jint MyHttp_getResponseCode(jobject obj, jmethodID id, va_list args) {
     int res = 0;
     l_debug("[JNI] MyHttp::getResponseCode(): %d", res);
     return (jint)res;
 }
 
 // "getHeaderLength", "()I"
-jint MyHttp_getHeaderLength(jmethodID id, va_list args) {
+jint MyHttp_getHeaderLength(jobject obj, jmethodID id, va_list args) {
     int res = 0;
     l_debug("[JNI] MyHttp::getHeaderLength(): %d", res);
     return (jint)res;
 }
 
 // "getHeader", "(Ljava/lang/String;)Ljava/lang/String;"
-jstring MyHttp_getHeader(jmethodID id, va_list args) {
+jstring MyHttp_getHeader(jobject obj, jmethodID id, va_list args) {
     int         res   = 0;
     const char *value = va_arg(args, char *);
     l_debug("[JNI] MyHttp::getHeader(%s): %d", value, res);
@@ -110,7 +110,7 @@ jstring MyHttp_getHeader(jmethodID id, va_list args) {
 }
 
 // "init", "(Ljava/lang/String;III)I"
-jint MyHttp_init(jmethodID id, va_list args) {
+jint MyHttp_init(jobject obj, jmethodID id, va_list args) {
     int         res    = 0;
     const char *value  = va_arg(args, char *);
     const char *value1 = va_arg(args, char *);
@@ -120,7 +120,7 @@ jint MyHttp_init(jmethodID id, va_list args) {
 }
 
 // "SetPostKey", "(Ljava/lang/String;)I"
-jint MyHttp_SetPostKey(jmethodID id, va_list args) {
+jint MyHttp_SetPostKey(jobject obj, jmethodID id, va_list args) {
     int         res   = 0;
     const char *value = va_arg(args, char *);
     l_debug("[JNI] MyHttp::SetPostKey(%s): %d", value, value1, value2, res);
@@ -128,7 +128,7 @@ jint MyHttp_SetPostKey(jmethodID id, va_list args) {
 }
 
 // "SetPostValue", "(Ljava/lang/String;)I"
-jint MyHttp_SetPostValue(jmethodID id, va_list args) {
+jint MyHttp_SetPostValue(jobject obj, jmethodID id, va_list args) {
     int         res   = 0;
     const char *value = va_arg(args, char *);
     l_debug("[JNI] MyHttp::SetPostValue(%s): %d", value, value1, value2, res);
@@ -136,7 +136,7 @@ jint MyHttp_SetPostValue(jmethodID id, va_list args) {
 }
 
 // "setUserPtr", "(I)I"
-jint MyHttp_setUserPtr(jmethodID id, va_list args) {
+jint MyHttp_setUserPtr(jobject obj, jmethodID id, va_list args) {
     int res   = 0;
     int value = va_arg(args, int);
     l_debug("[JNI] MyHttp::setUserPtr(%d): %d", value, res);

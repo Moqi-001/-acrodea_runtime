@@ -47,6 +47,25 @@ enum event_type {
 typedef void (*callback_t)(int event, void *user, void *info);
 
 typedef struct AAudioTrack AAudioTrack;
+struct AAudioTrack {
+    status_t             mStatus;
+    audio_stream_type_t  mStreamType;
+    uint32_t             mSampleRate;
+    audio_format_t       mFormat;
+    audio_channel_mask_t mChannelMask;
+    size_t               mFrameCount;
+    audio_output_flags_t mFlags;
+    callback_t           mCbf;
+    void                *mUserData;
+    uint32_t             mNotificationFrames;
+    const void          *mSharedBuffer;
+    int                  mSessionId;
+
+    transfer_type mTransfer;
+
+    pthread_mutex_t mLock;
+    bool            mIsTimed;
+};  // +216
 
 void     AAudioTrack_construct(AAudioTrack *self);
 void     AAudioTrack_destruct(AAudioTrack *self);
@@ -55,21 +74,19 @@ void     AAudioTrack_start(AAudioTrack *self);
 void     AAudioTrack_pause(AAudioTrack *self);
 void     AAudioTrack_stop(AAudioTrack *self);
 status_t AAudioTrack_setVolume(AAudioTrack *self, float left, float right);
-status_t AudioTrack_set(audio_stream_type_t         streamType,
-                        uint32_t                    sampleRate,
-                        audio_format_t              format,
-                        uint32_t                    channelMask,
-                        int                         frameCount,
-                        audio_output_flags_t        flags,
-                        callback_t                  cbf,
-                        void                       *user,
-                        int                         notificationFrames,
-                        const void                 *sharedBuffer,  // IMemory
-                        bool                        threadCanCallJava,
-                        int                         sessionId,
-                        transfer_type               transferType,
-                        const audio_offload_info_t *offloadInfo,
-                        int                         uid);
-ssize_t  AudioTrack_write(AAudioTrack *self, const void *buffer, size_t userSize);
+status_t AAudioTrack_set(AAudioTrack         *self,
+                         audio_stream_type_t  streamType,
+                         uint32_t             sampleRate,
+                         audio_format_t       format,
+                         uint32_t             channelMask,
+                         int                  frameCount,
+                         audio_output_flags_t flags,
+                         callback_t           cbf,
+                         void                *user,
+                         int                  notificationFrames,
+                         const void          *sharedBuffer,  // IMemory
+                         bool                 threadCanCallJava,
+                         int                  sessionId);
+ssize_t  AAudioTrack_write(AAudioTrack *self, const void *buffer, size_t userSize);
 
 #endif

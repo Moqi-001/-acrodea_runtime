@@ -3,7 +3,7 @@
 
 #include <falso_jni/FalsoJNI.h>
 
-jint     MyFont_getTextSize(jmethodID id, va_list args);
-jboolean MyFont_renderText(jmethodID id, va_list args);
+jint     MyFont_getTextSize(jobject obj, jmethodID id, va_list args);
+jboolean MyFont_renderText(jobject obj, jmethodID id, va_list args);
 
 #endif

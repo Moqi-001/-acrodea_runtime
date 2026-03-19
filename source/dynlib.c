@@ -192,7 +192,7 @@ void *dlsym_soloader(void *handle, const char *symbol) {
         }
     }
 
-    l_debug("[Error] dlsym(%p,%s): failed!", handle, symbol);
+    l_debug("[Warn] dlsym(%p,%s): failed!", handle, symbol);
     return NULL;
 }
 
@@ -1177,6 +1177,8 @@ so_dynlib default_dynlib[] = {
     {"_ZN7android7RefBase15onLastStrongRefEPKv", (uintptr_t)&_ZN7android7RefBase15onLastStrongRefEPKv},
     {"_ZN7android7RefBase13onLastWeakRefEPKv", (uintptr_t)&_ZN7android7RefBase13onLastWeakRefEPKv},
     {"_ZN7android7RefBase20onIncStrongAttemptedEjPKv", (uintptr_t)&_ZN7android7RefBase20onIncStrongAttemptedEjPKv},
+    {"_ZNK7android7RefBase9incStrongEPKv", (uintptr_t)&_ZNK7android7RefBase9incStrongEPKv},
+    {"_ZNK7android7RefBase9decStrongEPKv", (uintptr_t)&_ZNK7android7RefBase9decStrongEPKv},
 
     // Android Thread
     {"_ZN7android6ThreadC2Eb", (uintptr_t)&_ZN7android6ThreadC2Eb},
@@ -1189,16 +1191,6 @@ so_dynlib default_dynlib[] = {
     {"_ZN7android6Thread11requestExitEv", (uintptr_t)&_ZN7android6Thread11requestExitEv},
     {"_ZN7android6Thread3runEPKcij", (uintptr_t)&_ZN7android6Thread3runEPKcij},
 
-    // Android RefBase
-    {"_ZN7android7RefBaseC2Ev", (uintptr_t)&ret0},
-    {"_ZNK7android7RefBase9decStrongEPKv", (uintptr_t)&_ZNK7android7RefBase9incStrongEPKv},
-    {"_ZNK7android7RefBase9incStrongEPKv", (uintptr_t)&_ZNK7android7RefBase9incStrongEPKv},
-    {"_ZN7android7RefBase10onFirstRefEv", (uintptr_t)&ret0},
-    {"_ZN7android7RefBase20onIncStrongAttemptedEjPKv", (uintptr_t)&ret0},
-    {"_ZN7android7RefBase15onLastStrongRefEPKv", (uintptr_t)&ret0},
-    {"_ZN7android7RefBase13onLastWeakRefEPKv", (uintptr_t)&ret0},
-    {"_ZN7android7RefBaseD2Ev", (uintptr_t)&ret0},
-
     // Android AudioRecord
     {"_ZN7android11AudioRecordC1Ev", (uintptr_t)&AAudioRecord_fake},
     {"_ZN7android11AudioRecordD1Ev", (uintptr_t)&AAudioRecord_fake},
@@ -1210,19 +1202,19 @@ so_dynlib default_dynlib[] = {
     {"_ZN7android11AudioRecord3setEijijijPFviPvS1_ES1_ib", (uintptr_t)&AAudioRecord_fake},
 
     // Android AudioTrack
-    {"_ZN7android10AudioTrackC1Ev", (uintptr_t)&AAudioTrack_fake},
-    {"_ZN7android10AudioTrackD1Ev", (uintptr_t)&AAudioTrack_fake},
-    {"_ZNK7android10AudioTrack9initCheckEv", (uintptr_t)&AAudioTrack_fake},
-    {"_ZN7android10AudioTrack5startEv", (uintptr_t)&AAudioTrack_fake},
-    {"_ZN7android10AudioTrack5pauseEv", (uintptr_t)&AAudioTrack_fake},
-    {"_ZN7android10AudioTrack4stopEv", (uintptr_t)&AAudioTrack_fake},
-    {"_ZN7android10AudioTrack9setVolumeEff", (uintptr_t)&AAudioTrack_fake},
-    {"_ZN7android10AudioTrack3setE19audio_stream_type_tj14audio_format_tji20audio_output_flags_tPFviPvS4_ES4_iRKNS_2spINS_7IMemoryEEEbi", (uintptr_t)&AAudioTrack_fake},
-    {"_ZN7android10AudioTrack3setE19audio_stream_type_tj14audio_format_tii20audio_output_flags_tPFviPvS4_ES4_iRKNS_2spINS_7IMemoryEEEbi", (uintptr_t)&AAudioTrack_fake},
-    {"_ZN7android10AudioTrack3setEijiiijPFviPvS1_ES1_iRKNS_2spINS_7IMemoryEEEbi", (uintptr_t)&AAudioTrack_fake},
-    {"_ZN7android10AudioTrack3setEijiiijPFviPvS1_ES1_iRKNS_2spINS_7IMemoryEEEb", (uintptr_t)&AAudioTrack_fake},
-    {"_ZN7android10AudioTrack3setE19audio_stream_type_tj14audio_format_tji20audio_output_flags_tPFviPvS4_ES4_iRKNS_2spINS_7IMemoryEEEbiNS0_13transfer_typeEPK20audio_offload_info_t", (uintptr_t)&AAudioTrack_fake},
-    {"_ZN7android10AudioTrack3setE19audio_stream_type_tj14audio_format_tji20audio_output_flags_tPFviPvS4_ES4_iRKNS_2spINS_7IMemoryEEEbiNS0_13transfer_typeEPK20audio_offload_info_ti", (uintptr_t)&AAudioTrack_fake},
+    {"_ZN7android10AudioTrackC1Ev", (uintptr_t)&AAudioTrack_construct},
+    {"_ZN7android10AudioTrackD1Ev", (uintptr_t)&AAudioTrack_destruct},
+    {"_ZNK7android10AudioTrack9initCheckEv", (uintptr_t)&AAudioTrack_initCheck},
+    {"_ZN7android10AudioTrack5startEv", (uintptr_t)&AAudioTrack_start},
+    {"_ZN7android10AudioTrack5pauseEv", (uintptr_t)&AAudioTrack_pause},
+    {"_ZN7android10AudioTrack4stopEv", (uintptr_t)&AAudioTrack_stop},
+    {"_ZN7android10AudioTrack9setVolumeEff", (uintptr_t)&AAudioTrack_setVolume},
+    {"_ZN7android10AudioTrack3setE19audio_stream_type_tj14audio_format_tji20audio_output_flags_tPFviPvS4_ES4_iRKNS_2spINS_7IMemoryEEEbi", (uintptr_t)&AAudioTrack_set},
+    // {"_ZN7android10AudioTrack3setE19audio_stream_type_tj14audio_format_tii20audio_output_flags_tPFviPvS4_ES4_iRKNS_2spINS_7IMemoryEEEbi", (uintptr_t)&AAudioTrack_fake},
+    // {"_ZN7android10AudioTrack3setEijiiijPFviPvS1_ES1_iRKNS_2spINS_7IMemoryEEEbi", (uintptr_t)&AAudioTrack_fake},
+    // {"_ZN7android10AudioTrack3setEijiiijPFviPvS1_ES1_iRKNS_2spINS_7IMemoryEEEb", (uintptr_t)&AAudioTrack_fake},
+    // {"_ZN7android10AudioTrack3setE19audio_stream_type_tj14audio_format_tji20audio_output_flags_tPFviPvS4_ES4_iRKNS_2spINS_7IMemoryEEEbiNS0_13transfer_typeEPK20audio_offload_info_t", (uintptr_t)&AAudioTrack_fake},
+    // {"_ZN7android10AudioTrack3setE19audio_stream_type_tj14audio_format_tji20audio_output_flags_tPFviPvS4_ES4_iRKNS_2spINS_7IMemoryEEEbiNS0_13transfer_typeEPK20audio_offload_info_ti", (uintptr_t)&AAudioTrack_fake},
 
     // Android GgeeAudioTrack
     {"_ZN7android14GgeeAudioTrack11writethreadEv", (uintptr_t)&AGgeeAudioTrack_fake},

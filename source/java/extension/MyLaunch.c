@@ -9,7 +9,7 @@
  */
 
 // "setLaunchBehavior", "(I)I"
-jint MyLaunch_setLaunchBehavior(jmethodID id, va_list args) {
+jint MyLaunch_setLaunchBehavior(jobject obj, jmethodID id, va_list args) {
     int res   = 0;
     int value = va_arg(args, int);
     l_debug("[JNI] MyLaunch::setLaunchBehavior(%d): %d", res);
@@ -17,7 +17,7 @@ jint MyLaunch_setLaunchBehavior(jmethodID id, va_list args) {
 }
 
 // "launch", "(Ljava/lang/String;)I"
-jint MyLaunch_launch(jmethodID id, va_list args) {
+jint MyLaunch_launch(jobject obj, jmethodID id, va_list args) {
     int         res   = 0;
     const char *value = va_arg(args, char *);
     l_debug("[JNI] MyLaunch::launch(%s): %d", res);

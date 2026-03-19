@@ -10,20 +10,9 @@
 #include "utils/glutil.h"
 #include "utils/logger.h"
 
-#define RES_PATH "/com.acrodea.gamecenter/res"
+int _newlib_heap_size_user = MEMORY_NEWLIB_MB * 1024 * 1024;
 
-int       _newlib_heap_size_user = MEMORY_NEWLIB_MB * 1024 * 1024;
 so_module so_mod;
-
-int controls_thread(SceSize args, void *argp) {
-    while (1) {
-        controls_poll();
-        sceKernelDelayThread(10 * 1000);
-    }
-
-    sceKernelExitThread(0);
-    return 0;
-}
 
 void (*navite_surfaceChanged)(JNIEnv *env, jobject thiz, jint width, jint height);
 void (*navite_focusChanged)(JNIEnv *env, jobject thiz, jboolean hasFocus);
@@ -48,10 +37,20 @@ int RuntimeContextBase_Launch(void *this, int a2) {
     l_debug("RuntimeThread_threadLoop: %d", ret);
 }
 
+int controls_thread(SceSize args, void *argp) {
+    while (1) {
+        controls_poll();
+        sceKernelDelayThread(10 * 1000);
+    }
+
+    sceKernelExitThread(0);
+    return 0;
+}
+
 int main_thread(SceSize args, void *argp) {
     int ret = navite_launch(&jni,
                             NULL,
-                            10,
+                            19,
                             NULL,
                             "/runtime/",
                             "/app/com.acrodea.vividruntime.launcher.apk",
@@ -63,7 +62,6 @@ int main_thread(SceSize args, void *argp) {
                             0);
 
     l_debug("navite_launch over: return %d\n", ret);
-
     sceKernelExitThread(0);
     return ret;
 }
@@ -71,10 +69,10 @@ int main_thread(SceSize args, void *argp) {
 int main() {
     remove(LOG_PATH);
     soloader_init();
-    
+
     int (*JNI_OnLoad)(void *jvm, int reserved) = (void *)so_find_symbol(&so_mod, "JNI_OnLoad");
     JNI_OnLoad(&jvm, 0);
-    l_debug("JNI_OnLoad over \n");
+    l_debug("JNI_OnLoad over");
 
     hook_addr((uintptr_t)so_find_symbol(&so_mod, "_ZN18RuntimeContextBase6LaunchEb"), (uintptr_t)&RuntimeContextBase_Launch);
 
@@ -87,16 +85,16 @@ int main() {
     navite_MediaManagerInit = (void *)(LOAD_ADDRESS + 0x41285);
 
     navite_ExtensionInit(&jni, NULL, "");
-    l_debug("navite_ExtensionInit over \n");
+    l_debug("navite_ExtensionInit over");
 
     navite_MediaManagerInit(&jni, NULL, NULL);
-    l_debug("navite_MediaManagerInit over \n");
+    l_debug("navite_MediaManagerInit over");
 
-    navite_focusChanged(&jni, 0, 1);
+    navite_focusChanged(&jni, NULL, 1);
     l_debug("navite_focusChanged over");
 
-    navite_surfaceChanged(NULL, 0, SCREEN_W, SCREEN_H);
-    l_debug("navite_surfaceChanged over %p\n", navite_surfaceChanged);
+    navite_surfaceChanged(&jni, NULL, SCREEN_W, SCREEN_H);
+    l_debug("navite_surfaceChanged over");
 
     SceUID controls_thid = sceKernelCreateThread("controls_thread", (SceKernelThreadEntry)controls_thread, 0x40, 128 * 1024, 0, 0, NULL);
     sceKernelStartThread(controls_thid, 0, NULL);

@@ -44,7 +44,7 @@ void *ldModuleGetEntryPoint(LdModule *mod) {
             bootstrap_start = entry_point;
             entry_point     = (void *)&bootstrap_start_soloader;
         }
-        l_debug("ldModuleGetEntryPoint(%p): %s, return %p", mod->mod_name, entry_point);
+        l_debug("ldModuleGetEntryPoint(%p): %s, return %p", mod, mod->mod_name, entry_point);
         return entry_point;
     }
 

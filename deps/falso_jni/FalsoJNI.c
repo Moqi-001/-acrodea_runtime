@@ -28,6 +28,11 @@
 #include "FalsoJNI_ImplBridge.h"
 #include "FalsoJNI_Logger.h"
 
+#if 0 // fjni_logv_dbg
+#undef fjni_logv_dbg
+#define fjni_logv_dbg
+#endif
+
 // Objects to be passed to client applications:
 JavaVM jvm;
 JNIEnv jni;
@@ -242,7 +247,7 @@ jobject NewObject(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
     jobject ret;
     va_list args;
     va_start(args, methodID);
-    ret = methodObjectCall(methodID, args);
+    ret = methodObjectCall(clazz, methodID, args);
     va_end(args);
 
     return ret;
@@ -250,12 +255,12 @@ jobject NewObject(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
 
 jobject NewObjectV(JNIEnv *env, jclass clazz, jmethodID methodID, va_list args) {
     fjni_logv_dbg("[JNI] NewObjectV(env, 0x%x, %i)", clazz, methodID);
-    return methodObjectCall(methodID, args);
+    return methodObjectCall(clazz, methodID, args);
 }
 
 jobject NewObjectA(JNIEnv *env, jclass clazz, jmethodID methodID, const jvalue *args) {
     fjni_logv_dbg("[JNI] NewObjectA(env, 0x%x, %i)", (int)clazz, methodID);
-    return methodObjectCall(methodID, _AtoV(0, args));
+    return methodObjectCall(clazz, methodID, _AtoV(0, args));
 }
 
 jclass GetObjectClass(JNIEnv *env, jobject obj) {
@@ -304,7 +309,7 @@ jobject CallObjectMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
     jobject ret;
     va_list args;
     va_start(args, methodID);
-    ret = methodObjectCall(methodID, args);
+    ret = methodObjectCall(obj, methodID, args);
     va_end(args);
 
     return ret;
@@ -312,12 +317,12 @@ jobject CallObjectMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
 
 jobject CallObjectMethodV(JNIEnv *env, jobject obj, jmethodID methodID, va_list args) {
     fjni_logv_dbg("[JNI] CallObjectMethodV(env, 0x%x, %i, args)", (int)obj, (int)methodID);
-    return methodObjectCall(methodID, args);
+    return methodObjectCall(obj, methodID, args);
 }
 
 jobject CallObjectMethodA(JNIEnv *env, jobject obj, jmethodID methodID, const jvalue *args) {
     fjni_logv_dbg("[JNI] CallObjectMethodA(env, 0x%x, %i, args)", (int)obj, (int)methodID);
-    return methodObjectCall(methodID, _AtoV(0, args));
+    return methodObjectCall(obj, methodID, _AtoV(0, args));
 }
 
 jboolean CallBooleanMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
@@ -326,7 +331,7 @@ jboolean CallBooleanMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
     jboolean ret;
     va_list  args;
     va_start(args, methodID);
-    ret = methodBooleanCall(methodID, args);
+    ret = methodBooleanCall(obj, methodID, args);
     va_end(args);
 
     return ret;
@@ -334,12 +339,12 @@ jboolean CallBooleanMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
 
 jboolean CallBooleanMethodV(JNIEnv *env, jobject obj, jmethodID methodID, va_list args) {
     fjni_logv_dbg("[JNI] CallBooleanMethodV(env, 0x%x, %i, args)", (int)obj, (int)methodID);
-    return methodBooleanCall(methodID, args);
+    return methodBooleanCall(obj, methodID, args);
 }
 
 jboolean CallBooleanMethodA(JNIEnv *env, jobject obj, jmethodID methodID, const jvalue *args) {
     fjni_logv_dbg("[JNI] CallBooleanMethodA(env, 0x%x, %i, args)", (int)obj, (int)methodID);
-    return methodBooleanCall(methodID, _AtoV(0, args));
+    return methodBooleanCall(obj, methodID, _AtoV(0, args));
 }
 
 jbyte CallByteMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
@@ -348,7 +353,7 @@ jbyte CallByteMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
     jbyte   ret;
     va_list args;
     va_start(args, methodID);
-    ret = methodByteCall(methodID, args);
+    ret = methodByteCall(obj, methodID, args);
     va_end(args);
 
     return ret;
@@ -356,12 +361,12 @@ jbyte CallByteMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
 
 jbyte CallByteMethodV(JNIEnv *env, jobject obj, jmethodID methodID, va_list args) {
     fjni_logv_dbg("[JNI] CallByteMethodV(env, 0x%x, %i, args)", (int)obj, (int)methodID);
-    return methodByteCall(methodID, args);
+    return methodByteCall(obj, methodID, args);
 }
 
 jbyte CallByteMethodA(JNIEnv *env, jobject obj, jmethodID methodID, const jvalue *args) {
     fjni_logv_dbg("[JNI] CallByteMethodA(env, 0x%x, %i, args)", (int)obj, (int)methodID);
-    return methodByteCall(methodID, _AtoV(0, args));
+    return methodByteCall(obj, methodID, _AtoV(0, args));
 }
 
 jchar CallCharMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
@@ -370,7 +375,7 @@ jchar CallCharMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
     jchar   ret;
     va_list args;
     va_start(args, methodID);
-    ret = methodCharCall(methodID, args);
+    ret = methodCharCall(obj, methodID, args);
     va_end(args);
 
     return ret;
@@ -378,12 +383,12 @@ jchar CallCharMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
 
 jchar CallCharMethodV(JNIEnv *env, jobject obj, jmethodID methodID, va_list args) {
     fjni_logv_dbg("[JNI] CallCharMethodV(env, 0x%x, %i, args)", (int)obj, (int)methodID);
-    return methodCharCall(methodID, args);
+    return methodCharCall(obj, methodID, args);
 }
 
 jchar CallCharMethodA(JNIEnv *env, jobject obj, jmethodID methodID, const jvalue *args) {
     fjni_logv_dbg("[JNI] CallCharMethodA(env, 0x%x, %i, args)", (int)obj, (int)methodID);
-    return methodCharCall(methodID, _AtoV(0, args));
+    return methodCharCall(obj, methodID, _AtoV(0, args));
 }
 
 jshort CallShortMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
@@ -392,7 +397,7 @@ jshort CallShortMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
     jshort  ret;
     va_list args;
     va_start(args, methodID);
-    ret = methodShortCall(methodID, args);
+    ret = methodShortCall(obj, methodID, args);
     va_end(args);
 
     return ret;
@@ -400,12 +405,12 @@ jshort CallShortMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
 
 jshort CallShortMethodV(JNIEnv *env, jobject obj, jmethodID methodID, va_list args) {
     fjni_logv_dbg("[JNI] CallShortMethodV(env, 0x%x, %i, args)", (int)obj, (int)methodID);
-    return methodShortCall(methodID, args);
+    return methodShortCall(obj, methodID, args);
 }
 
 jshort CallShortMethodA(JNIEnv *env, jobject obj, jmethodID methodID, const jvalue *args) {
     fjni_logv_dbg("[JNI] CallShortMethodA(env, 0x%x, %i, args)", (int)obj, (int)methodID);
-    return methodShortCall(methodID, _AtoV(0, args));
+    return methodShortCall(obj, methodID, _AtoV(0, args));
 }
 
 jint CallIntMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
@@ -414,7 +419,7 @@ jint CallIntMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
     jint    ret;
     va_list args;
     va_start(args, methodID);
-    ret = methodIntCall(methodID, args);
+    ret = methodIntCall(obj, methodID, args);
     va_end(args);
 
     return ret;
@@ -422,12 +427,12 @@ jint CallIntMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
 
 jint CallIntMethodV(JNIEnv *env, jobject obj, jmethodID methodID, va_list args) {
     fjni_logv_dbg("[JNI] CallIntMethodV(env, 0x%x, %i, args)", (int)obj, methodID);
-    return methodIntCall(methodID, args);
+    return methodIntCall(obj, methodID, args);
 }
 
 jint CallIntMethodA(JNIEnv *env, jobject obj, jmethodID methodID, const jvalue *args) {
     fjni_logv_dbg("[JNI] CallIntMethodA(env, 0x%x, %i, args)", (int)obj, methodID);
-    return methodIntCall(methodID, _AtoV(0, args));
+    return methodIntCall(obj, methodID, _AtoV(0, args));
 }
 
 jlong CallLongMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
@@ -436,7 +441,7 @@ jlong CallLongMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
     jlong   ret;
     va_list args;
     va_start(args, methodID);
-    ret = methodLongCall(methodID, args);
+    ret = methodLongCall(obj, methodID, args);
     va_end(args);
 
     return ret;
@@ -444,12 +449,12 @@ jlong CallLongMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
 
 jlong CallLongMethodV(JNIEnv *env, jobject obj, jmethodID methodID, va_list args) {
     fjni_logv_dbg("[JNI] CallLongMethodV(env, 0x%x, %i, args)", (int)obj, methodID);
-    return methodLongCall(methodID, args);
+    return methodLongCall(obj, methodID, args);
 }
 
 jlong CallLongMethodA(JNIEnv *env, jobject obj, jmethodID methodID, const jvalue *args) {
     fjni_logv_dbg("[JNI] CallLongMethodA(env, 0x%x, %i, args)", (int)obj, methodID);
-    return methodLongCall(methodID, _AtoV(0, args));
+    return methodLongCall(obj, methodID, _AtoV(0, args));
 }
 
 jfloat CallFloatMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
@@ -458,7 +463,7 @@ jfloat CallFloatMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
     jfloat  ret;
     va_list args;
     va_start(args, methodID);
-    ret = methodFloatCall(methodID, args);
+    ret = methodFloatCall(obj, methodID, args);
     va_end(args);
 
     return ret;
@@ -466,12 +471,12 @@ jfloat CallFloatMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
 
 jfloat CallFloatMethodV(JNIEnv *env, jobject obj, jmethodID methodID, va_list args) {
     fjni_logv_dbg("[JNI] CallFloatMethodV(env, 0x%x, %i, args)", (int)obj, methodID);
-    return methodFloatCall(methodID, args);
+    return methodFloatCall(obj, methodID, args);
 }
 
 jfloat CallFloatMethodA(JNIEnv *env, jobject obj, jmethodID methodID, const jvalue *args) {
     fjni_logv_dbg("[JNI] CallFloatMethodA(env, 0x%x, %i, args)", (int)obj, methodID);
-    return methodFloatCall(methodID, _AtoV(0, args));
+    return methodFloatCall(obj, methodID, _AtoV(0, args));
 }
 
 jdouble CallDoubleMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
@@ -480,7 +485,7 @@ jdouble CallDoubleMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
     jdouble ret;
     va_list args;
     va_start(args, methodID);
-    ret = methodDoubleCall(methodID, args);
+    ret = methodDoubleCall(obj, methodID, args);
     va_end(args);
 
     return ret;
@@ -488,12 +493,12 @@ jdouble CallDoubleMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
 
 jdouble CallDoubleMethodV(JNIEnv *env, jobject obj, jmethodID methodID, va_list args) {
     fjni_logv_dbg("[JNI] CallDoubleMethodV(env, 0x%x, %i, args)", (int)obj, methodID);
-    return methodDoubleCall(methodID, args);
+    return methodDoubleCall(obj, methodID, args);
 }
 
 jdouble CallDoubleMethodA(JNIEnv *env, jobject obj, jmethodID methodID, const jvalue *args) {
     fjni_logv_dbg("[JNI] CallDoubleMethodA(env, 0x%x, %i, args)", (int)obj, methodID);
-    return methodDoubleCall(methodID, _AtoV(0, args));
+    return methodDoubleCall(obj, methodID, _AtoV(0, args));
 }
 
 void CallVoidMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
@@ -501,18 +506,18 @@ void CallVoidMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
 
     va_list args;
     va_start(args, methodID);
-    methodVoidCall(methodID, args);
+    methodVoidCall(obj, methodID, args);
     va_end(args);
 }
 
 void CallVoidMethodV(JNIEnv *env, jobject obj, jmethodID methodID, va_list args) {
     fjni_logv_dbg("[JNI] CallVoidMethodV(env, 0x%x, %i, args)", (int)obj, methodID);
-    methodVoidCall(methodID, args);
+    methodVoidCall(obj, methodID, args);
 }
 
 void CallVoidMethodA(JNIEnv *env, jobject obj, jmethodID methodID, const jvalue *args) {
     fjni_logv_dbg("[JNI] CallVoidMethodA(env, 0x%x, %i, args)", (int)obj, methodID);
-    methodVoidCall(methodID, _AtoV(0, args));
+    methodVoidCall(obj, methodID, _AtoV(0, args));
 }
 
 jobject CallNonvirtualObjectMethod(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, ...) {
@@ -521,7 +526,7 @@ jobject CallNonvirtualObjectMethod(JNIEnv *env, jobject obj, jclass clazz, jmeth
     jobject ret;
     va_list args;
     va_start(args, methodID);
-    ret = methodObjectCall(methodID, args);
+    ret = methodObjectCall(obj, methodID, args);
     va_end(args);
 
     return ret;
@@ -529,12 +534,12 @@ jobject CallNonvirtualObjectMethod(JNIEnv *env, jobject obj, jclass clazz, jmeth
 
 jobject CallNonvirtualObjectMethodV(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, va_list args) {
     fjni_logv_dbg("[JNI] CallNonvirtualObjectMethodV(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
-    return methodObjectCall(methodID, args);
+    return methodObjectCall(obj, methodID, args);
 }
 
 jobject CallNonvirtualObjectMethodA(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, const jvalue *args) {
     fjni_logv_dbg("[JNI] CallNonvirtualObjectMethodA(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
-    return methodObjectCall(methodID, _AtoV(0, args));
+    return methodObjectCall(obj, methodID, _AtoV(0, args));
 }
 
 jboolean CallNonvirtualBooleanMethod(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, ...) {
@@ -543,7 +548,7 @@ jboolean CallNonvirtualBooleanMethod(JNIEnv *env, jobject obj, jclass clazz, jme
     jboolean ret;
     va_list  args;
     va_start(args, methodID);
-    ret = methodBooleanCall(methodID, args);
+    ret = methodBooleanCall(obj, methodID, args);
     va_end(args);
 
     return ret;
@@ -551,12 +556,12 @@ jboolean CallNonvirtualBooleanMethod(JNIEnv *env, jobject obj, jclass clazz, jme
 
 jboolean CallNonvirtualBooleanMethodV(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, va_list args) {
     fjni_logv_dbg("[JNI] CallNonvirtualBooleanMethodV(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
-    return methodBooleanCall(methodID, args);
+    return methodBooleanCall(obj, methodID, args);
 }
 
 jboolean CallNonvirtualBooleanMethodA(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, const jvalue *args) {
     fjni_logv_dbg("[JNI] CallNonvirtualBooleanMethodA(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
-    return methodBooleanCall(methodID, _AtoV(0, args));
+    return methodBooleanCall(obj, methodID, _AtoV(0, args));
 }
 
 jbyte CallNonvirtualByteMethod(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, ...) {
@@ -565,7 +570,7 @@ jbyte CallNonvirtualByteMethod(JNIEnv *env, jobject obj, jclass clazz, jmethodID
     jbyte   ret;
     va_list args;
     va_start(args, methodID);
-    ret = methodByteCall(methodID, args);
+    ret = methodByteCall(obj, methodID, args);
     va_end(args);
 
     return ret;
@@ -573,12 +578,12 @@ jbyte CallNonvirtualByteMethod(JNIEnv *env, jobject obj, jclass clazz, jmethodID
 
 jbyte CallNonvirtualByteMethodV(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, va_list args) {
     fjni_logv_dbg("[JNI] CallNonvirtualByteMethodV(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
-    return methodByteCall(methodID, args);
+    return methodByteCall(obj, methodID, args);
 }
 
 jbyte CallNonvirtualByteMethodA(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, const jvalue *args) {
     fjni_logv_dbg("[JNI] CallNonvirtualByteMethodA(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
-    return methodByteCall(methodID, _AtoV(0, args));
+    return methodByteCall(obj, methodID, _AtoV(0, args));
 }
 
 jchar CallNonvirtualCharMethod(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, ...) {
@@ -587,7 +592,7 @@ jchar CallNonvirtualCharMethod(JNIEnv *env, jobject obj, jclass clazz, jmethodID
     jchar   ret;
     va_list args;
     va_start(args, methodID);
-    ret = methodCharCall(methodID, args);
+    ret = methodCharCall(obj, methodID, args);
     va_end(args);
 
     return ret;
@@ -595,12 +600,12 @@ jchar CallNonvirtualCharMethod(JNIEnv *env, jobject obj, jclass clazz, jmethodID
 
 jchar CallNonvirtualCharMethodV(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, va_list args) {
     fjni_logv_dbg("[JNI] CallNonvirtualCharMethodV(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
-    return methodCharCall(methodID, args);
+    return methodCharCall(obj, methodID, args);
 }
 
 jchar CallNonvirtualCharMethodA(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, const jvalue *args) {
     fjni_logv_dbg("[JNI] CallNonvirtualCharMethodA(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
-    return methodCharCall(methodID, _AtoV(0, args));
+    return methodCharCall(obj, methodID, _AtoV(0, args));
 }
 
 jshort CallNonvirtualShortMethod(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, ...) {
@@ -609,7 +614,7 @@ jshort CallNonvirtualShortMethod(JNIEnv *env, jobject obj, jclass clazz, jmethod
     jshort  ret;
     va_list args;
     va_start(args, methodID);
-    ret = methodShortCall(methodID, args);
+    ret = methodShortCall(obj, methodID, args);
     va_end(args);
 
     return ret;
@@ -617,12 +622,12 @@ jshort CallNonvirtualShortMethod(JNIEnv *env, jobject obj, jclass clazz, jmethod
 
 jshort CallNonvirtualShortMethodV(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, va_list args) {
     fjni_logv_dbg("[JNI] CallNonvirtualShortMethodV(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
-    return methodShortCall(methodID, args);
+    return methodShortCall(obj, methodID, args);
 }
 
 jshort CallNonvirtualShortMethodA(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, const jvalue *args) {
     fjni_logv_dbg("[JNI] CallNonvirtualShortMethodV(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
-    return methodShortCall(methodID, _AtoV(0, args));
+    return methodShortCall(obj, methodID, _AtoV(0, args));
 }
 
 jint CallNonvirtualIntMethod(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, ...) {
@@ -631,7 +636,7 @@ jint CallNonvirtualIntMethod(JNIEnv *env, jobject obj, jclass clazz, jmethodID m
     jint    ret;
     va_list args;
     va_start(args, methodID);
-    ret = methodIntCall(methodID, args);
+    ret = methodIntCall(obj, methodID, args);
     va_end(args);
 
     return ret;
@@ -639,12 +644,12 @@ jint CallNonvirtualIntMethod(JNIEnv *env, jobject obj, jclass clazz, jmethodID m
 
 jint CallNonvirtualIntMethodV(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, va_list args) {
     fjni_logv_dbg("[JNI] CallNonvirtualIntMethodV(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
-    return methodIntCall(methodID, args);
+    return methodIntCall(obj, methodID, args);
 }
 
 jint CallNonvirtualIntMethodA(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, const jvalue *args) {
     fjni_logv_dbg("[JNI] CallNonvirtualIntMethodA(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
-    return methodIntCall(methodID, _AtoV(0, args));
+    return methodIntCall(obj, methodID, _AtoV(0, args));
 }
 
 jlong CallNonvirtualLongMethod(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, ...) {
@@ -653,7 +658,7 @@ jlong CallNonvirtualLongMethod(JNIEnv *env, jobject obj, jclass clazz, jmethodID
     jlong   ret;
     va_list args;
     va_start(args, methodID);
-    ret = methodLongCall(methodID, args);
+    ret = methodLongCall(obj, methodID, args);
     va_end(args);
 
     return ret;
@@ -661,12 +666,12 @@ jlong CallNonvirtualLongMethod(JNIEnv *env, jobject obj, jclass clazz, jmethodID
 
 jlong CallNonvirtualLongMethodV(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, va_list args) {
     fjni_logv_dbg("[JNI] CallNonvirtualLongMethodV(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
-    return methodLongCall(methodID, args);
+    return methodLongCall(obj, methodID, args);
 }
 
 jlong CallNonvirtualLongMethodA(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, const jvalue *args) {
     fjni_logv_dbg("[JNI] CallNonvirtualLongMethodA(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
-    return methodLongCall(methodID, _AtoV(0, args));
+    return methodLongCall(obj, methodID, _AtoV(0, args));
 }
 
 jfloat CallNonvirtualFloatMethod(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, ...) {
@@ -675,7 +680,7 @@ jfloat CallNonvirtualFloatMethod(JNIEnv *env, jobject obj, jclass clazz, jmethod
     jfloat  ret;
     va_list args;
     va_start(args, methodID);
-    ret = methodFloatCall(methodID, args);
+    ret = methodFloatCall(obj, methodID, args);
     va_end(args);
 
     return ret;
@@ -683,12 +688,12 @@ jfloat CallNonvirtualFloatMethod(JNIEnv *env, jobject obj, jclass clazz, jmethod
 
 jfloat CallNonvirtualFloatMethodV(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, va_list args) {
     fjni_logv_dbg("[JNI] CallNonvirtualFloatMethodV(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
-    return methodFloatCall(methodID, args);
+    return methodFloatCall(obj, methodID, args);
 }
 
 jfloat CallNonvirtualFloatMethodA(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, const jvalue *args) {
     fjni_logv_dbg("[JNI] CallNonvirtualFloatMethodA(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
-    return methodFloatCall(methodID, _AtoV(0, args));
+    return methodFloatCall(obj, methodID, _AtoV(0, args));
 }
 
 jdouble CallNonvirtualDoubleMethod(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, ...) {
@@ -697,7 +702,7 @@ jdouble CallNonvirtualDoubleMethod(JNIEnv *env, jobject obj, jclass clazz, jmeth
     jdouble ret;
     va_list args;
     va_start(args, methodID);
-    ret = methodDoubleCall(methodID, args);
+    ret = methodDoubleCall(obj, methodID, args);
     va_end(args);
 
     return ret;
@@ -705,12 +710,12 @@ jdouble CallNonvirtualDoubleMethod(JNIEnv *env, jobject obj, jclass clazz, jmeth
 
 jdouble CallNonvirtualDoubleMethodV(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, va_list args) {
     fjni_logv_dbg("[JNI] CallNonvirtualDoubleMethodV(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
-    return methodDoubleCall(methodID, args);
+    return methodDoubleCall(obj, methodID, args);
 }
 
 jdouble CallNonvirtualDoubleMethodA(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, const jvalue *args) {
     fjni_logv_dbg("[JNI] CallNonvirtualDoubleMethodA(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
-    return methodDoubleCall(methodID, _AtoV(0, args));
+    return methodDoubleCall(obj, methodID, _AtoV(0, args));
 }
 
 void CallNonvirtualVoidMethod(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, ...) {
@@ -718,18 +723,18 @@ void CallNonvirtualVoidMethod(JNIEnv *env, jobject obj, jclass clazz, jmethodID 
 
     va_list args;
     va_start(args, methodID);
-    methodVoidCall(methodID, args);
+    methodVoidCall(obj, methodID, args);
     va_end(args);
 }
 
 void CallNonvirtualVoidMethodV(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, va_list args) {
     fjni_logv_dbg("[JNI] CallNonvirtualVoidMethodV(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
-    methodVoidCall(methodID, args);
+    methodVoidCall(obj, methodID, args);
 }
 
 void CallNonvirtualVoidMethodA(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, const jvalue *args) {
     fjni_logv_dbg("[JNI] CallNonvirtualVoidMethodA(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
-    methodVoidCall(methodID, _AtoV(0, args));
+    methodVoidCall(obj, methodID, _AtoV(0, args));
 }
 
 jfieldID GetFieldID(JNIEnv *env, jclass clazz, const char *name, const char *t) {
@@ -861,7 +866,7 @@ jobject CallStaticObjectMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ..
     jobject ret;
     va_list args;
     va_start(args, methodID);
-    ret = methodObjectCall(methodID, args);
+    ret = methodObjectCall(clazz, methodID, args);
     va_end(args);
 
     return ret;
@@ -869,12 +874,12 @@ jobject CallStaticObjectMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ..
 
 jobject CallStaticObjectMethodV(JNIEnv *env, jclass clazz, jmethodID methodID, va_list args) {
     fjni_logv_dbg("[JNI] CallStaticObjectMethodV(env, 0x%x, %i, args)", (int)clazz, (int)methodID);
-    return methodObjectCall(methodID, args);
+    return methodObjectCall(clazz, methodID, args);
 }
 
 jobject CallStaticObjectMethodA(JNIEnv *env, jclass clazz, jmethodID methodID, const jvalue *args) {
     fjni_logv_dbg("[JNI] CallStaticObjectMethodA(env, 0x%x, %i, args)", (int)clazz, (int)methodID);
-    return methodObjectCall(methodID, _AtoV(0, args));
+    return methodObjectCall(clazz, methodID, _AtoV(0, args));
 }
 
 jboolean CallStaticBooleanMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
@@ -883,7 +888,7 @@ jboolean CallStaticBooleanMethod(JNIEnv *env, jclass clazz, jmethodID methodID, 
     jboolean ret;
     va_list  args;
     va_start(args, methodID);
-    ret = methodBooleanCall(methodID, args);
+    ret = methodBooleanCall(clazz, methodID, args);
     va_end(args);
 
     return ret;
@@ -891,12 +896,12 @@ jboolean CallStaticBooleanMethod(JNIEnv *env, jclass clazz, jmethodID methodID, 
 
 jboolean CallStaticBooleanMethodV(JNIEnv *env, jclass clazz, jmethodID methodID, va_list args) {
     fjni_logv_dbg("[JNI] CallStaticBooleanMethodV(env, 0x%x, %i, args)", (int)clazz, (int)methodID);
-    return methodBooleanCall(methodID, args);
+    return methodBooleanCall(clazz, methodID, args);
 }
 
 jboolean CallStaticBooleanMethodA(JNIEnv *env, jclass clazz, jmethodID methodID, const jvalue *args) {
     fjni_logv_dbg("[JNI] CallStaticBooleanMethodA(env, 0x%x, %i, args)", (int)clazz, (int)methodID);
-    return methodBooleanCall(methodID, _AtoV(0, args));
+    return methodBooleanCall(clazz, methodID, _AtoV(0, args));
 }
 
 jbyte CallStaticByteMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
@@ -905,7 +910,7 @@ jbyte CallStaticByteMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
     jbyte   ret;
     va_list args;
     va_start(args, methodID);
-    ret = methodByteCall(methodID, args);
+    ret = methodByteCall(clazz, methodID, args);
     va_end(args);
 
     return ret;
@@ -913,12 +918,12 @@ jbyte CallStaticByteMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
 
 jbyte CallStaticByteMethodV(JNIEnv *env, jclass clazz, jmethodID methodID, va_list args) {
     fjni_logv_dbg("[JNI] CallStaticByteMethodV(env, 0x%x, %i, args)", (int)clazz, (int)methodID);
-    return methodByteCall(methodID, args);
+    return methodByteCall(clazz, methodID, args);
 }
 
 jbyte CallStaticByteMethodA(JNIEnv *env, jclass clazz, jmethodID methodID, const jvalue *args) {
     fjni_logv_dbg("[JNI] CallStaticByteMethodA(env, 0x%x, %i, args)", (int)clazz, (int)methodID);
-    return methodByteCall(methodID, _AtoV(0, args));
+    return methodByteCall(clazz, methodID, _AtoV(0, args));
 }
 
 jchar CallStaticCharMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
@@ -927,7 +932,7 @@ jchar CallStaticCharMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
     jchar   ret;
     va_list args;
     va_start(args, methodID);
-    ret = methodCharCall(methodID, args);
+    ret = methodCharCall(clazz, methodID, args);
     va_end(args);
 
     return ret;
@@ -935,12 +940,12 @@ jchar CallStaticCharMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
 
 jchar CallStaticCharMethodV(JNIEnv *env, jclass clazz, jmethodID methodID, va_list args) {
     fjni_logv_dbg("[JNI] CallStaticCharMethodV(env, 0x%x, %i, args)", (int)clazz, (int)methodID);
-    return methodCharCall(methodID, args);
+    return methodCharCall(clazz, methodID, args);
 }
 
 jchar CallStaticCharMethodA(JNIEnv *env, jclass clazz, jmethodID methodID, const jvalue *args) {
     fjni_logv_dbg("[JNI] CallStaticCharMethodA(env, 0x%x, %i, args)", (int)clazz, (int)methodID);
-    return methodCharCall(methodID, _AtoV(0, args));
+    return methodCharCall(clazz, methodID, _AtoV(0, args));
 }
 
 jshort CallStaticShortMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
@@ -949,7 +954,7 @@ jshort CallStaticShortMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...)
     jshort  ret;
     va_list args;
     va_start(args, methodID);
-    ret = methodShortCall(methodID, args);
+    ret = methodShortCall(clazz, methodID, args);
     va_end(args);
 
     return ret;
@@ -957,12 +962,12 @@ jshort CallStaticShortMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...)
 
 jshort CallStaticShortMethodV(JNIEnv *env, jclass clazz, jmethodID methodID, va_list args) {
     fjni_logv_dbg("[JNI] CallStaticShortMethodV(env, 0x%x, %i, args)", (int)clazz, (int)methodID);
-    return methodShortCall(methodID, args);
+    return methodShortCall(clazz, methodID, args);
 }
 
 jshort CallStaticShortMethodA(JNIEnv *env, jclass clazz, jmethodID methodID, const jvalue *args) {
     fjni_logv_dbg("[JNI] CallStaticShortMethodA(env, 0x%x, %i, args)", (int)clazz, (int)methodID);
-    return methodShortCall(methodID, _AtoV(0, args));
+    return methodShortCall(clazz, methodID, _AtoV(0, args));
 }
 
 jint CallStaticIntMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
@@ -971,7 +976,7 @@ jint CallStaticIntMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
     jint    ret;
     va_list args;
     va_start(args, methodID);
-    ret = methodIntCall(methodID, args);
+    ret = methodIntCall(clazz, methodID, args);
     va_end(args);
 
     return ret;
@@ -979,12 +984,12 @@ jint CallStaticIntMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
 
 jint CallStaticIntMethodV(JNIEnv *env, jclass clazz, jmethodID methodID, va_list args) {
     fjni_logv_dbg("[JNI] CallStaticIntMethodV(env, 0x%x, %i, args)", (int)clazz, methodID);
-    return methodIntCall(methodID, args);
+    return methodIntCall(clazz, methodID, args);
 }
 
 jint CallStaticIntMethodA(JNIEnv *env, jclass clazz, jmethodID methodID, const jvalue *args) {
     fjni_logv_dbg("[JNI] CallStaticIntMethodA(env, 0x%x, %i, args)", (int)clazz, (int)methodID);
-    return methodIntCall(methodID, _AtoV(0, args));
+    return methodIntCall(clazz, methodID, _AtoV(0, args));
 }
 
 jlong CallStaticLongMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
@@ -993,7 +998,7 @@ jlong CallStaticLongMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
     jlong   ret;
     va_list args;
     va_start(args, methodID);
-    ret = methodLongCall(methodID, args);
+    ret = methodLongCall(clazz, methodID, args);
     va_end(args);
 
     return ret;
@@ -1001,12 +1006,12 @@ jlong CallStaticLongMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
 
 jlong CallStaticLongMethodV(JNIEnv *env, jclass clazz, jmethodID methodID, va_list args) {
     fjni_logv_dbg("[JNI] CallStaticLongMethodV(env, 0x%x, %i, args)", (int)clazz, methodID);
-    return methodLongCall(methodID, args);
+    return methodLongCall(clazz, methodID, args);
 }
 
 jlong CallStaticLongMethodA(JNIEnv *env, jclass clazz, jmethodID methodID, const jvalue *args) {
     fjni_logv_dbg("[JNI] CallStaticLongMethodA(env, 0x%x, %i, args)", (int)clazz, (int)methodID);
-    return methodLongCall(methodID, _AtoV(0, args));
+    return methodLongCall(clazz, methodID, _AtoV(0, args));
 }
 
 jfloat CallStaticFloatMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
@@ -1015,7 +1020,7 @@ jfloat CallStaticFloatMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...)
     jfloat  ret;
     va_list args;
     va_start(args, methodID);
-    ret = methodFloatCall(methodID, args);
+    ret = methodFloatCall(clazz, methodID, args);
     va_end(args);
 
     return ret;
@@ -1023,12 +1028,12 @@ jfloat CallStaticFloatMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...)
 
 jfloat CallStaticFloatMethodV(JNIEnv *env, jclass clazz, jmethodID methodID, va_list args) {
     fjni_logv_dbg("[JNI] CallStaticFloatMethodV(env, 0x%x, %i, args)", (int)clazz, methodID);
-    return methodFloatCall(methodID, args);
+    return methodFloatCall(clazz, methodID, args);
 }
 
 jfloat CallStaticFloatMethodA(JNIEnv *env, jclass clazz, jmethodID methodID, const jvalue *args) {
     fjni_logv_dbg("[JNI] CallStaticFloatMethodA(env, 0x%x, %i, args)", (int)clazz, (int)methodID);
-    return methodFloatCall(methodID, _AtoV(0, args));
+    return methodFloatCall(clazz, methodID, _AtoV(0, args));
 }
 
 jdouble CallStaticDoubleMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
@@ -1037,7 +1042,7 @@ jdouble CallStaticDoubleMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ..
     jdouble ret;
     va_list args;
     va_start(args, methodID);
-    ret = methodDoubleCall(methodID, args);
+    ret = methodDoubleCall(clazz, methodID, args);
     va_end(args);
 
     return ret;
@@ -1045,12 +1050,12 @@ jdouble CallStaticDoubleMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ..
 
 jdouble CallStaticDoubleMethodV(JNIEnv *env, jclass clazz, jmethodID methodID, va_list args) {
     fjni_logv_dbg("[JNI] CallStaticDoubleMethodV(env, 0x%x, %i, args)", (int)clazz, methodID);
-    return methodDoubleCall(methodID, args);
+    return methodDoubleCall(clazz, methodID, args);
 }
 
 jdouble CallStaticDoubleMethodA(JNIEnv *env, jclass clazz, jmethodID methodID, const jvalue *args) {
     fjni_logv_dbg("[JNI] CallStaticDoubleMethodA(env, 0x%x, %i, args)", (int)clazz, (int)methodID);
-    return methodDoubleCall(methodID, _AtoV(0, args));
+    return methodDoubleCall(clazz, methodID, _AtoV(0, args));
 }
 
 void CallStaticVoidMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
@@ -1058,18 +1063,18 @@ void CallStaticVoidMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
 
     va_list args;
     va_start(args, methodID);
-    methodVoidCall(methodID, args);
+    methodVoidCall(clazz, methodID, args);
     va_end(args);
 }
 
 void CallStaticVoidMethodV(JNIEnv *env, jclass clazz, jmethodID methodID, va_list args) {
     fjni_logv_dbg("[JNI] CallStaticVoidMethodV(env, 0x%x, %i, args)", (int)clazz, methodID);
-    methodVoidCall(methodID, args);
+    methodVoidCall(clazz, methodID, args);
 }
 
 void CallStaticVoidMethodA(JNIEnv *env, jclass clazz, jmethodID methodID, const jvalue *args) {
     fjni_logv_dbg("[JNI] CallStaticVoidMethodA(env, 0x%x, %i, args)", (int)clazz, (int)methodID);
-    methodVoidCall(methodID, _AtoV(0, args));
+    methodVoidCall(clazz, methodID, _AtoV(0, args));
 }
 
 jfieldID GetStaticFieldID(JNIEnv *env, jclass clazz, const char *name, const char *t) {

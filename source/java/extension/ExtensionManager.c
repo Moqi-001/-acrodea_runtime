@@ -9,7 +9,7 @@
  */
 
 // "getExtensonByName", "(Ljava/lang/String;)Lcom/acrodea/vividruntime/launcher/extension/MyExtensionInterface;"
-jobject ExtensionManager_getExtensonByName(jmethodID id, va_list args) {
+jobject ExtensionManager_getExtensonByName(jobject obj, jmethodID id, va_list args) {
     const char *value = va_arg(args, char *);
     const char *res   = value;
     l_debug("[JNI] ExtensionManager::getExtensonByName(%s): %p", value, res);

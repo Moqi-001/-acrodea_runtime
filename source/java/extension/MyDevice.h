@@ -3,11 +3,11 @@
 
 #include <falso_jni/FalsoJNI.h>
 
-jobject MyDevice_getImei(jmethodID id, va_list args);
-jobject MyDevice_getImsi(jmethodID id, va_list args);
-jint    MyDevice_setNavigationHiddenEnable(jmethodID id, va_list args);
-jint    MyDevice_getNavigationHiddenState(jmethodID id, va_list args);
+jobject MyDevice_getImei(jobject obj, jmethodID id, va_list args);
+jobject MyDevice_getImsi(jobject obj, jmethodID id, va_list args);
+jint    MyDevice_setNavigationHiddenEnable(jobject obj, jmethodID id, va_list args);
+jint    MyDevice_getNavigationHiddenState(jobject obj, jmethodID id, va_list args);
 jobject MyDevice_getPlatformInfo();
-jint    MyDevice_getMutedState(jmethodID id, va_list args);
+jint    MyDevice_getMutedState(jobject obj, jmethodID id, va_list args);
 
 #endif

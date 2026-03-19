@@ -3,6 +3,6 @@
 
 #include <falso_jni/FalsoJNI.h>
 
-jobject ExtensionManager_getExtensonByName(jmethodID id, va_list args);
+jobject ExtensionManager_getExtensonByName(jobject obj, jmethodID id, va_list args);
 
 #endif

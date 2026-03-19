@@ -9,6 +9,7 @@
 #include <falso_jni/FalsoJNI.h>
 #include <falso_jni/FalsoJNI_Impl.h>
 
+#include "java/AudioTrack.h"
 #include "java/extension/ExtensionManager.h"
 #include "java/extension/MyDevice.h"
 #include "java/extension/MyErrorDialog.h"
@@ -20,6 +21,13 @@
 /*
  * JNI Methods
  */
+
+// commonIsSLESCompatibility", "()I
+jint commonIsSLESCompatibility(jclass clazz, jmethodID id, va_list args) {
+    int res = 1;
+    l_debug("[JNI] commonIsSLESCompatibility(): %d", res);
+    return (jint)res;
+}
 
 NameToMethodID nameToMethodId[] = {
     // com/acrodea/vividruntime/launcher/Runtime
@@ -54,9 +62,20 @@ NameToMethodID nameToMethodId[] = {
     {25, "getPlatformInfo", METHOD_TYPE_OBJECT},
     {26, "getMutedState", METHOD_TYPE_INT},
 
+    // com/acrodea/vividruntime/launcher/extension/MyErrorDialog
     {27, "setMessage", METHOD_TYPE_VOID},
-
     {28, "setCode", METHOD_TYPE_VOID},
+
+    // android/media/AudioTrack
+    {29, "android/media/AudioTrack/<init>", METHOD_TYPE_OBJECT},
+    {30, "getMinBufferSize", METHOD_TYPE_INT},
+    {31, "setStereoVolume", METHOD_TYPE_INT},
+    {32, "play", METHOD_TYPE_VOID},
+    {33, "stop", METHOD_TYPE_VOID},
+    {34, "release", METHOD_TYPE_VOID},
+    {35, "write", METHOD_TYPE_INT},
+
+    {36, "commonIsSLESCompatibility", METHOD_TYPE_INT},
 };
 
 MethodsBoolean methodsBoolean[] = {
@@ -74,6 +93,12 @@ MethodsInt methodsInt[] = {
     {23, MyDevice_setNavigationHiddenEnable},
     {24, MyDevice_getNavigationHiddenState},
     {26, MyDevice_getMutedState},
+
+    {30, AudioTrack_getMinBufferSize},
+    {31, AudioTrack_setStereoVolume},
+    {35, AudioTrack_write},
+
+    {36, commonIsSLESCompatibility},
 };
 MethodsLong   methodsLong[]   = {};
 MethodsObject methodsObject[] = {
@@ -87,6 +112,7 @@ MethodsObject methodsObject[] = {
     {22, MyDevice_getImsi},
     {25, MyDevice_getPlatformInfo},
 
+    {29, AudioTrack_init},
 };
 MethodsShort methodsShort[] = {};
 MethodsVoid  methodsVoid[]  = {
@@ -105,6 +131,10 @@ MethodsVoid  methodsVoid[]  = {
 
     {27, MyErrorDialog_setMessage},
     {28, MyErrorDialog_setCode},
+
+    {32, AudioTrack_play},
+    {33, AudioTrack_stop},
+    {34, AudioTrack_release},
 };
 
 /*

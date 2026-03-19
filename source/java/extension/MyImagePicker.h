@@ -3,7 +3,7 @@
 
 #include <falso_jni/FalsoJNI.h>
 
-jint MyImagePicker_addHeader(jmethodID id, va_list args);
-jint MyImagePicker_setType(jmethodID id, va_list args);
+jint MyImagePicker_addHeader(jobject obj, jmethodID id, va_list args);
+jint MyImagePicker_setType(jobject obj, jmethodID id, va_list args);
 
 #endif

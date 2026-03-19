@@ -3,8 +3,8 @@
 
 #include <falso_jni/FalsoJNI.h>
 
-jobject MyPopup_getText(jmethodID id, va_list args);
-jint    MyPopup_setPropertycv(jmethodID id, va_list args);
-jint    MyPopup_show(jmethodID id, va_list args);
+jobject MyPopup_getText(jobject obj, jmethodID id, va_list args);
+jint    MyPopup_setPropertycv(jobject obj, jmethodID id, va_list args);
+jint    MyPopup_show(jobject obj, jmethodID id, va_list args);
 
 #endif

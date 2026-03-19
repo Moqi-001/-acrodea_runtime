@@ -84,19 +84,19 @@ Java method signatures are translated into FalsoJNI-compatible implementations:
 // CallMethodV, or CallMethodA ).
 
 // "SetShiftEnabled", "(Z)V"
-void SetShiftEnabled(jmethodID id, va_list args) { // V (ret type) is a void
+void SetShiftEnabled(jobject obj, jmethodID id, va_list args) { // V (ret type) is a void
     jboolean arg = va_arg(args, jboolean); // Z is a boolean
     // do something
 }
 
 // "GetDisplayOrientationLock", "()I"
-jint GetDisplayOrientationLock(jmethodID id, va_list args) { // I (ret type) is an integer
+jint GetDisplayOrientationLock(jobject obj, jmethodID id, va_list args) { // I (ret type) is an integer
     // no arguments here
     return 0;
 }
 
 // "read", "([BII)I"
-jint InputStream_read(jmethodID id, va_list args) { // I (ret type) is an integer
+jint InputStream_read(jobject obj, jmethodID id, va_list args) { // I (ret type) is an integer
     jbyteArray _b = va_arg(args, char*); // [B is a byte array.
     jint off = va_arg(args, int); // I is an int
     jint len = va_arg(args, int); // I is an int

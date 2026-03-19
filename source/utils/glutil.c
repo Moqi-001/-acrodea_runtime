@@ -163,7 +163,7 @@ void load_shader(GLuint shader, const char *string, size_t length) {
         size_t size;
 
         file_load(cg_path, (uint8_t **)&buffer, &size);
-        glShaderSource(shader, 1, &buffer, &size);
+        glShaderSource(shader, 1, (const GLchar *const *)&buffer, &size);
 
         strcpy(next_shader_fname, gxp_path);
 
@@ -213,7 +213,7 @@ void load_shader(GLuint shader, const char *string, size_t length) {
         l_debug("Shader:%s", sha_name);
         file_load(path, (uint8_t **)&buffer, &size);
 
-        glShaderSource(shader, 1, &buffer, &size);
+        glShaderSource(shader, 1, (const GLchar *const *)&buffer, &size);
         l_debug("Shader load over:%s", sha_name);
 
         free(buffer);

@@ -38,11 +38,11 @@ SceUID thid = sceKernelCreateThread("main_thread", (SceKernelThreadEntry)main_th
 
 2.java.c
 这个代码里就so调用java代码的逻辑了，需要分析java代码，然后重新写入这里面
-jlong GetCurrentTime(jmethodID id, va_list args) {
+jlong GetCurrentTime(jobject obj, jmethodID id, va_list args) {
     return (int64_t) current_timestamp_ms();
 }
 
-jlong Native_GetHeapTotalMemory(jmethodID id, va_list args) {
+jlong Native_GetHeapTotalMemory(jobject obj, jmethodID id, va_list args) {
 
     debugPrintf("Native_GetHeapTotalMemory(12000000)");
     return 12000000;

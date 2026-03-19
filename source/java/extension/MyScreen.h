@@ -3,11 +3,11 @@
 
 #include <falso_jni/FalsoJNI.h>
 
-jint   MyScreen_getWidthPixels(jmethodID id, va_list args);
-jint   MyScreen_getHeightPixels(jmethodID id, va_list args);
-jfloat MyScreen_getDensity(jmethodID id, va_list args);
-jint   MyScreen_getDensityDpi(jmethodID id, va_list args);
-jfloat MyScreen_getXDensityDpi(jmethodID id, va_list args);
-jfloat MyScreen_getYDensityDpi(jmethodID id, va_list args);
+jint   MyScreen_getWidthPixels(jobject obj, jmethodID id, va_list args);
+jint   MyScreen_getHeightPixels(jobject obj, jmethodID id, va_list args);
+jfloat MyScreen_getDensity(jobject obj, jmethodID id, va_list args);
+jint   MyScreen_getDensityDpi(jobject obj, jmethodID id, va_list args);
+jfloat MyScreen_getXDensityDpi(jobject obj, jmethodID id, va_list args);
+jfloat MyScreen_getYDensityDpi(jobject obj, jmethodID id, va_list args);
 
 #endif

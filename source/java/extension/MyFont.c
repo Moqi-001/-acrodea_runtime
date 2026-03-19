@@ -9,7 +9,7 @@
  */
 
 // "getTextSize", "(Ljava/lang/String;[I)I"
-jint MyFont_getTextSize(jmethodID id, va_list args) {
+jint MyFont_getTextSize(jobject obj, jmethodID id, va_list args) {
     int         res    = 0;
     const char *value  = va_arg(args, char *);
     jintArray   value2 = va_arg(args, jintArray);
@@ -18,7 +18,7 @@ jint MyFont_getTextSize(jmethodID id, va_list args) {
 }
 
 // "getWidth", "(Ljava/lang/String;[I)I"
-jint MyFont_getWidth(jmethodID id, va_list args) {
+jint MyFont_getWidth(jobject obj, jmethodID id, va_list args) {
     int         res    = 0;
     const char *value  = va_arg(args, char *);
     jintArray   value2 = va_arg(args, jintArray);
@@ -27,7 +27,7 @@ jint MyFont_getWidth(jmethodID id, va_list args) {
 }
 
 // "getHeightEx", "(Ljava/lang/String;[I)I"
-jint MyFont_getHeightEx(jmethodID id, va_list args) {
+jint MyFont_getHeightEx(jobject obj, jmethodID id, va_list args) {
     int         res    = 0;
     const char *value  = va_arg(args, char *);
     jintArray   value2 = va_arg(args, jintArray);
@@ -36,13 +36,13 @@ jint MyFont_getHeightEx(jmethodID id, va_list args) {
 }
 
 // "getFontInfo", "([I)V"
-void MyFont_getFontInfo(jmethodID id, va_list args) {
+void MyFont_getFontInfo(jobject obj, jmethodID id, va_list args) {
     jintArray value = va_arg(args, jintArray);
     l_debug("[JNI] MyFont::getFontInfo(%p): %u", value, res);
 }
 
 // "drawString", "(Ljava/lang/String;[I)[I"
-jbyteArray MyFont_drawString(jmethodID id, va_list args) {
+jbyteArray MyFont_drawString(jobject obj, jmethodID id, va_list args) {
     jbyteArray  res    = 0;
     const char *value  = va_arg(args, char *);
     jintArray   value2 = va_arg(args, jintArray);
@@ -51,7 +51,7 @@ jbyteArray MyFont_drawString(jmethodID id, va_list args) {
 }
 
 // "drawStringEx", "(Ljava/lang/String;[I)[I"
-jbyteArray MyFont_drawStringEx(jmethodID id, va_list args) {
+jbyteArray MyFont_drawStringEx(jobject obj, jmethodID id, va_list args) {
     jbyteArray  res    = 0;
     const char *value  = va_arg(args, char *);
     jintArray   value2 = va_arg(args, jintArray);
@@ -60,7 +60,7 @@ jbyteArray MyFont_drawStringEx(jmethodID id, va_list args) {
 }
 
 // "renderText", "(Ljava/lang/String;[I)[B"
-jbyteArray MyFont_renderText(jmethodID id, va_list args) {
+jbyteArray MyFont_renderText(jobject obj, jmethodID id, va_list args) {
     jbyteArray  res    = 0;
     const char *value  = va_arg(args, char *);
     jintArray   value2 = va_arg(args, jintArray);

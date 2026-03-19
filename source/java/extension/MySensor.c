@@ -9,7 +9,7 @@
  */
 
 // "setAccelerometer", "(I)I"
-jint MySensor_setAccelerometer(jmethodID id, va_list args) {
+jint MySensor_setAccelerometer(jobject obj, jmethodID id, va_list args) {
     int res   = 0;
     int value = va_arg(args, int);
     l_debug("[JNI] MySensor::setAccelerometer(%d): %u", value, res);
@@ -17,7 +17,7 @@ jint MySensor_setAccelerometer(jmethodID id, va_list args) {
 }
 
 // "checkType", "(I)I"
-jint MySensor_checkType(jmethodID id, va_list args) {
+jint MySensor_checkType(jobject obj, jmethodID id, va_list args) {
     int res   = 0;
     int value = va_arg(args, int);
     l_debug("[JNI] MySensor::checkType(%d): %u", value, res);
@@ -25,7 +25,7 @@ jint MySensor_checkType(jmethodID id, va_list args) {
 }
 
 // "setGyro", "(I)I"
-jint MySensor_setGyro(jmethodID id, va_list args) {
+jint MySensor_setGyro(jobject obj, jmethodID id, va_list args) {
     int res   = 0;
     int value = va_arg(args, int);
     l_debug("[JNI] MySensor::setGyro(%d): %u", value, res);
@@ -33,7 +33,7 @@ jint MySensor_setGyro(jmethodID id, va_list args) {
 }
 
 // "setMagnetic", "(I)I"
-jint MySensor_setMagnetic(jmethodID id, va_list args) {
+jint MySensor_setMagnetic(jobject obj, jmethodID id, va_list args) {
     int res   = 0;
     int value = va_arg(args, int);
     l_debug("[JNI] MySensor::setMagnetic(%d): %u", value, res);

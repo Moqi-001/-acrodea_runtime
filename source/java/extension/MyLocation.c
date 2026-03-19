@@ -9,7 +9,7 @@
  */
 
 // "setEnable", "(III)I"
-jint MyLocation_setEnable(jmethodID id, va_list args) {
+jint MyLocation_setEnable(jobject obj, jmethodID id, va_list args) {
     int res    = 0;
     int value  = va_arg(args, int);
     int value1 = va_arg(args, int);

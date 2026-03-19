@@ -3,6 +3,6 @@
 
 #include <falso_jni/FalsoJNI.h>
 
-jint MyDialog_showDialog(jmethodID id, va_list args);
+jint MyDialog_showDialog(jobject obj, jmethodID id, va_list args);
 
 #endif

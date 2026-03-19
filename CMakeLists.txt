@@ -95,6 +95,7 @@ add_executable(${CMAKE_PROJECT_NAME}
   source/reimpl/time64.c
 
   source/java/java.c
+  source/java/AudioTrack.c
   source/java/Runtime.c
   source/java/extension/ExtensionManager.c
   source/java/extension/MyDevice.c
@@ -130,6 +131,8 @@ target_link_directories (${CMAKE_PROJECT_NAME}
 target_link_libraries(${CMAKE_PROJECT_NAME}
   -Wl,--whole-archive pthread -Wl,--no-whole-archive
   stdc++
+  OpenSLES
+  sndfile
   vitaGL
   vitashark
   z

@@ -3,6 +3,6 @@
 
 #include <falso_jni/FalsoJNI.h>
 
-jint MyLocation_setEnable(jmethodID id, va_list args);
+jint MyLocation_setEnable(jobject obj, jmethodID id, va_list args);
 
 #endif

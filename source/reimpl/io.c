@@ -45,9 +45,10 @@ FILE *fopen_soloader(const char *filename, const char *mode) {
     return ret;
 }
 
-int dup_soloader(int fd) {
-    l_debug("dup_soloader:%d", fd);
-    return fd;
+int fclose_soloader(FILE *f) {
+    int ret = fclose(f);
+    l_debug("fclose(%p): %i", f, ret);
+    return ret;
 }
 
 size_t fread_soloader(void *data, size_t _size, size_t _n, FILE *fd) {
@@ -55,19 +56,10 @@ size_t fread_soloader(void *data, size_t _size, size_t _n, FILE *fd) {
     return fread(data, _size, _n, fd);
 }
 
-FILE *fdopen_soloader(int fd, const char *mode) {
-    char *filename = "ux0:data/Acrodea/app.exe";
-    l_debug("fdopen_soloader:%s", filename);
-
-    FILE *ret = fopen(filename, mode);
-    if (ret) {
-        l_debug("fdopen(%s, %s): %p", filename, mode, ret);
-    } else {
-        l_debug("fdopen_soloader not find file:%s", filename);
-        l_warn("fdopen(%s, %s): %p", filename, mode, ret);
-    }
-
-    return ret;
+int fseek_soloader(FILE *stream, long l, int i) {
+    int v = fseek(stream, l, i);
+    l_debug("fseek(%p,%ld,%d) return:%d", stream, l, i, v);
+    return v;
 }
 
 long ftell_soloader(FILE *stream) {
@@ -76,10 +68,15 @@ long ftell_soloader(FILE *stream) {
     return v;
 }
 
-int fseek_soloader(FILE *stream, long l, int i) {
-    int v = fseek(stream, l, i);
-    l_debug("fseek(%p,%ld,%d) return:%d", stream, l, i, v);
-    return v;
+FILE *fdopen_soloader(int fd, const char *mode) {
+    FILE *ret = fdopen(fd, mode);
+    l_debug("fdopen(%d, %s): %p", fd, mode, ret);
+    return ret;
+}
+
+int dup_soloader(int fd) {
+    l_debug("dup_soloader:%d", fd);
+    return fd;
 }
 
 static uint64_t rng = 0x123456789abcdef;
@@ -138,6 +135,12 @@ exit_return:
     return ret;
 }
 
+int close_soloader(int fd) {
+    int ret = close(fd);
+    l_debug("close(%i): %i", fd, ret);
+    return ret;
+}
+
 int fstat_soloader(int fd, stat64_bionic *buf) {
     struct stat st;
     int         res = fstat(fd, &st);
@@ -158,18 +161,6 @@ int stat_soloader(const char *path, stat64_bionic *buf) {
 
     l_debug("stat(%s): %i", path, res);
     return res;
-}
-
-int fclose_soloader(FILE *f) {
-    int ret = fclose(f);
-    l_debug("fclose(%p): %i", f, ret);
-    return ret;
-}
-
-int close_soloader(int fd) {
-    int ret = close(fd);
-    l_debug("close(%i): %i", fd, ret);
-    return ret;
 }
 
 DIR *opendir_soloader(char *_pathname) {

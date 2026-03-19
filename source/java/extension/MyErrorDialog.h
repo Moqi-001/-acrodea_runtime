@@ -3,7 +3,7 @@
 
 #include <falso_jni/FalsoJNI.h>
 
-void MyErrorDialog_setMessage(jmethodID id, va_list args);
-void MyErrorDialog_setCode(jmethodID id, va_list args);
+void MyErrorDialog_setMessage(jobject obj, jmethodID id, va_list args);
+void MyErrorDialog_setCode(jobject obj, jmethodID id, va_list args);
 
 #endif

@@ -26,28 +26,9 @@
 #include "reimpl/android/SharedBuffer.h"
 #include "utils/logger.h"
 
-struct AAudioTrack {
-    status_t             mStatus;
-    audio_stream_type_t  mStreamType;
-    uint32_t             mSampleRate;
-    audio_format_t       mFormat;
-    audio_channel_mask_t mChannelMask;
-    size_t               mFrameCount;
-    audio_output_flags_t mFlags;
-    callback_t           mCbf;
-    void                *mUserData;
-    uint32_t             mNotificationFrames;
-    const void          *mSharedBuffer;
-    int                  mSessionId;
-
-    transfer_type mTransfer;
-
-    pthread_mutex_t mLock;
-    bool            mIsTimed;
-};  // +216
-
 void AAudioTrack_construct(AAudioTrack *self) {
     l_debug("[Android] AAudioTrack_construct(%p)", self);
+    self->mStatus             = NO_ERROR;
     self->mFrameCount         = 0;
     self->mFlags              = AUDIO_OUTPUT_FLAG_NONE;
     self->mCbf                = NULL;
@@ -78,7 +59,7 @@ void AAudioTrack_stop(AAudioTrack *self) {
 }
 
 status_t AAudioTrack_setVolume(AAudioTrack *self, float left, float right) {
-    l_debug("[Android] AAudioTrack_stop(%p)", self);
+    l_debug("[Android] AAudioTrack_setVolume(%p, %f, %f)", self, left, right);
     return NO_ERROR;
 }
 
@@ -94,25 +75,44 @@ status_t AAudioTrack_setVolume(AAudioTrack *self, float left, float right) {
  * @param notificationFrames 通知帧数
  * @return status_t 状态码
  */
-status_t AudioTrack_set(audio_stream_type_t         streamType,
-                        uint32_t                    sampleRate,
-                        audio_format_t              format,
-                        uint32_t                    channelMask,
-                        int                         frameCount,
-                        audio_output_flags_t        flags,
-                        callback_t                  cbf,
-                        void                       *user,
-                        int                         notificationFrames,
-                        const void                 *sharedBuffer,  // IMemory
-                        bool                        threadCanCallJava,
-                        int                         sessionId,
-                        transfer_type               transferType,
-                        const audio_offload_info_t *offloadInfo,
-                        int                         uid) {
+status_t AAudioTrack_set(AAudioTrack         *self,
+                        audio_stream_type_t  streamType,
+                        uint32_t             sampleRate,
+                        audio_format_t       format,
+                        uint32_t             channelMask,
+                        int                  frameCount,
+                        audio_output_flags_t flags,
+                        callback_t           cbf,
+                        void                *user,
+                        int                  notificationFrames,
+                        const void          *sharedBuffer,  // IMemory
+                        bool                 threadCanCallJava,
+                        int                  sessionId) {
+    int res = NO_ERROR;
+    l_debug("[Android] AAudioTrack_set(%p,%d,%u,0x%x,%u,%d,0x%x,%p,%p,%d,%p,%u,%d): %d",
+            self,
+            streamType,
+            sampleRate,
+            format,
+            channelMask,
+            frameCount,
+            flags,
+            cbf,
+            user,
+            notificationFrames,
+            sharedBuffer,  // IMemory
+            threadCanCallJava,
+            sessionId,
+            res);
+
     return NO_ERROR;
 }
 
-ssize_t AudioTrack_write(AAudioTrack *self, const void *buffer, size_t userSize) {
+ssize_t AAudioTrack_write(AAudioTrack *self, const void *buffer, size_t userSize) {
+    int res = NO_ERROR;
+    l_debug("[Android] AAudioTrack_write(%p,%p,%u): %d", self, buffer, userSize, res);
+    return NO_ERROR;
+
     /*
     if (self->mTransfer != TRANSFER_SYNC || self->mIsTimed) {
         return INVALID_OPERATION;

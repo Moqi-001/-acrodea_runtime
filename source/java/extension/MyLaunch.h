@@ -3,7 +3,7 @@
 
 #include <falso_jni/FalsoJNI.h>
 
-jint MyLaunch_setLaunchBehavior(jmethodID id, va_list args);
-jint MyLaunch_launch(jmethodID id, va_list args);
+jint MyLaunch_setLaunchBehavior(jobject obj, jmethodID id, va_list args);
+jint MyLaunch_launch(jobject obj, jmethodID id, va_list args);
 
 #endif

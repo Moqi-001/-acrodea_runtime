@@ -3,8 +3,8 @@
 
 #include <falso_jni/FalsoJNI.h>
 
-jobject MyTextInput_getText(jmethodID id, va_list args);
-jint    MyTextInput_setPropertycv(jmethodID id, va_list args);
-jint    MyTextInput_doModal(jmethodID id, va_list args);
+jobject MyTextInput_getText(jobject obj, jmethodID id, va_list args);
+jint    MyTextInput_setPropertycv(jobject obj, jmethodID id, va_list args);
+jint    MyTextInput_doModal(jobject obj, jmethodID id, va_list args);
 
 #endif
