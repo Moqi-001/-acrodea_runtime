@@ -169,6 +169,19 @@ PTHR_INLINE int _cond_t_static_init(pthread_cond_t_bionic *cond, const pthread_c
     return ret;
 }
 
+void __pthread_cleanup_push_soloader(pte_cleanup_t *cleanup, void (*routine)(void *), void *arg) {
+    l_debug("__pthread_cleanup_push(%p,%p,%p)", cleanup, routine, arg);
+
+    return pte_push_cleanup(cleanup, routine, arg);
+}
+
+void __pthread_cleanup_pop_soloader(pte_cleanup_t *cleanup, int execute) {
+    l_debug("__pthread_cleanup_pop(%p,%d)", cleanup, execute);
+
+    pte_cleanup_t *_cleanup = pte_pop_cleanup(execute);
+    return;
+}
+
 int pthread_create_soloader(pthread_t *thread, const pthread_attr_t_bionic *attr, void *(*start)(void *), void *param) {
     int ret;
 

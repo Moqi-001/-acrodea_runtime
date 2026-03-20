@@ -33,4 +33,4 @@ extern JNIEnv jni;
 
 void jni_init();
 
-#endif // FALSOJNI_H
+#endif  // FALSOJNI_H

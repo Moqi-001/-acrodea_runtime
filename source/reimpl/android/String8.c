@@ -19,7 +19,7 @@ static int real_init(AString8 *self, const char *cstr, size_t len) {
         return -1;
 
     ASharedBuffer *sb;
-    size_t        str8_len;
+    size_t         self_len;
 
     if (!cstr || len == 0)  // 创建并写入空字符串
     {
@@ -27,8 +27,8 @@ static int real_init(AString8 *self, const char *cstr, size_t len) {
         if (!sb)
             return -1;
         self->string           = getString(sb);
-        str8_len               = 0;
-        self->string[str8_len] = '\0';
+        self_len               = 0;
+        self->string[self_len] = '\0';
     } else  // 创建并复制字符串
     {
         sb = ASharedBuffer_alloc(len + 1);
@@ -36,8 +36,8 @@ static int real_init(AString8 *self, const char *cstr, size_t len) {
             return -1;
         self->string = getString(sb);
         memcpy(self->string, cstr, len);
-        str8_len               = len;
-        self->string[str8_len] = '\0';
+        self_len               = len;
+        self->string[self_len] = '\0';
     }
 
     return 0;
@@ -48,7 +48,7 @@ static int real_setTo(AString8 *self, const char *cstr, size_t len) {
         return -1;
 
     ASharedBuffer *sb       = getSharedBuffer(self);
-    size_t        str8_len = getLength(sb);
+    size_t         self_len = getLength(sb);
 
     if (!cstr || len == 0)  // 写入空字符串
     {
@@ -56,8 +56,8 @@ static int real_setTo(AString8 *self, const char *cstr, size_t len) {
         if (!sb)
             return -1;
         self->string           = getString(sb);
-        str8_len               = 0;
-        self->string[str8_len] = '\0';
+        self_len               = 0;
+        self->string[self_len] = '\0';
     } else  // 复制字符串
     {
         sb = ASharedBuffer_editResize(sb, len + 1);
@@ -65,8 +65,8 @@ static int real_setTo(AString8 *self, const char *cstr, size_t len) {
             return -1;
         self->string = getString(sb);
         memcpy(self->string, cstr, len);
-        str8_len               = len;
-        self->string[str8_len] = '\0';
+        self_len               = len;
+        self->string[self_len] = '\0';
     }
 
     return 0;
@@ -80,15 +80,15 @@ static int real_append(AString8 *self, const char *cstr, size_t len) {
         return 0;
 
     ASharedBuffer *sb       = getSharedBuffer(self);
-    size_t        str8_len = getLength(sb);
-    sb                     = ASharedBuffer_editResize(sb, str8_len + len + 1);
+    size_t         self_len = getLength(sb);
+    sb                      = ASharedBuffer_editResize(sb, self_len + len + 1);
     if (!sb)
         return -1;
 
     self->string = getString(sb);
-    memcpy(self->string + str8_len, cstr, len);
-    str8_len += len;
-    self->string[str8_len] = '\0';
+    memcpy(self->string + self_len, cstr, len);
+    self_len += len;
+    self->string[self_len] = '\0';
 
     return 0;
 }
@@ -101,62 +101,56 @@ static int real_appendPath(AString8 *self, const char *cstr, size_t len) {
         return 0;
 
     ASharedBuffer *sb;
-    size_t        str8_len;
+    size_t         self_len;
 
     if (cstr[0] != '/') {
         sb       = getSharedBuffer(self);
-        str8_len = getLength(sb);
-        if (self->string[str8_len] != '/') {
-            sb = ASharedBuffer_editResize(sb, str8_len + len + 2);  // 多分配一个字节给'/'
+        self_len = getLength(sb);
+        if (self->string[self_len] != '/') {
+            sb = ASharedBuffer_editResize(sb, self_len + len + 2);  // 多分配一个字节给'/'
             if (!sb)
                 return -1;
             self->string             = getString(sb);
-            self->string[str8_len++] = '/';
+            self->string[self_len++] = '/';
         } else {
-            sb = ASharedBuffer_editResize(sb, str8_len + len + 1);
+            sb = ASharedBuffer_editResize(sb, self_len + len + 1);
             if (!sb)
                 return -1;
             self->string = getString(sb);
         }
 
-        memcpy(self->string + str8_len, cstr, len);
-        str8_len += len;
-        self->string[str8_len] = '\0';
+        memcpy(self->string + self_len, cstr, len);
+        self_len += len;
+        self->string[self_len] = '\0';
     } else {
         sb = ASharedBuffer_editResize(sb, len + 1);
         if (!sb)
             return -1;
         self->string = getString(sb);
         memcpy(self->string, cstr, len);
-        str8_len               = len;
-        self->string[str8_len] = '\0';
+        self_len               = len;
+        self->string[self_len] = '\0';
     }
 
     return 0;
 }
 
 int AString8_construct(AString8 *self) {
-    l_debug("[Android] AString8_construct(%p)", self);
-
     int res = real_init(self, NULL, 0);
 
-    l_debug("[Android] AString8_construct over: \"%s\"", self ? self->string : NULL);
+    l_debug("[Android] AString8_construct(%p): '%s'", self, self ? self->string : NULL);
     return res;
 }
 
 int AString8_constructFromCstr(AString8 *self, const char *cstr) {
-    l_debug("[Android] AString8_constructFromCstr(%p,\"%s\")", self, cstr);
-
     size_t len = cstr ? strlen(cstr) : 0;
     int    res = real_init(self, cstr, len);
 
-    l_debug("[Android] AString8_constructFromCstr over: \"%s\"", self ? self->string : NULL);
+    l_debug("[Android] AString8_constructFromCstr(%p,%p): '%s'", self, cstr, self ? self->string : NULL);
     return res;
 }
 
 int AString8_constructFromOther(AString8 *self, const AString8 *other) {
-    l_debug("[Android] AString8_constructFromOther(%p,%p): \"%s\"", self, other, other ? other->string : NULL);
-
     int res = -1;
 
     if (self) {
@@ -169,24 +163,20 @@ int AString8_constructFromOther(AString8 *self, const AString8 *other) {
         }
     }
 
-    l_debug("[Android] AString8_constructFromOther over: \"%s\"", self ? self->string : NULL);
+    l_debug("[Android] AString8_constructFromOther(%p,%p): '%s'", self, other, self ? self->string : NULL);
     return res;
 }
 
 void AString8_destruct(AString8 *self) {
-    l_debug("[Android] AString8_destruct(%p): \"%s\"", self, self ? self->string : NULL);
+    l_debug("[Android] AString8_destruct(%p): '%s'", self, self ? self->string : NULL);
 
     if (self && self->string) {
         ASharedBuffer_release(getSharedBuffer(self), 0);
         self->string = NULL;
     }
-
-    l_debug("[Android] AString8_destruct over");
 }
 
 int AString8_setTo(AString8 *self, const AString8 *other) {
-    l_debug("[Android] AString8_setTo(%p,%p): \"%s\"", self, other, other ? other->string : NULL);
-
     int res = -1;
 
     if (self) {
@@ -202,65 +192,53 @@ int AString8_setTo(AString8 *self, const AString8 *other) {
         }
     }
 
-    l_debug("[Android] AString8_setTo over: \"%s\"", self ? self->string : NULL);
+    l_debug("[Android] AString8_setTo(%p,%p): '%s'", self, other, self ? self->string : NULL);
     return res;
 }
 
 int AString8_setToCstr(AString8 *self, const char *cstr) {
-    l_debug("[Android] AString8_setToCstr(%p,\"%s\")", self, cstr);
-
     size_t len = cstr ? strlen(cstr) : 0;
     int    res = real_setTo(self, cstr, len);
 
-    l_debug("[Android] AString8_setToCstr over: \"%s\"", self ? self->string : NULL);
+    l_debug("[Android] AString8_setToCstr(%p,%p): '%s", self, cstr, self ? self->string : NULL);
     return res;
 }
 
 int AString8_append(AString8 *self, const AString8 *other) {
-    l_debug("[Android] AString8_append(%p,%p): \"%s\",\"%s\"", self, other, self ? self->string : NULL, other ? other->string : NULL);
-
     const char *cstr = other ? other->string : NULL;
     size_t      len  = other ? getLength(getSharedBuffer(other)) : 0;
     int         res  = real_append(self, cstr, len);
 
-    l_debug("[Android] AString8_append over: \"%s\"", self ? self->string : NULL);
+    l_debug("[Android] AString8_append(%p,%p): '%s'", self, other, self ? self->string : NULL);
     return res;
 }
 
 int AString8_appendCstr(AString8 *self, const char *cstr) {
-    l_debug("[Android] AString8_appendCstr(%p): \"%s\",\"%s\"", self, self ? self->string : NULL, cstr);
-
     size_t len = cstr ? strlen(cstr) : 0;
     int    res = real_append(self, cstr, len);
 
-    l_debug("[Android] AString8_appendCstr over: \"%s\"", self ? self->string : NULL);
+    l_debug("[Android] AString8_appendCstr(%p,%p): '%s'", self, cstr, self ? self->string : NULL);
     return res;
 }
 
 int AString8_appendPath(AString8 *self, const AString8 *other) {
-    l_debug("[Android] AString8_appendPath(%p,%p): \"%s\",\"%s\"", self, other, self ? self->string : NULL, other ? other->string : NULL);
-
     const char *cstr = other ? other->string : NULL;
     size_t      len  = other ? getLength(getSharedBuffer(other)) : 0;
     int         res  = real_appendPath(self, cstr, len);
 
-    l_debug("[Android] AString8_appendPath over: \"%s\"", self ? self->string : NULL);
+    l_debug("[Android] AString8_appendPath(%p,%p): '%s'", self, other, self ? self->string : NULL);
     return res;
 }
 
 int AString8_appendPathCstr(AString8 *self, const char *cstr) {
-    l_debug("[Android] AString8_appendPathCstr(%p): \"%s\",\"%s\"", self, self ? self->string : NULL, cstr);
-
     size_t len = cstr ? strlen(cstr) : 0;
     int    res = real_appendPath(self, cstr, len);
 
-    l_debug("[Android] AString8_appendPathCstr over: \"%s\"", self ? self->string : NULL);
+    l_debug("[Android] AString8_appendPathCstr(%p,%p): '%s'", self, cstr, self ? self->string : NULL);
     return res;
 }
 
 int AString8_getPathDir(AString8 *self, const AString8 *other) {
-    l_debug("[Android] AString8_getPathDir(%p,%p): \"%s\"", self, other, other ? other->string : NULL);
-
     int res;
 
     if (!other || !other->string)  // 创建空字符串
@@ -277,13 +255,11 @@ int AString8_getPathDir(AString8 *self, const AString8 *other) {
         res        = real_init(self, cstr, len);
     }
 
-    l_debug("[Android] AString8_getPathDir over: \"%s\"", self ? self->string : NULL);
+    l_debug("[Android] AString8_getPathDir(%p,%p): '%s'", self, other, self ? self->string : NULL);
     return res;
 }
 
 int AString8_walkPath(AString8 *self, const AString8 *other, AString8 *out_remains) {
-    l_debug("[Android] AString8_walkPath(%p,%p,%p): \"%s\"", self, other, out_remains, other ? other->string : NULL);
-
     int res;
 
     if (!other || !other->string)  // 创建空字符串
@@ -314,7 +290,7 @@ int AString8_walkPath(AString8 *self, const AString8 *other, AString8 *out_remai
         }
     }
 
-    l_debug("[Android] AString8_walkPath over: \"%s\",\"%s\"", self ? self->string : NULL, out_remains ? out_remains->string : NULL);
+    l_debug("[Android] AString8_walkPath(%p,%p,%p): '%s','%s'", self, other, out_remains, self ? self->string : NULL, out_remains ? out_remains->string : NULL);
     return res;
 }
 
@@ -327,9 +303,9 @@ const char *AString8_string(AString8 *self) {
 }
 
 size_t AString8_length(AString8 *self) {
-    return (self && self->string) ? getLength(getSharedBuffer(self)) : 0;
+    return self ? getLength(getSharedBuffer(self)) : 0;
 }
 
 int AString8_isEmpty(AString8 *self) {
-    return (self && self->string) ? (getLength(getSharedBuffer(self)) == 0) : 0;
+    return self ? (getLength(getSharedBuffer(self)) == 0) : 0;
 }

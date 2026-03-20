@@ -7,16 +7,16 @@
 extern "C" {
 #endif
 
-void resolve_imports(so_module *mod);
-
-void soloader_patch();
-
-void soloader_init();
-
+int       soloader_resolve_imports(so_module *mod);
 uintptr_t soloader_find_symbol_from_default_dynlib(const char *symbol);
+
+int soloader_patch();
+
+int soloader_init();
+int soloader_run();
 
 #ifdef __cplusplus
 };
 #endif
 
-#endif // SOLOADER_INIT_H
+#endif  // SOLOADER_INIT_H

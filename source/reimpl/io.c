@@ -33,6 +33,7 @@ void replace(char str[], char old, char new, int count) {
         }
     }
 }
+
 FILE *fopen_soloader(const char *filename, const char *mode) {
     // TODO: 判断文件名称, 帮他引导到 DATA_PATH/filename 下去 open
     FILE *ret = fopen(filename, mode);
@@ -58,13 +59,13 @@ size_t fread_soloader(void *data, size_t _size, size_t _n, FILE *fd) {
 
 int fseek_soloader(FILE *stream, long l, int i) {
     int v = fseek(stream, l, i);
-    l_debug("fseek(%p,%ld,%d) return:%d", stream, l, i, v);
+    l_debug("fseek(%p,%ld,%d): %d", stream, l, i, v);
     return v;
 }
 
 long ftell_soloader(FILE *stream) {
     long v = ftell(stream);
-    l_debug("ftell(%p) return:%ld", stream, v);
+    l_debug("ftell(%p): %ld", stream, v);
     return v;
 }
 
@@ -75,7 +76,7 @@ FILE *fdopen_soloader(int fd, const char *mode) {
 }
 
 int dup_soloader(int fd) {
-    l_debug("dup_soloader:%d", fd);
+    l_debug("dup(fd): %d", fd, fd);
     return fd;
 }
 

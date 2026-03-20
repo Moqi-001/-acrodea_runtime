@@ -23,8 +23,6 @@ extern "C" {
 
 void gl_init();
 
-void gl_preload();
-
 void gl_swap();
 
 void glCompileShader_soloader(GLuint shader);

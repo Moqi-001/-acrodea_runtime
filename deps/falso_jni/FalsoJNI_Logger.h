@@ -21,20 +21,15 @@
 extern "C" {
 #endif
 
-#define fjni_logv_info(fmt, ...) _fjni_log_info(__FILE__, __LINE__, __func__, fmt, __VA_ARGS__)
-#define fjni_logv_warn(fmt, ...) _fjni_log_warn(__FILE__, __LINE__, __func__, fmt, __VA_ARGS__)
-#define fjni_logv_dbg(fmt, ...)  _fjni_log_debug(__FILE__, __LINE__, __func__, fmt, __VA_ARGS__)
-#define fjni_logv_err(fmt, ...)  _fjni_log_error(__FILE__, __LINE__, __func__, fmt, __VA_ARGS__)
+#define fjni_log_dbg(...)  _fjni_log_debug(__VA_ARGS__)
+#define fjni_log_info(...) _fjni_log_info(__VA_ARGS__)
+#define fjni_log_warn(...) _fjni_log_warn(__VA_ARGS__)
+#define fjni_log_err(...)  _fjni_log_error(__VA_ARGS__)
 
-#define fjni_log_info(fmt) _fjni_log_info(__FILE__, __LINE__, __func__, fmt)
-#define fjni_log_warn(fmt) _fjni_log_warn(__FILE__, __LINE__, __func__, fmt)
-#define fjni_log_dbg(fmt)  _fjni_log_debug(__FILE__, __LINE__, __func__, fmt)
-#define fjni_log_err(fmt)  _fjni_log_error(__FILE__, __LINE__, __func__, fmt)
-
-void _fjni_log_info(const char *fi, int li, const char *fn, const char *fmt, ...);
-void _fjni_log_warn(const char *fi, int li, const char *fn, const char *fmt, ...);
-void _fjni_log_debug(const char *fi, int li, const char *fn, const char *fmt, ...);
-void _fjni_log_error(const char *fi, int li, const char *fn, const char *fmt, ...);
+void _fjni_log_debug(const char *fmt, ...);
+void _fjni_log_info(const char *fmt, ...);
+void _fjni_log_warn(const char *fmt, ...);
+void _fjni_log_error(const char *fmt, ...);
 
 #ifdef __cplusplus
 };

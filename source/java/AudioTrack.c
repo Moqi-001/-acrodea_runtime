@@ -23,7 +23,7 @@ int                         write_pos = 0;
 
 // "<init>", "(IIIIII)V" (3,16000,4,2,4096,1)
 jobject AudioTrack_init(jclass clazz, jmethodID id, va_list args) {
-    const char *res               = "Vita_audio_obj";
+    const char *audioTrack        = "Vita_audio_obj";
     int         streamType        = va_arg(args, int);  // 3
     int         sampleRateInHz    = va_arg(args, int);  // 1600
     int         channelConfig     = va_arg(args, int);  // 4
@@ -47,9 +47,10 @@ jobject AudioTrack_init(jclass clazz, jmethodID id, va_list args) {
         l_debug("[JNI] AudioTrack::<init>: Already initialized!");
     }
 
+    void *res = (jobject)jni->NewStringUTF(&jni, audioTrack);
     l_debug("[JNI] AudioTrack::<init>(%d,%d,%d,%d,%d,%d): %p",
             streamType, sampleRateInHz, channelConfig, audioFormat, bufferSizeInBytes, mode, res);
-    return (jobject)jni->NewStringUTF(&jni, res);
+    return (jobject)res;
 }
 
 // "getMinBufferSize", "(III)I"
@@ -115,15 +116,17 @@ jint AudioTrack_write(jobject obj, jmethodID id, va_list args) {
     if (audio_port < 0) {
         l_debug("[JNI] AudioTrack::write(%p,%p,%d,%d): failed!", obj, audioData, offsetInBytes, sizeInBytes);
     } else {
-        jbyte *bytes = jni->GetByteArrayElements(&jni, audioData, NULL);
         sceKernelLockLwMutex(&audio_mutex, 1, NULL);
-        l_debug("[JNI] AudioTrack::write(%p,%p,%d,%d): %d\n", obj, audioData, offsetInBytes, sizeInBytes, res);
+        l_debug("[JNI] AudioTrack::write(%p,%p,%d,%d): %d", obj, audioData, offsetInBytes, sizeInBytes, res);
+        jbyte *bytes = jni->GetByteArrayElements(&jni, audioData, NULL);
+        l_debug("[JNI] AudioTrack::write(%p,%p,%d,%d): %d", obj, audioData, offsetInBytes, sizeInBytes, res);
         l_debug("    GetByteArrayElements(env,%p,NULL): %p", audioData, bytes);
         if (bytes) {
             memset(audio_buffer[write_pos], 0, AUDIO_OUT_SIZE);
             memcpy(audio_buffer[write_pos], bytes + offsetInBytes, sizeInBytes);
             sceAudioOutOutput(audio_port, audio_buffer[write_pos]);
             write_pos = (write_pos + 1) % AUDIO_BUFFER_COUNT;
+            jni->ReleaseByteArrayElements(&jni, audioData, bytes, 0);
         }
         sceKernelUnlockLwMutex(&audio_mutex, 1);
     }

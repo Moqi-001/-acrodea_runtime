@@ -25,18 +25,6 @@ GLboolean skip_next_compile = GL_FALSE;
 char      next_shader_fname[256];
 void      load_shader(GLuint shader, const char *string, size_t length);
 
-void gl_preload() {
-    if (!file_exists("ur0:/data/libshacccg.suprx") && !file_exists("ur0:/data/external/libshacccg.suprx")) {
-        fatal_error(
-            "Error: libshacccg.suprx is not installed. "
-            "Google \"ShaRKBR33D\" for quick installation.");
-    }
-
-#ifdef USE_GLSL_SHADERS
-    // vglSetSemanticBindingMode(VGL_MODE_POSTPONED);
-#endif
-}
-
 void gl_init() {
     vglInitExtended(0, 960, 544, MEMORY_VITAGL_THRESHOLD_MB * 1024 * 1024, SCE_GXM_MULTISAMPLE_4X);
 }

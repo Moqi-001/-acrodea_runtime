@@ -24,41 +24,32 @@ int bootstrap_start_soloader(int argc, char *argv[], char *envp[]) {
         l_debug("bootstrap_start: argv[%d]:(%s)", i, argv[i]);
     }
 
-    // launch 命令
+    // launch 参数
     char *launch_argv[] = {
-        // 主参数
-        "com.acrodea.vividruntime.launcher",  // +0 程序名？
-        "launch",                             // +1 mode: 启动模式："launch", "navite_marketlaunch", "rorequest", "install", "roinstall", "remove", "verify"
-        "/native/RuntimeApps",                // +2 RuntimeApps 路径
-        "1760",                               // +3 app_id (会将RuntimeApps和这id拼接，鬼泣的id为1760)
-        "debug",                              // +4 params: "debug", "reschk"(resource check)
-        // 额外参数传入子函数启动
-        "argv5",  // +5
-        "argv6",  // +6
-        "argv7",  // +7
-        "argv8",  // +8
-        "argv9",  // +9
+        "/native/app/com.acrodea.vividruntime.launcher.apk",  // +0 apkPath  程序包路径
+        "launch",                                             // +1 mode:    启动模式："launch", "navite_marketlaunch", "rorequest", "install", "roinstall", "remove", "verify"
+        "/native/RuntimeApps",                                // +2 rootDir: RuntimeApps的路径
+        "1760",                                               // +3 appID:   游戏ID，会将RuntimeApps和这ID拼接，鬼泣的ID为1760
+        "debug",                                              // +4 params:  "debug", "reschk" // 无实际作用，函数空执行
+        "",                                                   // +5 args:    额外参数传入子函数启动
     };
 
+    // marketlaunch 参数
     char *marketlaunch_argv[] = {
-        "/native/com.acrodea.vividruntime.launcher",
-        "navite_marketlaunch",
-        "/native/RuntimeApps/",
-        "1760",
-        "/lib/com.acrodea.gamecenter/app.exe",
-        "/native/RuntimeApps",
-        "/native/com.acrodea.gamecenter/res",
-        "/native/.tmp",
-        "from_manager:log_print",
+        "/native/app/com.acrodea.vividruntime.launcher.apk",  // +0 apkPath  程序包路径
+        "marketlaunch",                                       // +1 mode:    启动模式："launch", "navite_marketlaunch", "rorequest", "install", "roinstall", "remove", "verify"
+        "/native/RuntimeApps/",                               // +2 rootDir: RuntimeApps的路径
+        "1760",                                               // +3 appID:   游戏ID，会将RuntimeApps和这ID拼接，鬼泣的ID为1760
+        "/lib/com.acrodea.gamecenter/app.exe",                // +4 exePath: 商店的exe路径
+        "/native/RuntimeApps",                                // +5
+        "/native/com.acrodea.gamecenter/res",                 // +6 resDir:  商店的res路径
+        "/native/com.acrodea.gamecenter/.tmp",                // +7 tmpDir:  商店的tmp路径
+        "from_manager:log_print",                             // +8 args:    额外参数传入子函数启动?
     };
 
-    // hook_addr((uintptr_t)(0x101154+1+0x99000000), (uintptr_t)&sub_101154);
-    // hook_addr((uintptr_t)(0x105D58+1+0x99000000), (uintptr_t)&sub_105D58);
-    // hook_addr((uintptr_t)(0x10F07C+1+0x99000000), (uintptr_t)&sub_10F07C);
-
-    // int ret = bootstrap_start(sizeof(marketlaunch_argv) / sizeof(marketlaunch_argv[0]), marketlaunch_argv, envp);
-    int ret = bootstrap_start(argc, argv, envp);
-    l_debug("bootstrap_start_soloader return %p", ret);
+    int ret = bootstrap_start(sizeof(launch_argv) / sizeof(launch_argv[0]), launch_argv, envp);
+    // int ret = bootstrap_start(argc, argv, envp);
+    l_debug("bootstrap_start(%d,%p,%p): %d", argc, argv, envp, ret);
     return ret;
 }
 

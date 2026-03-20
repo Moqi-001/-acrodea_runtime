@@ -62,33 +62,23 @@ void _log_print(int t, const char *fmt, ...) {
 
     switch (t) {
         case LT_DEBUG:
-            sceClibSnprintf(buffer_b, sizeof(buffer_b), " %s• debug%s    %s\n",
-                            COLOR_PINK, COLOR_END, buffer_a);
+            sceClibSnprintf(buffer_b, sizeof(buffer_b), "[DEBUG] %s\n", buffer_a);
             break;
         case LT_INFO:
-            sceClibSnprintf(buffer_b, sizeof(buffer_b), " %sℹ info%s     %s\n",
+            sceClibSnprintf(buffer_b, sizeof(buffer_b), " %s[INFO]%s %s\n",
                             COLOR_BLUE, COLOR_END, buffer_a);
             break;
         case LT_WARN:
-            sceClibSnprintf(buffer_b, sizeof(buffer_b), " %s⚠ warning%s  %s\n",
+            sceClibSnprintf(buffer_b, sizeof(buffer_b), " %s[WARN]%s %s\n",
                             COLOR_ORANGE, COLOR_END, buffer_a);
             break;
         case LT_ERROR:
-            sceClibSnprintf(buffer_b, sizeof(buffer_b), " %s⨯ error%s    %s\n",
+            sceClibSnprintf(buffer_b, sizeof(buffer_b), " %s[ERRROR]%s %s\n",
                             COLOR_RED, COLOR_END, buffer_a);
             break;
         case LT_FATAL:
-            sceClibSnprintf(buffer_b, sizeof(buffer_b), " %s! fatal%s    %s\n",
+            sceClibSnprintf(buffer_b, sizeof(buffer_b), " %s[FATAL]%s %s\n",
                             COLOR_RED, COLOR_END, buffer_a);
-            break;
-        case LT_SUCCESS:
-            sceClibSnprintf(buffer_b, sizeof(buffer_b), " %s! success%s  %s\n",
-                            COLOR_GREEN, COLOR_END, buffer_a);
-            break;
-        case LT_WAIT:
-            sceClibSnprintf(buffer_b, sizeof(buffer_b), " %s… waiting%s  %s\n",
-                            COLOR_CYAN, COLOR_END, buffer_a);
-            break;
         default:
             sceClibPrintf(buffer_a);
             if (atomic_load_explicit(&_log_mutex_ready, memory_order_relaxed)) {

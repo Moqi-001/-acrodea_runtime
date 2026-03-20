@@ -12,7 +12,6 @@
 #ifndef FALSOJNI_IMPL
 #define FALSOJNI_IMPL
 
-
 #include "FalsoJNI_ImplBridge.h"
 
 extern NameToMethodID nameToMethodId[];

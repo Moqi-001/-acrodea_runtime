@@ -25,30 +25,33 @@ extern "C" {
 #include <semaphore.h>
 
 typedef struct {
-    pthread_attr_t *real_ptr; // replaces `uint32_t flags;`
-    int32_t magic; // replaces `void * stack_base;`
-    size_t stack_size;
-    size_t guard_size;
-    int32_t sched_policy;
-    int32_t sched_priority;
+    pthread_attr_t *real_ptr;  // replaces `uint32_t flags;`
+    int32_t         magic;     // replaces `void * stack_base;`
+    size_t          stack_size;
+    size_t          guard_size;
+    int32_t         sched_policy;
+    int32_t         sched_priority;
 } pthread_attr_t_bionic;
 
 typedef struct {
-    pthread_mutex_t *real_ptr; // replaces `int volatile value;`
+    pthread_mutex_t *real_ptr;  // replaces `int volatile value;`
 } pthread_mutex_t_bionic;
 
 typedef struct {
-    pthread_cond_t *real_ptr; // replaces `int volatile value;`
+    pthread_cond_t *real_ptr;  // replaces `int volatile value;`
 } pthread_cond_t_bionic;
 
+void __pthread_cleanup_push_soloader(pte_cleanup_t *cleanup, void (*routine)(void *), void *arg);
+void __pthread_cleanup_pop_soloader(pte_cleanup_t *cleanup, int execute);
+
 // pthread_t is same size on bionic and newlib
-int pthread_create_soloader(pthread_t *thread, const pthread_attr_t_bionic *attr, void *(*start)(void *), void *param);
-int pthread_kill_soloader(pthread_t thread, int sig);
-int pthread_join_soloader(pthread_t thread, void **value_ptr);
-int pthread_detach_soloader(pthread_t thread);
-int pthread_equal_soloader(pthread_t t1, pthread_t t2);
+int       pthread_create_soloader(pthread_t *thread, const pthread_attr_t_bionic *attr, void *(*start)(void *), void *param);
+int       pthread_kill_soloader(pthread_t thread, int sig);
+int       pthread_join_soloader(pthread_t thread, void **value_ptr);
+int       pthread_detach_soloader(pthread_t thread);
+int       pthread_equal_soloader(pthread_t t1, pthread_t t2);
 pthread_t pthread_self_soloader();
-int pthread_once_soloader(volatile int *once_control, void (*init_routine)(void));
+int       pthread_once_soloader(volatile int *once_control, void (*init_routine)(void));
 
 // pthread_t and sched_param are same size on bionic and newlib
 int pthread_getschedparam_soloader(pthread_t thread, int *policy, struct sched_param *param);
@@ -70,16 +73,16 @@ int pthread_cond_timedwait_soloader(pthread_cond_t_bionic *cond, pthread_mutex_t
 int pthread_cond_broadcast_soloader(pthread_cond_t_bionic *cond);
 int pthread_cond_signal_soloader(pthread_cond_t_bionic *cond);
 
-int pthread_mutex_init_soloader(pthread_mutex_t_bionic *uid, const pthread_mutexattr_t *attr);
-int pthread_mutex_destroy_soloader(pthread_mutex_t_bionic *mutex);
-int pthread_mutex_lock_soloader(pthread_mutex_t_bionic *mutex);
-int pthread_mutex_trylock_soloader(pthread_mutex_t_bionic *mutex);
-int pthread_mutex_unlock_soloader(pthread_mutex_t_bionic *mutex);
-void* pthread_getspecific_soloader(pthread_key_t key);
-int pthread_attr_init_soloader(pthread_attr_t_bionic *attr);
-int pthread_attr_destroy_soloader(pthread_attr_t_bionic *attr);
-int pthread_attr_setdetachstate_soloader(pthread_attr_t_bionic *attr, int state);
-int pthread_attr_setstacksize_soloader(pthread_attr_t_bionic *attr, size_t stacksize);
+int   pthread_mutex_init_soloader(pthread_mutex_t_bionic *uid, const pthread_mutexattr_t *attr);
+int   pthread_mutex_destroy_soloader(pthread_mutex_t_bionic *mutex);
+int   pthread_mutex_lock_soloader(pthread_mutex_t_bionic *mutex);
+int   pthread_mutex_trylock_soloader(pthread_mutex_t_bionic *mutex);
+int   pthread_mutex_unlock_soloader(pthread_mutex_t_bionic *mutex);
+void *pthread_getspecific_soloader(pthread_key_t key);
+int   pthread_attr_init_soloader(pthread_attr_t_bionic *attr);
+int   pthread_attr_destroy_soloader(pthread_attr_t_bionic *attr);
+int   pthread_attr_setdetachstate_soloader(pthread_attr_t_bionic *attr, int state);
+int   pthread_attr_setstacksize_soloader(pthread_attr_t_bionic *attr, size_t stacksize);
 
 int pthread_setname_np_soloader(pthread_t thread, const char *thread_name);
 
@@ -95,4 +98,4 @@ int sem_wait_soloader(int *sem);
 };
 #endif
 
-#endif // SOLOADER_PTHR_H
+#endif  // SOLOADER_PTHR_H

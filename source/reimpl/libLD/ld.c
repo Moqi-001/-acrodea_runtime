@@ -243,14 +243,14 @@ static int ldModuleRelocateCore2(LdModule *mod, Elf32_Rel *rel_tab, size_t rel_n
                 sym_addr = ldModuleGetSymbol(mod->context->loaded_mods->mod, sym_name, sym_hash, 1, vna_name, vna_hash, &sym_mod);
 
             // printf("ldModuleRelocateCore2: sym_name=\"%s\", sym_addr=0x%x\n", sym_name, sym_addr);
-            
+
             // 尝试从default_dynlib中查找
             // if (!sym_addr)
             //    sym_addr = soloader_find_symbol_from_default_dynlib(sym_name);
 
             if (!sym_addr) {
                 if (ELF32_ST_BIND(mod->symtab[rel_sym].st_info) == STB_WEAK) {
-                    l_debug("    Weak symbol '%s' not found, skipping", sym_name);
+                    l_debug("[%s] Weak symbol '%s' not found, skipping", mod->mod_name, sym_name);
                     continue;
                 } else {
                     if (vna_name)

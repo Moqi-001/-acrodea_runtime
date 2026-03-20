@@ -51,7 +51,7 @@ endif()
 
 # Unique debug definition for loader's logging to not interfere with anything
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-  add_definitions(-DDEBUG_LOGFILE)
+  #add_definitions(-DDEBUG_LOGFILE)
   add_definitions(-DDEBUG_SOLOADER)
   # Uncomment this for verbose FalsoJNI logging:
   #add_definitions(-DFALSOJNI_DEBUGLEVEL=0)
@@ -107,6 +107,8 @@ add_executable(${CMAKE_PROJECT_NAME}
   source/utils/utils.c
 
   deps/falso_jni/FalsoJNI.c
+  deps/falso_jni/FalsoJNI_Array.c
+  deps/falso_jni/FalsoJNI_SharedBuffer.c
   deps/falso_jni/FalsoJNI_ImplBridge.c
   deps/falso_jni/FalsoJNI_Logger.c
   deps/so_util/so_util.c

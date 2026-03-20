@@ -179,120 +179,107 @@ jfloat   methodFloatCall(jobject obj, jmethodID id, va_list args);
 jdouble  methodDoubleCall(jobject obj, jmethodID id, va_list args);
 
 /*
- * Dynamically allocated arrays
- */
-
-typedef struct {
-    jarray     array;
-    jsize      len;
-    FIELD_TYPE type;
-} JavaDynArray;
-
-JavaDynArray *jda_alloc(jsize len, FIELD_TYPE type);
-jsize         jda_sizeof(JavaDynArray *jda);
-jboolean      jda_free(JavaDynArray *jda);
-JavaDynArray *jda_find(void *arr);
-
-/*
  * Helper macros / functions
  */
 
 va_list _AtoV(int dummy, ...);
 
-#define getFieldValueById(jtype, fieldtype, containertype, container, containersize, id, defaultval) ({                                                            \
-    for (int i = 0; i < nameToFieldId_size() / sizeof(NameToFieldID); i++) {                                                                                       \
-        if (nameToFieldId[i].id == (int)(id)) {                                                                                                                    \
-            if (nameToFieldId[i].f != (fieldtype)) {                                                                                                               \
-                fjni_logv_err("Field type mismatch for field #%i: expected %s, found %s", (int)id, fieldTypeToStr(fieldtype), fieldTypeToStr(nameToFieldId[i].f)); \
-                return defaultval;                                                                                                                                 \
-            }                                                                                                                                                      \
-                                                                                                                                                                   \
-            const jtype *x = NULL;                                                                                                                                 \
-            for (int u = 0; u < containersize() / sizeof(containertype); u++) {                                                                                    \
-                if (container[u].id == (int)id) {                                                                                                                  \
-                    x = &container[u].value;                                                                                                                       \
-                }                                                                                                                                                  \
-            }                                                                                                                                                      \
-                                                                                                                                                                   \
-            if (!x) {                                                                                                                                              \
-                fjni_logv_err("Field #%i is defined in NameToFieldID table but has no value set", (int)id);                                                        \
-                return defaultval;                                                                                                                                 \
-            }                                                                                                                                                      \
-                                                                                                                                                                   \
-            return *x;                                                                                                                                             \
-        }                                                                                                                                                          \
-    }                                                                                                                                                              \
-    fjni_logv_err("Undefined fieldID #%i", (int)id);                                                                                                               \
-    return defaultval;                                                                                                                                             \
+#define getFieldValueById(jtype, fieldtype, containertype, container, containersize, id, defaultval) ({                                                                 \
+    for (int i = 0; i < nameToFieldId_size() / sizeof(NameToFieldID); i++) {                                                                                            \
+        if (nameToFieldId[i].id == (int)(id)) {                                                                                                                         \
+            if (nameToFieldId[i].f != (fieldtype)) {                                                                                                                    \
+                fjni_log_err("[JNI] Field type mismatch for field #%i: expected %s, found %s", (int)id, fieldTypeToStr(fieldtype), fieldTypeToStr(nameToFieldId[i].f)); \
+                return defaultval;                                                                                                                                      \
+            }                                                                                                                                                           \
+                                                                                                                                                                        \
+            const jtype *x = NULL;                                                                                                                                      \
+            for (int u = 0; u < containersize() / sizeof(containertype); u++) {                                                                                         \
+                if (container[u].id == (int)id) {                                                                                                                       \
+                    x = &container[u].value;                                                                                                                            \
+                }                                                                                                                                                       \
+            }                                                                                                                                                           \
+                                                                                                                                                                        \
+            if (!x) {                                                                                                                                                   \
+                fjni_log_err("[JNI] Field #%i is defined in NameToFieldID table but has no value set", (int)id);                                                        \
+                return defaultval;                                                                                                                                      \
+            }                                                                                                                                                           \
+                                                                                                                                                                        \
+            return *x;                                                                                                                                                  \
+        }                                                                                                                                                               \
+    }                                                                                                                                                                   \
+    fjni_log_err("[JNI] Undefined fieldID #%i", (int)id);                                                                                                               \
+    return defaultval;                                                                                                                                                  \
 })
 
-#define setFieldValueById(jtype, fieldtype, containertype, container, containersize, id, value) ({                                                                   \
-    for (int i = 0; i < nameToFieldId_size() / sizeof(NameToFieldID); i++) {                                                                                         \
-        if (nameToFieldId[i].id == (int)(id)) {                                                                                                                      \
-            if (nameToFieldId[i].f != (fieldtype)) {                                                                                                                 \
-                fjni_logv_err("Field type mismatch for field #%i: expected %s, found %s", (int)(id), fieldTypeToStr(fieldtype), fieldTypeToStr(nameToFieldId[i].f)); \
-                return;                                                                                                                                              \
-            }                                                                                                                                                        \
-                                                                                                                                                                     \
-            jtype *x = NULL;                                                                                                                                         \
-            for (int u = 0; u < containersize() / sizeof(containertype); u++) {                                                                                      \
-                if ((container)[u].id == (int)(id)) {                                                                                                                \
-                    x = &(container)[u].value;                                                                                                                       \
-                }                                                                                                                                                    \
-            }                                                                                                                                                        \
-                                                                                                                                                                     \
-            if (!x) {                                                                                                                                                \
-                fjni_logv_err("Field #%i is defined in NameToFieldID table but has no value set", (int)(id));                                                        \
-                return;                                                                                                                                              \
-            }                                                                                                                                                        \
-                                                                                                                                                                     \
-            *x = value;                                                                                                                                              \
-        }                                                                                                                                                            \
-    }                                                                                                                                                                \
-    fjni_logv_err("Undefined fieldID #%i", (int)(id));                                                                                                               \
-    return;                                                                                                                                                          \
+#define setFieldValueById(jtype, fieldtype, containertype, container, containersize, id, value) ({                                                                        \
+    for (int i = 0; i < nameToFieldId_size() / sizeof(NameToFieldID); i++) {                                                                                              \
+        if (nameToFieldId[i].id == (int)(id)) {                                                                                                                           \
+            if (nameToFieldId[i].f != (fieldtype)) {                                                                                                                      \
+                fjni_log_err("[JNI] Field type mismatch for field #%i: expected %s, found %s", (int)(id), fieldTypeToStr(fieldtype), fieldTypeToStr(nameToFieldId[i].f)); \
+                return;                                                                                                                                                   \
+            }                                                                                                                                                             \
+                                                                                                                                                                          \
+            jtype *x = NULL;                                                                                                                                              \
+            for (int u = 0; u < containersize() / sizeof(containertype); u++) {                                                                                           \
+                if ((container)[u].id == (int)(id)) {                                                                                                                     \
+                    x = &(container)[u].value;                                                                                                                            \
+                }                                                                                                                                                         \
+            }                                                                                                                                                             \
+                                                                                                                                                                          \
+            if (!x) {                                                                                                                                                     \
+                fjni_log_err("[JNI] Field #%i is defined in NameToFieldID table but has no value set", (int)(id));                                                        \
+                return;                                                                                                                                                   \
+            }                                                                                                                                                             \
+                                                                                                                                                                          \
+            *x = value;                                                                                                                                                   \
+        }                                                                                                                                                                 \
+    }                                                                                                                                                                     \
+    fjni_log_err("[JNI] Undefined fieldID #%i", (int)(id));                                                                                                               \
+    return;                                                                                                                                                               \
 })
 
-#define GetPrimitiveArrayRegion(fun_name, fieldType, jType, array, start, length, buffer) ({                                                               \
-    JavaDynArray *jda = jda_find((void *)array);                                                                                                           \
-    if (!jda) {                                                                                                                                            \
-        fjni_logv_err("[JNI] %s(env, 0x%x, %i, %i, 0x%x): Array not found.", fun_name, (int)array, start, length, buffer);                                 \
-        return;                                                                                                                                            \
-    }                                                                                                                                                      \
-                                                                                                                                                           \
-    if (start < 0 || length > jda->len) {                                                                                                                  \
-        fjni_logv_err("[JNI] %s(env, 0x%x, %i, %i, 0x%x): Index out of bounds! (real length: %i)", fun_name, (int)array, start, length, buffer, jda->len); \
-        return;                                                                                                                                            \
-    }                                                                                                                                                      \
-                                                                                                                                                           \
-    fjni_logv_dbg("[JNI] %s(env, 0x%x, %i, %i, 0x%x)", fun_name, (int)array, start, length, buffer);                                                       \
-                                                                                                                                                           \
-    if (!buffer)                                                                                                                                           \
-        buffer = (jType *)malloc(length);                                                                                                                  \
-                                                                                                                                                           \
-    jType *arr = jda->array;                                                                                                                               \
-    memcpy(buffer, &arr[start], length * getFieldTypeSize(fieldType));                                                                                     \
+#define GetPrimitiveArrayRegion(fun_name, fieldType, jType, array, start, length, buffer) ({                                                              \
+    void *data = jarray_data(array);                                                                                                                      \
+    if (!data) {                                                                                                                                          \
+        fjni_log_err("[JNI] %s(env, 0x%x, %i, %i, 0x%x): Array not found.", fun_name, (int)array, start, length, buffer);                                 \
+        return;                                                                                                                                           \
+    }                                                                                                                                                     \
+                                                                                                                                                          \
+    jsize data_len = jarray_length(array);                                                                                                                \
+    if (start < 0 || length > data_len) {                                                                                                                 \
+        fjni_log_err("[JNI] %s(env, 0x%x, %i, %i, 0x%x): Index out of bounds! (real length: %i)", fun_name, (int)array, start, length, buffer, data_len); \
+        return;                                                                                                                                           \
+    }                                                                                                                                                     \
+                                                                                                                                                          \
+    fjni_log_dbg("[JNI] %s(env, 0x%x, %i, %i, 0x%x)", fun_name, (int)array, start, length, buffer);                                                       \
+                                                                                                                                                          \
+    if (!buffer)                                                                                                                                          \
+        buffer = (jType *)malloc(length);                                                                                                                 \
+                                                                                                                                                          \
+    jType *arr = (jType *)data;                                                                                                                           \
+    memcpy(buffer, &arr[start], length * getFieldTypeSize(fieldType));                                                                                    \
 })
 
-#define SetPrimitiveArrayRegion(fun_name, fieldType, jType, array, start, length, buffer) ({                                                               \
-    JavaDynArray *jda = jda_find((void *)array);                                                                                                           \
-    if (!jda) {                                                                                                                                            \
-        fjni_logv_err("[JNI] %s(env, 0x%x, %i, %i, 0x%x): Array not found!", fun_name, (int)array, start, length, buffer);                                 \
-        return;                                                                                                                                            \
-    }                                                                                                                                                      \
-                                                                                                                                                           \
-    if (start < 0 || length > jda->len) {                                                                                                                  \
-        fjni_logv_err("[JNI] %s(env, 0x%x, %i, %i, 0x%x): Index out of bounds! (real length: %i)", fun_name, (int)array, start, length, buffer, jda->len); \
-        return;                                                                                                                                            \
-    }                                                                                                                                                      \
-                                                                                                                                                           \
-    fjni_logv_dbg("[JNI] %s(env, 0x%x, %i, %i, 0x%x)", fun_name, (int)array, start, length, buffer);                                                       \
-                                                                                                                                                           \
-    if (!buffer)                                                                                                                                           \
-        fjni_logv_warn("[JNI] %s(env, 0x%x, %i, %i, 0x%x): buffer is NULL", fun_name, (int)array, start, length, buffer);                                  \
-                                                                                                                                                           \
-    jType *arr = jda->array;                                                                                                                               \
-    memcpy(&arr[start], buffer, length * getFieldTypeSize(fieldType));                                                                                     \
+#define SetPrimitiveArrayRegion(fun_name, fieldType, jType, array, start, length, buffer) ({                                                              \
+    void *data = jarray_data(array);                                                                                                                      \
+    if (!data) {                                                                                                                                          \
+        fjni_log_err("[JNI] %s(env, 0x%x, %i, %i, 0x%x): Array not found!", fun_name, (int)array, start, length, buffer);                                 \
+        return;                                                                                                                                           \
+    }                                                                                                                                                     \
+                                                                                                                                                          \
+    jsize data_len = jarray_length(array);                                                                                                                \
+    if (start < 0 || length > data_len) {                                                                                                                 \
+        fjni_log_err("[JNI] %s(env, 0x%x, %i, %i, 0x%x): Index out of bounds! (real length: %i)", fun_name, (int)array, start, length, buffer, data_len); \
+        return;                                                                                                                                           \
+    }                                                                                                                                                     \
+                                                                                                                                                          \
+    fjni_log_dbg("[JNI] %s(env, 0x%x, %i, %i, 0x%x)", fun_name, (int)array, start, length, buffer);                                                       \
+                                                                                                                                                          \
+    if (!buffer)                                                                                                                                          \
+        fjni_log_warn("[JNI] %s(env, 0x%x, %i, %i, 0x%x): buffer is NULL", fun_name, (int)array, start, length, buffer);                                  \
+                                                                                                                                                          \
+    jType *arr = (jType *)data;                                                                                                                           \
+    memcpy(&arr[start], buffer, length * getFieldTypeSize(fieldType));                                                                                    \
 })
 
 #endif  // FALSOJNI_IMPL_BRIDGE

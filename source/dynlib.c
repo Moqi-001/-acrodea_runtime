@@ -61,10 +61,10 @@
 #include "utils/logger.h"
 #include "utils/utils.h"
 
-extern void *_ZdaPv;
-extern void *_ZdlPv;
-extern void *_Znaj;
-extern void *_Znwj;
+extern void *_Znwj;   // operator new
+extern void *_ZdlPv;  // operator delete
+extern void *_Znaj;   // operator new[]
+extern void *_ZdaPv;  // operator delete[]
 extern void *_ZTISt8bad_cast;
 extern void *_ZTISt9exception;
 extern void *_ZNSt8bad_castD1Ev;
@@ -568,12 +568,13 @@ so_dynlib default_dynlib[] = {
     {"statfs", (uintptr_t)&statfs_soloader},
 
     // Pthread
-    {"__pthread_cleanup_push", (uintptr_t)&ret0},
-    {"__pthread_cleanup_pop", (uintptr_t)&ret0},
+    {"__pthread_cleanup_push", (uintptr_t)&__pthread_cleanup_push_soloader},
+    {"__pthread_cleanup_pop", (uintptr_t)&__pthread_cleanup_pop_soloader},
 
     {"pthread_create", (uintptr_t)&pthread_create_soloader},
     {"pthread_detach", (uintptr_t)&pthread_detach_soloader},
     {"pthread_equal", (uintptr_t)&pthread_equal_soloader},
+    {"pthread_cancel", (uintptr_t)&pthread_cancel},
     {"pthread_exit", (uintptr_t)&pthread_exit},
     {"pthread_getschedparam", (uintptr_t)&pthread_getschedparam_soloader},
     {"pthread_getspecific", (uintptr_t)&pthread_getspecific_soloader},
@@ -1230,13 +1231,15 @@ so_dynlib default_dynlib[] = {
     {"_ZNK7android9ZipFileRO15findEntryByNameEPKc", (uintptr_t)&AZipFile_fake},
 };
 
-void resolve_imports(so_module *mod) {
+int soloader_resolve_imports(so_module *mod) {
     __sF_fake[0]        = *stdin;
     __sF_fake[1]        = *stdout;
     __sF_fake[2]        = *stderr;
     default_dynlib_m    = default_dynlib;
     size_default_dynlib = sizeof(default_dynlib);
     so_resolve(mod, default_dynlib, size_default_dynlib, 0);
+
+    return 0;
 }
 
 uintptr_t soloader_find_symbol_from_default_dynlib(const char *symbol) {

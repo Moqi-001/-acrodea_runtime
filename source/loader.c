@@ -1,19 +1,7 @@
-/*
- * Copyright (C) 2021      Andy Nguyen
- * Copyright (C) 2021-2022 Rinnegatamante
- * Copyright (C) 2022-2024 Volodymyr Atamanenko
- *
- * This software may be modified and distributed under the terms
- * of the MIT license. See the LICENSE file for details.
- */
-
 #include <string.h>
 
 #include <falso_jni/FalsoJNI.h>
-#include <psp2/appmgr.h>
-#include <psp2/apputil.h>
-#include <psp2/kernel/clib.h>
-#include <psp2/power.h>
+#include <psp2/kernel/threadmgr.h>
 #include <so_util/so_util.h>
 
 #include "config.h"
@@ -24,32 +12,86 @@
 #include "utils/logger.h"
 #include "utils/utils.h"
 
-extern so_module so_mod;
+so_module so_mod;
 
-void soloader_init() {
-    // Launch `app0:configurator.bin` on `-config` init param
-    sceAppUtilInit(&(SceAppUtilInitParam){}, &(SceAppUtilBootParam){});
-    SceAppUtilAppEventParam eventParam;
-    sceClibMemset(&eventParam, 0, sizeof(SceAppUtilAppEventParam));
-    sceAppUtilReceiveAppEvent(&eventParam);
-    if (eventParam.type == 0x05) {
-        char buffer[2048];
-        sceAppUtilAppEventParseLiveArea(&eventParam, buffer);
-        if (strstr(buffer, "-config"))
-            sceAppMgrLoadExec("app0:/configurator.bin", NULL, NULL);
-    }
+void (*navite_surfaceChanged)(JNIEnv *env, jobject thiz, jint width, jint height);
+void (*navite_focusChanged)(JNIEnv *env, jobject thiz, jboolean hasFocus);
 
-    // Set default overclock values
-    scePowerSetArmClockFrequency(444);
-    scePowerSetBusClockFrequency(222);
-    scePowerSetGpuClockFrequency(222);
-    scePowerSetGpuXbarClockFrequency(166);
+jint (*navite_launch)(JNIEnv *env, jobject thiz, jint sdkInt, jobject surface, jstring bootstrapPath, jstring apkPath,
+                      jstring rootDir, jstring appId, jstring params, jstring fromManager, jstring args, jstring serverEnvId);
+jint (*navite_marketlaunch)(JNIEnv *env, jobject thiz, jint sdkVersion, jobject surface, jstring str1, jstring str2, jstring str3, jstring str4,
+                            jstring str5, jstring str6, jstring str7, jstring str8, jint arg2, jstring str9, jobjectArray strArray);
+void (*navite_ExtensionInit)(JNIEnv *env, jobject thiz, jobject obj);
+void (*navite_MediaManagerInit)(JNIEnv *env, jobject thiz, jobject obj);
 
+static int checkKubridge() {
     if (!module_loaded("kubridge")) {
-        l_fatal("kubridge is not loaded.");
         fatal_error("Error: kubridge.skprx is not installed.");
+        return -1;
     }
-    l_success("kubridge check passed.");
+
+    return 0;
+}
+
+static int checkOpenGL() {
+    if (!file_exists("ur0:/data/libshacccg.suprx") && !file_exists("ur0:/data/external/libshacccg.suprx")) {
+        fatal_error(
+            "Error: libshacccg.suprx is not installed. "
+            "Google \"ShaRKBR33D\" for quick installation.");
+        return -1;
+    }
+
+    return 0;
+}
+
+int RuntimeContextBase_Launch(void *this, int a2) {
+    void *(*RuntimeContext_Get)() = (void *)so_find_symbol(&so_mod, "_ZN14RuntimeContext3GetEv");
+    void *RuntimeContext_Instance = RuntimeContext_Get();
+    l_debug("[LOADER] RuntimeContext_Instance: %p", RuntimeContext_Instance);
+
+    int (*RuntimeThread_threadLoop)(void *) = (void *)so_find_symbol(&so_mod, "_ZN13RuntimeThread10threadLoopEv");
+    void *RuntimeThread_Instance            = *(void **)((uintptr_t)RuntimeContext_Instance + 208);
+    l_debug("[LOADER] RuntimeThread_Instance: %p", RuntimeThread_Instance);
+
+    int ret = RuntimeThread_threadLoop(RuntimeThread_Instance);
+    l_debug("[LOADER] RuntimeThread_threadLoop: %d", ret);
+}
+
+static int controls_thread(SceSize args, void *argp) {
+    while (1) {
+        controls_poll();
+        sceKernelDelayThread(10 * 1000);
+    }
+
+    sceKernelExitThread(0);
+    return 0;
+}
+
+static int main_thread(SceSize args, void *argp) {
+    int ret = navite_launch(&jni,                                          // env
+                            NULL,                                          // thizz
+                            19,                                            // sdkInt
+                            NULL,                                          // surface
+                            "/runtime/",                                   // bootstrapPath
+                            "/app/com.acrodea.vividruntime.launcher.apk",  // apkPath
+                            "/RuntimeApps",                                // rootDir
+                            "1760",                                        // appId
+                            "",                                            // params
+                            "",                                            // fromManager
+                            "",                                            // args
+                            0);                                            // serverEnvId
+
+    l_debug("[LOADER] navite_launch over: return %d\n", ret);
+    sceKernelExitThread(0);
+    return ret;
+}
+
+int soloader_init() {
+    checkKubridge();
+    l_debug("[LOADER] kubridge check passed.");
+
+    checkOpenGL();
+    l_debug("[LOADER] kubridge check passed.");
 
     if (!file_exists(SO_PATH)) {
         fatal_error(
@@ -60,35 +102,73 @@ void soloader_init() {
     }
 
     if (so_file_load(&so_mod, SO_PATH, LOAD_ADDRESS) < 0) {
-        l_fatal("SO could not be loaded.");
         fatal_error("Error: could not load %s.", SO_PATH);
     }
-    l_debug("SO loaded: text_base=%p", so_mod.text_base);
+    l_debug("[LOADER] SO loaded: %p", so_mod.text_base);
 
     so_relocate(&so_mod);
-    l_success("SO relocated.");
+    l_debug("[LOADER] SO relocated.");
 
-    resolve_imports(&so_mod);
-    l_success("SO imports resolved.");
+    soloader_resolve_imports(&so_mod);
+    l_debug("[LOADER] SO imports resolved.");
 
     soloader_patch();
-    l_success("SO patched.");
+    l_debug("[LOADER] SO patched.");
 
     so_flush_caches(&so_mod);
-    l_success("SO caches flushed.");
+    l_debug("[LOADER] SO caches flushed.");
 
     so_initialize(&so_mod);
-    l_success("SO initialized.");
-
-    gl_preload();
-    l_success("OpenGL preloaded.");
+    l_debug("[LOADER] SO initialized.");
 
     jni_init();
-    l_success("FalsoJNI initialized.");
+    l_debug("[LOADER] FalsoJNI initialized.");
 
     controls_init();
-    l_success("Controls initialized.");
+    l_debug("[LOADER] Controls initialized.");
 
     gl_init();
+#ifdef USE_GLSL_SHADERS
+    // vglSetSemanticBindingMode(VGL_MODE_POSTPONED);
+#endif
     // eglSwapInterval(0, 2);
+
+    return 0;
+}
+
+int soloader_run() {
+    int (*JNI_OnLoad)(void *jvm, int reserved) = (void *)so_find_symbol(&so_mod, "JNI_OnLoad");
+    JNI_OnLoad(&jvm, 0);
+    l_debug("[LOADER] JNI_OnLoad over");
+
+    hook_addr((uintptr_t)so_find_symbol(&so_mod, "_ZN18RuntimeContextBase6LaunchEb"), (uintptr_t)&RuntimeContextBase_Launch);
+
+    navite_marketlaunch   = (void *)(LOAD_ADDRESS + 0x416CD);
+    navite_launch         = (void *)(LOAD_ADDRESS + 0x413F9);
+    navite_surfaceChanged = (void *)(LOAD_ADDRESS + 0x40291);
+    navite_focusChanged   = (void *)(LOAD_ADDRESS + 0x40269);
+
+    navite_ExtensionInit    = (void *)(LOAD_ADDRESS + 0x41221);
+    navite_MediaManagerInit = (void *)(LOAD_ADDRESS + 0x41285);
+
+    navite_ExtensionInit(&jni, NULL, "");
+    l_debug("[LOADER] navite_ExtensionInit over");
+
+    navite_MediaManagerInit(&jni, NULL, NULL);  // 没有实际作用
+    l_debug("[LOADER] navite_MediaManagerInit over");
+
+    navite_focusChanged(&jni, NULL, 1);
+    l_debug("[LOADER] navite_focusChanged over");
+
+    navite_surfaceChanged(&jni, NULL, SCREEN_W, SCREEN_H);
+    l_debug("[LOADER] navite_surfaceChanged over");
+
+    SceUID controls_thid = sceKernelCreateThread("controls_thread", (SceKernelThreadEntry)controls_thread, 0x40, 128 * 1024, 0, 0, NULL);
+    sceKernelStartThread(controls_thid, 0, NULL);
+
+    SceUID main_thid = sceKernelCreateThread("main_thread", (SceKernelThreadEntry)main_thread, 0x40, 128 * 1024, 0, 0, NULL);
+    sceKernelStartThread(main_thid, 0, NULL);
+    sceKernelWaitThreadEnd(main_thid, NULL, NULL);
+
+    return 0;
 }

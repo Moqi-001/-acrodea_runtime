@@ -17,9 +17,9 @@
 #include "FalsoJNI.h"
 #include "FalsoJNI_Logger.h"
 
+#include <psp2/io/fcntl.h>
 #include <psp2/kernel/clib.h>
 #include <psp2/kernel/threadmgr.h>
-#include <psp2/io/fcntl.h>
 
 #define COLOR_RED    "\x1B[31m"
 #define COLOR_ORANGE "\x1B[33m"
@@ -67,7 +67,21 @@ static char _fjni_log_buffer_2[2048];
 #define LOG_FPRINTF
 #endif
 
-void _fjni_log_info(const char *fi, int li, const char *fn, const char *fmt, ...) {
+void _fjni_log_debug(const char *fmt, ...) {
+#if FALSOJNI_DEBUGLEVEL <= FALSOJNI_DEBUG_ALL
+    LOG_LOCK
+    LOG_FORMAT
+    LOG_FPRINTF
+
+    sceClibSnprintf(_fjni_log_buffer_2, sizeof(_fjni_log_buffer_2) - 1,
+                    "[DEBUG] %s\n", _fjni_log_buffer_1);
+    sceClibPrintf(_fjni_log_buffer_2);
+
+    LOG_UNLOCK
+#endif
+}
+
+void _fjni_log_info(const char *fmt, ...) {
 #if FALSOJNI_DEBUGLEVEL <= FALSOJNI_DEBUG_INFO
     LOG_LOCK
     LOG_FORMAT
@@ -81,42 +95,28 @@ void _fjni_log_info(const char *fi, int li, const char *fn, const char *fmt, ...
 #endif
 }
 
-void _fjni_log_warn(const char *fi, int li, const char *fn, const char *fmt, ...) {
+void _fjni_log_warn(const char *fmt, ...) {
 #if FALSOJNI_DEBUGLEVEL <= FALSOJNI_DEBUG_WARN
     LOG_LOCK
     LOG_FORMAT
     LOG_FPRINTF
 
     sceClibSnprintf(_fjni_log_buffer_2, sizeof(_fjni_log_buffer_2) - 1,
-                    "%s[WARN][%s:%d][%s] %s%s\n", COLOR_ORANGE, fi, li, fn, _fjni_log_buffer_1, COLOR_END);
+                    "%s[WARN] %s%s\n", COLOR_ORANGE, _fjni_log_buffer_1, COLOR_END);
     sceClibPrintf(_fjni_log_buffer_2);
 
     LOG_UNLOCK
 #endif
 }
 
-void _fjni_log_debug(const char *fi, int li, const char *fn, const char *fmt, ...) {
-#if FALSOJNI_DEBUGLEVEL <= FALSOJNI_DEBUG_ALL
-    LOG_LOCK
-    LOG_FORMAT
-    LOG_FPRINTF
-
-    sceClibSnprintf(_fjni_log_buffer_2, sizeof(_fjni_log_buffer_2) - 1,
-                    "[DBG][%s:%d][%s] %s\n", fi, li, fn, _fjni_log_buffer_1);
-    sceClibPrintf(_fjni_log_buffer_2);
-
-    LOG_UNLOCK
-#endif
-}
-
-void _fjni_log_error(const char *fi, int li, const char *fn, const char *fmt, ...) {
+void _fjni_log_error(const char *fmt, ...) {
 #if FALSOJNI_DEBUGLEVEL <= FALSOJNI_DEBUG_ERROR
     LOG_LOCK
     LOG_FORMAT
     LOG_FPRINTF
 
     sceClibSnprintf(_fjni_log_buffer_2, sizeof(_fjni_log_buffer_2) - 1,
-                    "%s[ERROR][%s:%d][%s] %s%s\n", COLOR_RED, fi, li, fn, _fjni_log_buffer_1, COLOR_END);
+                    "%s[ERROR] %s%s\n", COLOR_RED, _fjni_log_buffer_1, COLOR_END);
     sceClibPrintf(_fjni_log_buffer_2);
 
     LOG_UNLOCK
