@@ -1280,7 +1280,7 @@ jsize GetArrayLength(JNIEnv *env, jarray array) {
     jsize ret = jarray_length(array);
     if (ret > -1) return ret;
 
-    fjni_log_warn("Array 0x%x not found. Unknown array type?", (int)array);
+    fjni_log_warn("[JNI] Array 0x%x not found. Unknown array type?", (int)array);
     return 0;
 }
 

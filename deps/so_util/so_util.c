@@ -58,7 +58,7 @@ typedef struct ldst_enc {
 #define PATCH_SZ 0x10000  // 64 KB-ish arenas
 static so_module *head = NULL, *tail = NULL;
 
-so_hook hook_thumb(uintptr_t addr, uintptr_t dst) {
+so_hook so_hook_thumb(uintptr_t addr, uintptr_t dst) {
     so_hook h;
     printf("THUMB HOOK\n");
     if (addr == 0)
@@ -81,12 +81,11 @@ so_hook hook_thumb(uintptr_t addr, uintptr_t dst) {
     return h;
 }
 
-so_hook hook_arm(uintptr_t addr, uintptr_t dst) {
+so_hook so_hook_arm(uintptr_t addr, uintptr_t dst) {
     so_hook h;
     printf("ARM HOOK\n");
     if (addr == 0)
         return h;
-    uint32_t hook[2];
     h.thumb_addr     = 0;
     h.addr           = addr;
     h.patch_instr[0] = 0xe51ff004;  // LDR PC, [PC, #-0x4]
@@ -97,16 +96,20 @@ so_hook hook_arm(uintptr_t addr, uintptr_t dst) {
     return h;
 }
 
-so_hook hook_addr(uintptr_t addr, uintptr_t dst) {
+so_hook so_hook_addr(uintptr_t addr, uintptr_t dst) {
     if (addr == 0) {
         so_hook h;
         return h;
     }
 
     if (addr & 1)
-        return hook_thumb(addr, dst);
+        return so_hook_thumb(addr, dst);
     else
-        return hook_arm(addr, dst);
+        return so_hook_arm(addr, dst);
+}
+
+so_hook so_hook_symbol(so_module *mod, const char *symbol, uintptr_t hook_func) {
+    return so_hook_addr(so_find_symbol(mod, symbol), hook_func);
 }
 
 void so_flush_caches(so_module *mod) {

@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <so_util/so_util.h>
+
 #include "ggee.h"
 #include "utils/logger.h"
 
@@ -58,4 +60,14 @@ END:
 FAILED:
     res = -1;
     goto END;
+}
+
+int soloader_patch_ggee(so_module *mod) {
+    ggeeLibExpand = (void *)so_find_symbol(mod, "ggeeLibExpand");
+
+    // _ZN7android14GgeeAudioTrack11writethreadEv
+    // _ZN7android14GgeeAudioTrackC2Ev
+    // _ZN7android14GgeeAudioTrackD2Ev
+
+    return 0;
 }

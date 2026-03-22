@@ -50,6 +50,7 @@
 #include "reimpl/android/Thread.h"
 #include "reimpl/egl.h"
 #include "reimpl/errno.h"
+#include "reimpl/gl.h"
 #include "reimpl/io.h"
 #include "reimpl/libKD/kd.h"
 #include "reimpl/libLD/ld.h"
@@ -57,7 +58,6 @@
 #include "reimpl/pthr.h"
 #include "reimpl/sys.h"
 #include "reimpl/time64.h"
-#include "utils/glutil.h"
 #include "utils/logger.h"
 #include "utils/utils.h"
 
@@ -219,11 +219,6 @@ int AAudioRecord_fake(void) {
 
 int AAudioTrack_fake(void) {
     l_debug("[Error] Android AudioTrack function called: unsupport!");
-    return 0;
-}
-
-int AGgeeAudioTrack_fake(void) {
-    l_debug("[Error] Android GgeeAudioTrack function called: unsupport!");
     return 0;
 }
 
@@ -479,16 +474,20 @@ so_dynlib default_dynlib[] = {
     {"valloc", (uintptr_t)&valloc},
 
     // IO
-    {"close", (uintptr_t)&close_soloader},
+    {"fopen", (uintptr_t)&fopen_soloader},
+    {"fseek", (uintptr_t)&fseek_soloader},
+    {"fread", (uintptr_t)&fread_soloader},
+    {"fwrite", (uintptr_t)&fwrite_soloader},
+    {"ftell", (uintptr_t)&ftell_soloader},
+    {"fclose", (uintptr_t)&fclose_soloader},
     {"closedir", (uintptr_t)&closedir_soloader},
     {"execv", (uintptr_t)&ret0},
-    {"fclose", (uintptr_t)&fclose_soloader},
     {"fcntl", (uintptr_t)&fcntl_soloader},
-    {"fopen", (uintptr_t)&fopen_soloader},
     {"fstat", (uintptr_t)&fstat_soloader},
     {"fsync", (uintptr_t)&fsync_soloader},
     {"ioctl", (uintptr_t)&ioctl_soloader},
     {"open", (uintptr_t)&open_soloader},
+    {"close", (uintptr_t)&close_soloader},
     {"opendir", (uintptr_t)&opendir_soloader},
     {"readdir", (uintptr_t)&readdir_soloader},
     {"readdir_r", (uintptr_t)&readdir_r_soloader},
@@ -505,13 +504,9 @@ so_dynlib default_dynlib[] = {
     {"fileno", (uintptr_t)&fileno},
     {"fputc", (uintptr_t)&fputc},
     {"fputs", (uintptr_t)&fputs},
-    {"fread", (uintptr_t)&fread},
     {"freopen", (uintptr_t)&freopen},
-    {"fseek", (uintptr_t)&fseek},
     {"fsetpos", (uintptr_t)&fsetpos},
-    {"ftell", (uintptr_t)&ftell},
     {"fwide", (uintptr_t)&fwide},
-    {"fwrite", (uintptr_t)&fwrite},
     {"getc", (uintptr_t)&getc},
     {"getwc", (uintptr_t)&getwc},
     {"putc", (uintptr_t)&putc},
@@ -602,7 +597,7 @@ so_dynlib default_dynlib[] = {
     {"pthread_cond_init", (uintptr_t)&pthread_cond_init_soloader},
     {"pthread_cond_signal", (uintptr_t)&pthread_cond_signal_soloader},
     {"pthread_cond_timedwait", (uintptr_t)&pthread_cond_timedwait_soloader},
-    {"pthread_cond_timedwait_relative_np", (uintptr_t)&pthread_cond_timedwait_soloader},
+    {"pthread_cond_timedwait_relative_np", (uintptr_t)&pthread_cond_timedwait_relative_np_soloader},
     {"pthread_cond_wait", (uintptr_t)&pthread_cond_wait_soloader},
     {"pthread_attr_destroy", (uintptr_t)&pthread_attr_destroy_soloader},
     {"pthread_attr_init", (uintptr_t)&pthread_attr_init_soloader},
@@ -1216,11 +1211,6 @@ so_dynlib default_dynlib[] = {
     // {"_ZN7android10AudioTrack3setEijiiijPFviPvS1_ES1_iRKNS_2spINS_7IMemoryEEEb", (uintptr_t)&AAudioTrack_fake},
     // {"_ZN7android10AudioTrack3setE19audio_stream_type_tj14audio_format_tji20audio_output_flags_tPFviPvS4_ES4_iRKNS_2spINS_7IMemoryEEEbiNS0_13transfer_typeEPK20audio_offload_info_t", (uintptr_t)&AAudioTrack_fake},
     // {"_ZN7android10AudioTrack3setE19audio_stream_type_tj14audio_format_tji20audio_output_flags_tPFviPvS4_ES4_iRKNS_2spINS_7IMemoryEEEbiNS0_13transfer_typeEPK20audio_offload_info_ti", (uintptr_t)&AAudioTrack_fake},
-
-    // Android GgeeAudioTrack
-    {"_ZN7android14GgeeAudioTrack11writethreadEv", (uintptr_t)&AGgeeAudioTrack_fake},
-    {"_ZN7android14GgeeAudioTrackC2Ev", (uintptr_t)&AGgeeAudioTrack_fake},
-    {"_ZN7android14GgeeAudioTrackD2Ev", (uintptr_t)&AGgeeAudioTrack_fake},
 
     // Android ZipFile
     {"_ZNK7android9ZipFileRO12getEntryInfoEPvPiPlS3_S3_S3_S3_", (uintptr_t)&AZipFile_fake},

@@ -3,12 +3,13 @@
 #include <falso_jni/FalsoJNI.h>
 #include <psp2/kernel/threadmgr.h>
 #include <so_util/so_util.h>
+#include <vitaGL.h>
 
 #include "config.h"
 #include "controls.h"
 #include "loader.h"
+#include "patch.h"
 #include "utils/dialog.h"
-#include "utils/glutil.h"
 #include "utils/logger.h"
 #include "utils/utils.h"
 
@@ -19,8 +20,9 @@ void (*navite_focusChanged)(JNIEnv *env, jobject thiz, jboolean hasFocus);
 
 jint (*navite_launch)(JNIEnv *env, jobject thiz, jint sdkInt, jobject surface, jstring bootstrapPath, jstring apkPath,
                       jstring rootDir, jstring appId, jstring params, jstring fromManager, jstring args, jstring serverEnvId);
-jint (*navite_marketlaunch)(JNIEnv *env, jobject thiz, jint sdkVersion, jobject surface, jstring str1, jstring str2, jstring str3, jstring str4,
-                            jstring str5, jstring str6, jstring str7, jstring str8, jint arg2, jstring str9, jobjectArray strArray);
+jint (*navite_marketlaunch)(JNIEnv *env, jobject thiz, jint sdkInt, jobject surface, jstring bootstrapPath, jstring apkPath,
+                            jstring rootDir, jstring appId, jstring marketExePath, jstring marketResDir, jstring marketTmpDir,
+                            jstring params, jint fromManager, jstring str9, jobjectArray args);
 void (*navite_ExtensionInit)(JNIEnv *env, jobject thiz, jobject obj);
 void (*navite_MediaManagerInit)(JNIEnv *env, jobject thiz, jobject obj);
 
@@ -38,6 +40,19 @@ static int checkOpenGL() {
         fatal_error(
             "Error: libshacccg.suprx is not installed. "
             "Google \"ShaRKBR33D\" for quick installation.");
+        return -1;
+    }
+
+    return 0;
+}
+
+static int checkDataFiles() {
+    if (!file_exists(SO_PATH)) {
+        fatal_error(
+            "Looks like you haven't installed the data files for this "
+            "port, or they are in an incorrect location. Please make "
+            "sure that you have %s file exactly at that path.",
+            SO_PATH);
         return -1;
     }
 
@@ -93,16 +108,12 @@ int soloader_init() {
     checkOpenGL();
     l_debug("[LOADER] kubridge check passed.");
 
-    if (!file_exists(SO_PATH)) {
-        fatal_error(
-            "Looks like you haven't installed the data files for this "
-            "port, or they are in an incorrect location. Please make "
-            "sure that you have %s file exactly at that path.",
-            SO_PATH);
-    }
+    checkDataFiles();
+    l_debug("[LOADER] Data files check passed.");
 
     if (so_file_load(&so_mod, SO_PATH, LOAD_ADDRESS) < 0) {
         fatal_error("Error: could not load %s.", SO_PATH);
+        return -1;
     }
     l_debug("[LOADER] SO loaded: %p", so_mod.text_base);
 
@@ -112,7 +123,7 @@ int soloader_init() {
     soloader_resolve_imports(&so_mod);
     l_debug("[LOADER] SO imports resolved.");
 
-    soloader_patch();
+    soloader_patch(&so_mod);
     l_debug("[LOADER] SO patched.");
 
     so_flush_caches(&so_mod);
@@ -127,7 +138,7 @@ int soloader_init() {
     controls_init();
     l_debug("[LOADER] Controls initialized.");
 
-    gl_init();
+    vglInitExtended(0, 960, 544, MEMORY_VITAGL_THRESHOLD_MB * 1024 * 1024, SCE_GXM_MULTISAMPLE_4X);
 #ifdef USE_GLSL_SHADERS
     // vglSetSemanticBindingMode(VGL_MODE_POSTPONED);
 #endif
@@ -141,7 +152,7 @@ int soloader_run() {
     JNI_OnLoad(&jvm, 0);
     l_debug("[LOADER] JNI_OnLoad over");
 
-    hook_addr((uintptr_t)so_find_symbol(&so_mod, "_ZN18RuntimeContextBase6LaunchEb"), (uintptr_t)&RuntimeContextBase_Launch);
+    so_hook_symbol(&so_mod, "_ZN18RuntimeContextBase6LaunchEb", (uintptr_t)&RuntimeContextBase_Launch);
 
     navite_marketlaunch   = (void *)(LOAD_ADDRESS + 0x416CD);
     navite_launch         = (void *)(LOAD_ADDRESS + 0x413F9);
@@ -171,4 +182,8 @@ int soloader_run() {
     sceKernelWaitThreadEnd(main_thid, NULL, NULL);
 
     return 0;
+}
+
+void soloader_term() {
+    // Cleanup function called when soloader module is unloaded.
 }

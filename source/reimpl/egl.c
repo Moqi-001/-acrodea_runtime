@@ -5,18 +5,19 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-#include "reimpl/egl.h"
-
-#include "utils/glutil.h"
-#include "utils/logger.h"
-
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
+
+#include <vitaGL.h>
+
+#include "config.h"
+#include "reimpl/egl.h"
+#include "utils/logger.h"
 
 EGLBoolean eglInitialize(EGLDisplay dpy, EGLint *major, EGLint *minor) {
     l_debug("eglInitialize(0x%x)", (int)dpy);
 
-    gl_init();
+    vglInitExtended(0, 960, 544, MEMORY_VITAGL_THRESHOLD_MB * 1024 * 1024, SCE_GXM_MULTISAMPLE_4X);
 
     if (major) *major = 2;
     if (minor) *minor = 2;
@@ -48,7 +49,6 @@ EGLBoolean eglQueryContext(EGLDisplay dpy, EGLContext ctx, EGLint attribute,
 
     return ret;
 }
-
 
 EGLBoolean eglQuerySurface(EGLDisplay dpy, EGLSurface eglSurface,
                            EGLint attribute, EGLint *value) {
@@ -85,7 +85,7 @@ EGLBoolean eglQuerySurface(EGLDisplay dpy, EGLSurface eglSurface,
             break;
         case EGL_HORIZONTAL_RESOLUTION:
         case EGL_VERTICAL_RESOLUTION:
-            *value = 220 * EGL_DISPLAY_SCALING; // VITA DPI is 220
+            *value = 220 * EGL_DISPLAY_SCALING;  // VITA DPI is 220
             break;
         case EGL_PIXEL_ASPECT_RATIO:
             // Please don't ask why * EGL_DISPLAY_SCALING, the document says it
@@ -114,9 +114,8 @@ EGLBoolean eglQuerySurface(EGLDisplay dpy, EGLSurface eglSurface,
     return ret;
 }
 
-
 EGLBoolean eglGetConfigAttrib(EGLDisplay display, EGLConfig config,
-                              EGLint attribute, EGLint * value) {
+                              EGLint attribute, EGLint *value) {
     switch (attribute) {
         case EGL_ALPHA_SIZE: {
             *value = 8;
@@ -265,21 +264,21 @@ EGLBoolean eglChooseConfig(EGLDisplay dpy, const EGLint *attrib_list,
         return EGL_TRUE;
     }
 
-    *configs = strdup("conf");
+    *configs    = strdup("conf");
     *num_config = 1;
 
     return EGL_TRUE;
 }
 
 EGLContext eglCreateContext(EGLDisplay dpy, EGLConfig config,
-                            EGLContext share_context,
+                            EGLContext    share_context,
                             const EGLint *attrib_list) {
     // Just something that is a valid pointer which can be freed later
     return strdup("ctx");
 }
 
 EGLSurface eglCreateWindowSurface(EGLDisplay dpy, EGLConfig config,
-                                  void * win, const EGLint *attrib_list) {
+                                  void *win, const EGLint *attrib_list) {
     // Just something that is a valid pointer which can be freed later
     return strdup("surface");
 }
@@ -289,12 +288,12 @@ EGLBoolean eglMakeCurrent(EGLDisplay dpy, EGLSurface draw, EGLSurface read,
     return EGL_TRUE;
 }
 
-EGLBoolean eglDestroyContext (EGLDisplay dpy, EGLContext ctx) {
+EGLBoolean eglDestroyContext(EGLDisplay dpy, EGLContext ctx) {
     if (ctx) free(ctx);
     return EGL_TRUE;
 }
 
-EGLBoolean eglDestroySurface (EGLDisplay dpy, EGLSurface surface) {
+EGLBoolean eglDestroySurface(EGLDisplay dpy, EGLSurface surface) {
     if (surface) free(surface);
     return EGL_TRUE;
 }
@@ -303,35 +302,35 @@ EGLBoolean eglTerminate(EGLDisplay dpy) {
     return EGL_TRUE;
 }
 
-EGLContext eglGetCurrentContext (void) {
+EGLContext eglGetCurrentContext(void) {
     return strdup("ctx");
 }
 
-char const * eglQueryString(EGLDisplay display, EGLint name) {
+char const *eglQueryString(EGLDisplay display, EGLint name) {
     switch (name) {
-    case EGL_CLIENT_APIS:
-        return "OpenGL OpenGL_ES";
-    case EGL_VENDOR:
-        return "Rinnegatamante";
-    case EGL_VERSION:
-        return "2.2 VitaGL";
-    case EGL_EXTENSIONS:
-        return "EGL_KHR_image "
-               "EGL_KHR_image_base "
-               "EGL_KHR_image_pixmap "
-               "EGL_KHR_gl_texture_2D_image "
-               "EGL_KHR_gl_texture_cubemap_image "
-               "EGL_KHR_gl_renderbuffer_image "
-               "EGL_KHR_fence_sync "
-               "EGL_NV_system_time "
-               "EGL_ANDROID_image_native_buffer ";
-    default:
-        return NULL;
+        case EGL_CLIENT_APIS:
+            return "OpenGL OpenGL_ES";
+        case EGL_VENDOR:
+            return "Rinnegatamante";
+        case EGL_VERSION:
+            return "2.2 VitaGL";
+        case EGL_EXTENSIONS:
+            return "EGL_KHR_image "
+                   "EGL_KHR_image_base "
+                   "EGL_KHR_image_pixmap "
+                   "EGL_KHR_gl_texture_2D_image "
+                   "EGL_KHR_gl_texture_cubemap_image "
+                   "EGL_KHR_gl_renderbuffer_image "
+                   "EGL_KHR_fence_sync "
+                   "EGL_NV_system_time "
+                   "EGL_ANDROID_image_native_buffer ";
+        default:
+            return NULL;
     }
 }
 
-EGLBoolean eglGetConfigs(EGLDisplay display, EGLConfig * configs,
-                         EGLint config_size, EGLint * num_config) {
+EGLBoolean eglGetConfigs(EGLDisplay display, EGLConfig *configs,
+                         EGLint config_size, EGLint *num_config) {
     if (!num_config) {
         l_error("eglGetConfigs / EGL_BAD_PARAMETER");
         return EGL_FALSE;

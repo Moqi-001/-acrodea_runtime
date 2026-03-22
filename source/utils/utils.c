@@ -231,12 +231,10 @@ bool module_loaded(const char *name) {
 }
 
 int ret0(void) {
-    // l_debug("ret0");
     return 0;
 }
 
 int ret1(void) {
-    l_debug("ret1");
     return 1;
 }
 

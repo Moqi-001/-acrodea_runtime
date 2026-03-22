@@ -8,22 +8,18 @@
  */
 
 /**
- * @file  glutil.h
+ * @file  gl.h
  * @brief OpenGL API initializer, related functions.
  */
 
-#ifndef SOLOADER_GLUTIL_H
-#define SOLOADER_GLUTIL_H
+#ifndef SOLOADER_GL_H
+#define SOLOADER_GL_H
 
 #include <vitaGL.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-void gl_init();
-
-void gl_swap();
 
 void glCompileShader_soloader(GLuint shader);
 
@@ -34,4 +30,4 @@ void glShaderSource_soloader(GLuint shader, GLsizei count,
 };
 #endif
 
-#endif // SOLOADER_GLUTIL_H
+#endif  // SOLOADER_GLUTIL_H

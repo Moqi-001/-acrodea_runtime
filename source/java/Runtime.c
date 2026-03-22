@@ -60,7 +60,7 @@ jboolean Runtime_isUseRecord(jobject obj, jmethodID id, va_list args) {
 
 // "getCommonDir", "()Ljava/lang/String;"
 jobject Runtime_getCommonDir(jobject obj, jmethodID id, va_list args) {
-    const char *res = "ggee/";
+    const char *res = "/.ggee/";
     l_debug("[JNI] Runtime::getCommonDir(): %s", res);
     return (jobject)jni->NewStringUTF(&jni, res);
 }

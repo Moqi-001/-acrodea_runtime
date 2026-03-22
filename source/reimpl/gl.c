@@ -13,10 +13,11 @@
 
 #include <psp2/io/stat.h>
 #include <psp2/kernel/sysmem.h>
+#include <vitaGL.h>
 
 #include "config.h"
+#include "reimpl/gl.h"
 #include "utils/dialog.h"
-#include "utils/glutil.h"
 #include "utils/logger.h"
 #include "utils/utils.h"
 
@@ -24,14 +25,6 @@
 GLboolean skip_next_compile = GL_FALSE;
 char      next_shader_fname[256];
 void      load_shader(GLuint shader, const char *string, size_t length);
-
-void gl_init() {
-    vglInitExtended(0, 960, 544, MEMORY_VITAGL_THRESHOLD_MB * 1024 * 1024, SCE_GXM_MULTISAMPLE_4X);
-}
-
-void gl_swap() {
-    vglSwapBuffers(GL_FALSE);
-}
 
 void glShaderSource_soloader(GLuint shader, GLsizei count,
                              const GLchar **string, const GLint *_length) {

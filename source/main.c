@@ -34,6 +34,7 @@ int main() {
     remove(LOG_PATH);
     soloader_init();
     soloader_run();
+    soloader_term();
 
     return 0;
 }

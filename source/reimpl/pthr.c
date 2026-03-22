@@ -302,6 +302,26 @@ int pthread_cond_timedwait_soloader(pthread_cond_t_bionic *cond, pthread_mutex_t
     return pthread_cond_timedwait(cond->real_ptr, mutex->real_ptr, abstime);
 }
 
+int pthread_cond_timedwait_relative_np_soloader(pthread_cond_t_bionic *cond, pthread_mutex_t_bionic *mutex, struct timespec *reltime) {
+    if (!cond || !mutex) return EINVAL;
+
+    _cond_t_static_init(cond, NULL);
+    _mutex_t_static_init(mutex, NULL);
+
+    struct timespec abstime;
+    clock_gettime(CLOCK_REALTIME, &abstime);
+
+    abstime.tv_sec += reltime->tv_sec;
+    abstime.tv_nsec += reltime->tv_nsec;
+
+    if (abstime.tv_nsec >= 1000000000) {
+        abstime.tv_sec++;
+        abstime.tv_nsec -= 1000000000;
+    }
+
+    return pthread_cond_timedwait(cond->real_ptr, mutex->real_ptr, &abstime);
+}
+
 int pthread_cond_wait_soloader(pthread_cond_t_bionic *cond, pthread_mutex_t_bionic *mutex) {
     if (!cond || !mutex) return EINVAL;
 

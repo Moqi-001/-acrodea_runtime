@@ -7,19 +7,20 @@
 #include "ld_mem.h"
 #include "utils/logger.h"
 
-#define ALIGN(x, align) (((x) + ((align) - 1)) & ~((align) - 1))
+#define PAGE_SIZE 4096
 
-#define LdLoadMemContextAlignSize (ALIGN(sizeof(LdLoadMemContext), 0x1000))
+#define ALIGN_UP(x, align)   (((x) + (align) - 1) & ~((align) - 1))
+#define ALIGN_DOWN(x, align) ((x) & ~((align) - 1))
+
+#define CONTEXT_ALIGN_SIZE (ALIGN_UP(sizeof(LdLoadMemContext), PAGE_SIZE))
 
 LdLoadMemContext *ldLoadMemGetContextFromData(const void *data) {
-    return data ? (LdLoadMemContext *)((uintptr_t)data - LdLoadMemContextAlignSize) : NULL;
+    return data ? (LdLoadMemContext *)((uintptr_t)data - CONTEXT_ALIGN_SIZE) : NULL;
 }
 
 LdLoadMemContext *ldLoadMemCreateContext(uintptr_t addr) {
-    // l_debug("ldLoadMemCreateContext(0x%x)", addr);
-
     LdLoadMemContext *context  = NULL;
-    size_t            mem_size = LdLoadMemContextAlignSize;
+    size_t            mem_size = CONTEXT_ALIGN_SIZE;
 
     SceKernelAllocMemBlockKernelOpt opt;
     memset(&opt, 0, sizeof(SceKernelAllocMemBlockKernelOpt));
@@ -58,16 +59,16 @@ void ldLoadMemDestroyContext(LdLoadMemContext *context) {
 }
 
 LdLoadMemEntry *ldLoadMemCreateEntry(uintptr_t addr, int flags, size_t size, size_t align) {
-    // l_debug("ldLoadMemCreateEntry(0x%x,\"%s\",0x%x,0x%x)", addr,
-    //        (flags == SCE_KERNEL_MEMBLOCK_TYPE_USER_RX) ? "rx" : "rw",
-    //        size, align);
-
     LdLoadMemEntry *entry = calloc(1, sizeof(LdLoadMemEntry));
-    if (!entry)
+    if (!entry) {
+        // l_debug("ldLoadMemCreateEntry(0x%x,\"%s\",0x%x,0x%x) failed!", addr,
+        //        (flags == SCE_KERNEL_MEMBLOCK_TYPE_USER_RX) ? "rx" : "rw",
+        //        size, align);
         return NULL;
+    }
 
-    uintptr_t mem_addr = addr & ~(align - 1);
-    size_t    mem_size = ALIGN(size + (addr - mem_addr), align);
+    uintptr_t mem_addr = ALIGN_DOWN(addr, PAGE_SIZE);
+    size_t    mem_size = ALIGN_UP(size + (addr - mem_addr), align);
 
     SceKernelAllocMemBlockKernelOpt opt;
     memset(&opt, 0, sizeof(SceKernelAllocMemBlockKernelOpt));

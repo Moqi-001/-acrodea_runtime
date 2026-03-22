@@ -4,9 +4,11 @@
 
 #include <falso_jni/FalsoJNI.h>
 #include <psp2/audioout.h>
+#include <psp2/kernel/clib.h>
 #include <psp2/kernel/processmgr.h>
 
 #include "reimpl/android/AudioTrack.h"
+#include "utils/dialog.h"
 #include "utils/logger.h"
 
 /*
@@ -14,13 +16,35 @@
  */
 
 #define AUDIO_OUT_SIZE     4096
-#define AUDIO_BUFFER_COUNT 10
+#define AUDIO_BUFFER_COUNT 16
 
 static SceKernelLwMutexWork audio_mutex;
 SceUID                      audio_port = -1;
 char                        audio_buffer[AUDIO_BUFFER_COUNT][AUDIO_OUT_SIZE];
 int                         write_pos = 0;
 
+/*
+static int AudioThreadEntry(SceSize args, void *argp) {
+    APP_LOG("[AUDIO] Audio thread start run.\n");
+
+    AudioBuffer *audio_buffer = &audio_state.audio_buffer;
+
+    while (audio_state.run) {
+        sceKernelLockLwMutex(&audio_state.mutex, 1, NULL);
+        while (audio_state.run && ((uint16_t)(audio_buffer->write_pos - audio_buffer->read_pos) & (audio_buffer->buf_len - 1)) < audio_buffer->out_len)
+            sceKernelWaitLwCond(&audio_state.cond, NULL);
+        sceKernelUnlockLwMutex(&audio_state.mutex, 1);
+
+        if (!audio_state.pause)
+            sceAudioOutOutput(audio_state.output_port, audio_buffer->buf_data + audio_buffer->read_pos);
+        audio_buffer->read_pos = (audio_buffer->read_pos + audio_buffer->out_len) % audio_buffer->buf_len;
+    }
+
+    APP_LOG("[AUDIO] Audio thread stop run.\n");
+    sceKernelExitThread(0);
+    return 0;
+}
+*/
 // "<init>", "(IIIIII)V" (3,16000,4,2,4096,1)
 jobject AudioTrack_init(jclass clazz, jmethodID id, va_list args) {
     const char *audioTrack        = "Vita_audio_obj";
@@ -36,8 +60,8 @@ jobject AudioTrack_init(jclass clazz, jmethodID id, va_list args) {
         SceAudioOutMode mode             = (channels == 2) ? SCE_AUDIO_OUT_MODE_STEREO : SCE_AUDIO_OUT_MODE_MONO;
         int             sample_bits      = (audioFormat == 2) ? 16 : 8;
         int             bytes_per_sample = sample_bits / 8;
-        int             len              = AUDIO_OUT_SIZE / (channels * bytes_per_sample);
-        audio_port                       = sceAudioOutOpenPort(SCE_AUDIO_OUT_PORT_TYPE_BGM, len, sampleRateInHz, mode);
+        int             out_len          = AUDIO_OUT_SIZE / channels;  // (channels * bytes_per_sample);
+        audio_port                       = sceAudioOutOpenPort(SCE_AUDIO_OUT_PORT_TYPE_BGM, out_len, sampleRateInHz, mode);
         if (audio_port < 0) {
             l_debug("[JNI] AudioTrack::<init>: sceAudioOutOpenPort failed!");
         } else {
@@ -108,22 +132,21 @@ void AudioTrack_release(jobject obj, jmethodID id, va_list args) {
 
 // "write", "([BII)I"
 jint AudioTrack_write(jobject obj, jmethodID id, va_list args) {
-    char *audioData     = va_arg(args, char *);
-    int   offsetInBytes = va_arg(args, int);
-    int   sizeInBytes   = va_arg(args, int);
-    int   res           = sizeInBytes;
+    jbyteArray audioData     = va_arg(args, jbyteArray);
+    int        offsetInBytes = va_arg(args, int);
+    int        sizeInBytes   = va_arg(args, int);
+    int        res           = sizeInBytes;
 
     if (audio_port < 0) {
         l_debug("[JNI] AudioTrack::write(%p,%p,%d,%d): failed!", obj, audioData, offsetInBytes, sizeInBytes);
     } else {
         sceKernelLockLwMutex(&audio_mutex, 1, NULL);
-        l_debug("[JNI] AudioTrack::write(%p,%p,%d,%d): %d", obj, audioData, offsetInBytes, sizeInBytes, res);
         jbyte *bytes = jni->GetByteArrayElements(&jni, audioData, NULL);
         l_debug("[JNI] AudioTrack::write(%p,%p,%d,%d): %d", obj, audioData, offsetInBytes, sizeInBytes, res);
         l_debug("    GetByteArrayElements(env,%p,NULL): %p", audioData, bytes);
         if (bytes) {
-            memset(audio_buffer[write_pos], 0, AUDIO_OUT_SIZE);
-            memcpy(audio_buffer[write_pos], bytes + offsetInBytes, sizeInBytes);
+            sceClibMemset(audio_buffer[write_pos], 0, AUDIO_OUT_SIZE);
+            sceClibMemcpy(audio_buffer[write_pos], bytes + offsetInBytes, sizeInBytes);
             sceAudioOutOutput(audio_port, audio_buffer[write_pos]);
             write_pos = (write_pos + 1) % AUDIO_BUFFER_COUNT;
             jni->ReleaseByteArrayElements(&jni, audioData, bytes, 0);

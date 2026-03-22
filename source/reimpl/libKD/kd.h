@@ -6,6 +6,7 @@
 char *__kdMapFilename(const char *filename, const char *mode);
 int   __kdFlushICache(const void *ptr, size_t len);
 int   __kdFlushICache(const void *ptr, size_t len);
-int   kdExit(void *context);
+
+int soloader_patch_kd(so_module *mod);
 
 #endif

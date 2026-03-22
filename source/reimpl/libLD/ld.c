@@ -5,18 +5,17 @@
 #include <so_util/so_util.h>
 
 #include "config.h"
-#include "ld.h"
-#include "ld_mem.h"
-#include "ld_patch.h"
 #include "loader.h"
 #include "patch.h"
+#include "reimpl/libLD/ld.h"
+#include "reimpl/libLD/ld_patch.h"
 #include "utils/logger.h"
 
 uintptr_t (*ldModuleGetSymbol)(LdModule *in_mod, const char *sym_name, uint32_t sym_hash, int type,
-                               const char *vna_name, uint32_t vna_hash, LdModule **out_mod);
+                               const char *ver_name, uint32_t ver_hash, LdModule **out_mod);
 
 uintptr_t (*ldModuleLookupSymbol)(LdModule *mod, const char *sym_name, uint32_t sym_hash, int visibility,
-                                  const char *vna_name, uint32_t vna_hash);
+                                  const char *ver_name, uint32_t ver_hash);
 
 void ldSetErrorCode(LdContext *context, int code, const char *msg) {
     if (context) {
@@ -39,12 +38,12 @@ const char *ldGetErrorMessage(LdContext *context) {
 
 void *ldModuleGetEntryPoint(LdModule *mod) {
     if (mod && mod->ehdr && mod->ehdr->e_entry) {
-        void *entry_point = (char *)mod->load_base + mod->load_offset + mod->ehdr->e_entry;
-        if (strcmp(mod->mod_name, "bootstrap.exe") == 0) {
-            bootstrap_start = entry_point;
-            entry_point     = (void *)&bootstrap_start_soloader;
+        void *entry_point = (char *)mod->load_mem + mod->load_offset + mod->ehdr->e_entry;
+        if (strcmp(mod->so_name, "bootstrap.exe") == 0) {
+            // 将启动函数跳转到我们的函数
+            entry_point = (void *)&bootstrap_start_soloader;
         }
-        l_debug("ldModuleGetEntryPoint(%p): %s, return %p", mod, mod->mod_name, entry_point);
+        l_debug("ldModuleGetEntryPoint(%p): %s, return %p", mod, mod->so_name, entry_point);
         return entry_point;
     }
 
@@ -63,367 +62,17 @@ uint32_t ldModuleSymHash(const uint8_t *name) {
     return h;
 }
 
-// 导出已解密的so文件 (在调用ldModuleAllocAndLoadImage函数时导出效为合适，否则之后原数据会被释放并被替换)
-static int ld_dump_so_file(LdModule *mod, const char *dst_dir) {
-    char dst_name[256];
-    char dst_path[1024];
-
-    const char *p = strrchr(mod->mod_name, '.');  // 把后缀合改为.so，因为有些.so文件以.exe后缀命名
-    if (!p) {
-        snprintf(dst_name, sizeof(dst_name), "%s.so", mod->mod_name);
-    } else {
-        size_t len = p - mod->mod_name;
-        strncpy(dst_name, mod->mod_name, len);
-        strcpy(dst_name + len, ".so");
-    }
-
-    snprintf(dst_path, sizeof(dst_path), "%s%s", dst_dir, dst_name);
-
-    FILE *f = fopen(dst_path, "wb");
-    if (!f) {
-        l_debug("[Error] Dump so file error: failed to fopen %s!\n", dst_path);
-        return -1;
-    }
-
-    fwrite(mod->load_base, 1, mod->load_size, f);
-    fclose(f);
-
-    l_debug("[DUMP] Dump so file '%s' success: -> '%s'\n", mod->mod_name, dst_path);
-    return 0;
-}
-
-int ldModuleAllocAndLoadImage(LdModule *mod, const char *path, const char *err_msg) {
-    LdLoadMemContext *mem_context;
-    int               failed_count;
-    char             *file_mem;
-    uintptr_t         load_addr;
-
-    if (!mod)
-        return -1;
-
-    if (!mod->load_base) {
-        l_debug("ldModuleAllocAndLoadImage(%p,%s): No need to execute", mod, path);
-        return 0;
-    }
-
-    // ld_dump_so_file(mod, DATA_PATH);  // 导出.so文件到 DATA_PATH 路径下
-
-    load_addr        = LOAD_ADDRESS;
-    mem_context      = NULL;
-    failed_count     = 0;
-    file_mem         = (char *)mod->load_base;
-    mod->load_base   = NULL;
-    mod->load_size   = 0;
-    mod->load_offset = 0;
-
-LOAD:
-    for (int i = 0; i < mod->ehdr->e_phnum; i++) {
-        Elf32_Phdr *phdr = &mod->phdr[i];
-        if (phdr->p_type == PT_LOAD) {
-            if (!mem_context) {
-                mem_context = ldLoadMemCreateContext(load_addr);
-                if (!mem_context)
-                    goto FAILED;
-                mod->load_base = (void *)mem_context->load_addr;
-            }
-
-            if (phdr->p_memsz > 0) {
-                int             flags = ((phdr->p_flags & PF_X) == PF_X) ? SCE_KERNEL_MEMBLOCK_TYPE_USER_RX : SCE_KERNEL_MEMBLOCK_TYPE_USER_RW;
-                uintptr_t       addr  = mem_context->load_addr + phdr->p_vaddr;
-                LdLoadMemEntry *entry = ldLoadMemCreateEntry(addr, flags, phdr->p_memsz, phdr->p_align);
-                if (!entry)
-                    goto FAILED;
-                ldLoadMemAddEntry(mem_context, entry);
-
-                kuKernelCpuUnrestrictedMemcpy((void *)addr, (void *)((uintptr_t)file_mem + phdr->p_offset), phdr->p_filesz);
-
-                if (phdr->p_memsz > phdr->p_filesz) {
-                    size_t zero_size = phdr->p_memsz - phdr->p_filesz;
-                    char  *zero      = malloc(zero_size);
-                    if (zero) {
-                        memset(zero, 0, zero_size);
-                        kuKernelCpuUnrestrictedMemcpy((void *)(addr + phdr->p_filesz), zero, zero_size);
-                        free(zero);
-                    }
-                }
-            }
-
-            if (mod->load_size < phdr->p_vaddr + phdr->p_memsz)
-                mod->load_size = phdr->p_vaddr + phdr->p_memsz;
-        }
-    }
-
-    free(file_mem);
-    l_debug("ldModuleAllocAndLoadImage(%p,%s) success: %s, load_base=0x%x", mod, path, mod->mod_name, mod->load_base);
-    return 0;
-
-FAILED:
-    if (mem_context) {
-        ldLoadMemDestroyContext(mem_context);
-        mem_context = NULL;
-    }
-
-    if (failed_count < 100) {  // 如果失败次数<100，将映射地址递增，重新尝试
-        // l_debug("ldModuleAllocAndLoadImage(%p) failed on addr 0x%x, will retry!", mod, load_addr);
-        failed_count++;
-        load_addr += 0x01000000;
-        goto LOAD;
-    }
-
-    free(file_mem);
-    l_debug("ldModuleAllocAndLoadImage(%p,%s) failed!", mod, path);
-    return -1;
-}
-
-void ldModuleDestroyImage(LdModule *mod) {
-    if (mod && mod->load_base) {
-        l_debug("ldModuleDestroyImage(%p): %s", mod, mod->mod_name);
-        ldLoadMemDestroyContext(ldLoadMemGetContextFromData(mod->load_base));
-        mod->load_base = NULL;
-        mod->load_size = 0;
-    }
-}
-
-int ldModuleProtectImage(LdModule *mod) {
-    return 0;
-}
-
-static int ldModuleRelocateCore2(LdModule *mod, Elf32_Rel *rel_tab, size_t rel_num) {
-    int         error_code;
-    char        error_msg[256];
-    uintptr_t   load_base = (uintptr_t)mod->load_base + mod->load_offset;
-    const char *sym_name  = NULL;
-    uint32_t    sym_hash  = 0;
-    uintptr_t   sym_addr  = 0;
-    char       *vna_name  = NULL;
-    uint32_t    vna_hash  = 0;
-
-    // l_debug("ldModuleRelocateCore2(%p,%p,%u): %s", mod, rel_tab, rel_num, mod->mod_name);
-
-    int i;
-    for (i = 0; i < rel_num; i++) {
-        Elf32_Rel *rel        = &rel_tab[i];
-        uint32_t   rel_offset = rel->r_offset;
-        uint16_t   rel_sym    = ELF32_R_SYM(rel->r_info);
-        uint8_t    rel_type   = ELF32_R_TYPE(rel->r_info);
-        LdModule  *sym_mod    = NULL;
-
-        sym_name = NULL;
-        sym_hash = 0;
-        vna_name = NULL;
-        vna_hash = 0;
-
-        sym_name = mod->strtab + mod->symtab[rel_sym].st_name;
-        sym_hash = ldModuleSymHash(sym_name);
-
-        if (mod->versym) {
-            Elf32_Verneed *verneed = mod->verneed;
-            Elf32_Versym   ver     = mod->versym[rel_sym];
-            if (ver > 1 && verneed) {
-                for (int j = 0; j < mod->needed_num; j++) {
-                    Elf32_Vernaux *aux = (Elf32_Vernaux *)((uintptr_t)verneed + verneed->vn_aux);
-                    for (int k = 0; k < verneed->vn_cnt; k++) {
-                        if (aux->vna_other == ver) {
-                            vna_name = mod->strtab + aux->vna_name;
-                            vna_hash = aux->vna_hash;
-                            if (vna_name)
-                                break;
-                        }
-                        aux = (Elf32_Vernaux *)((uintptr_t)aux + aux->vna_next);
-                    }
-                    verneed = (Elf32_Verneed *)((uintptr_t)verneed + verneed->vn_next);
-                }
-            }
-        }
-
-        if (rel_sym) {
-            if (rel_type == R_ARM_COPY)
-                sym_addr = ldModuleGetSymbol(mod, sym_name, sym_hash, 2, vna_name, vna_hash, &sym_mod);
-            else
-                sym_addr = ldModuleGetSymbol(mod->context->loaded_mods->mod, sym_name, sym_hash, 1, vna_name, vna_hash, &sym_mod);
-
-            // printf("ldModuleRelocateCore2: sym_name=\"%s\", sym_addr=0x%x\n", sym_name, sym_addr);
-
-            // 尝试从default_dynlib中查找
-            // if (!sym_addr)
-            //    sym_addr = soloader_find_symbol_from_default_dynlib(sym_name);
-
-            if (!sym_addr) {
-                if (ELF32_ST_BIND(mod->symtab[rel_sym].st_info) == STB_WEAK) {
-                    l_debug("[%s] Weak symbol '%s' not found, skipping", mod->mod_name, sym_name);
-                    continue;
-                } else {
-                    if (vna_name)
-                        snprintf(error_msg, 256, "%s@%s", sym_name, vna_name);
-                    else
-                        strncpy(error_msg, sym_name, 255);
-                    error_code = 0xE030100;
-                    ldSetErrorCode(mod->context, error_code, error_msg);
-                    l_debug("[Error] ldModuleRelocateCore2(%p): '%s' failed!", mod, mod->mod_name);
-                    return -1;
-                }
-            }
-        }
-
-        uintptr_t  val;
-        size_t     len;
-        uintptr_t *ptr = (uintptr_t *)(load_base + rel_offset);
-
-        // printf("ldModuleRelocateCore2(%p): ptr=%p, *ptr=0x%x\n", mod, ptr, *ptr);
-
-        switch (rel_type) {
-            case R_ARM_NONE:  // 0
-                // printf("case R_ARM_NONE\n");
-                break;
-            case R_ARM_ABS32:  // 2
-                val = *ptr + sym_addr;
-                len = sizeof(uintptr_t);
-                // printf("case R_ARM_ABS32: val=0x%x\n", val);
-                kuKernelCpuUnrestrictedMemcpy(ptr, &val, len);
-                break;
-            case R_ARM_REL32:  // 3
-                val = *ptr + (sym_addr - rel_offset);
-                len = sizeof(uintptr_t);
-                // printf("case R_ARM_REL32: val=0x%x\n", val);
-                kuKernelCpuUnrestrictedMemcpy(ptr, &val, len);
-                break;
-            case R_ARM_TLS_DTPMOD32:  // 17
-                val = sym_addr;
-                len = sizeof(uintptr_t);
-                // printf("case R_ARM_TLS_DTPMOD32: val=0x%x\n", val);
-                kuKernelCpuUnrestrictedMemcpy(ptr, &val, len);
-                break;
-            case R_ARM_TLS_DTPOFF32:  // 18
-                val = *ptr + (sym_addr - load_base);
-                len = sizeof(uintptr_t);
-                // printf("case R_ARM_TLS_DTPOFF32: val=0x%x\n", val);
-                kuKernelCpuUnrestrictedMemcpy(ptr, &val, len);
-                break;
-            case R_ARM_COPY:  // 20
-                val = sym_addr;
-                len = mod->symtab[rel_sym].st_size;
-                // printf("case R_ARM_COPY: val=0x%x\n", val);
-                kuKernelCpuUnrestrictedMemcpy(ptr, &val, len);
-                break;
-            case R_ARM_GLOB_DAT:   // 21
-            case R_ARM_JUMP_SLOT:  // 22
-                val = sym_addr;
-                len = sizeof(uintptr_t);
-                // printf("case %s: val=0x%x\n", rel_type == R_ARM_GLOB_DAT ? "R_ARM_GLOB_DAT" : "R_ARM_JUMP_SLOT", val);
-                kuKernelCpuUnrestrictedMemcpy(ptr, &val, len);
-                break;
-            case R_ARM_RELATIVE:  // 23
-                val = load_base + *ptr;
-                len = sizeof(uintptr_t);
-                // printf("case R_ARM_RELATIVE: val=0x%x\n", val);
-                kuKernelCpuUnrestrictedMemcpy(ptr, &val, len);
-                break;
-            default:
-                // printf("Unknown relocation type\n");
-                snprintf(error_msg, 256, "Unknown relocation type in file: %s", mod->mod_name);
-                error_code = 0xE030200;
-                ldSetErrorCode(mod->context, error_code, error_msg);
-                return -1;
-        }
-
-        // printf("ldModuleRelocate \"%s\" success!\n", sym_name);
-    }
-
-    // l_debug("ldModuleRelocateCore2(%p): %s success!", mod, mod->mod_name);
-    return 0;
-}
-
-static int ldModuleRelocateCore(LdModule *mod) {
-    if (!mod)
-        return -1;
-
-    if (!mod->dynamic_phdr)
-        return 0;
-
-    if (mod->status > LD_MODULE_STATUS_NONE) {
-        l_debug("ldModuleRelocateCore(%p): %s is already relocated", mod, mod->mod_name);
-        return 0;
-    }
-
-    uintptr_t   load_base    = (uintptr_t)mod->load_base + mod->load_offset;
-    Elf32_Phdr *dynamic_phdr = mod->dynamic_phdr;
-    Elf32_Dyn  *dynamic      = (Elf32_Dyn *)(load_base + dynamic_phdr->p_vaddr);
-    size_t      dynamic_num  = dynamic_phdr->p_memsz / sizeof(Elf32_Dyn);
-    Elf32_Rel  *rel_tab      = 0;
-    size_t      rel_size     = 0;
-    uint32_t    plt_type     = 0;
-    uintptr_t   plt_tab      = 0;
-    size_t      plt_size     = 0;
-
-    for (int i = 0; i < dynamic_num; i++) {
-        Elf32_Dyn *dyn = &dynamic[i];
-        switch (dyn->d_tag) {
-            case DT_REL:
-                rel_tab = (Elf32_Rel *)(load_base + dyn->d_un.d_ptr);
-                break;
-            case DT_RELSZ:
-                rel_size = dyn->d_un.d_val;
-                break;
-            case DT_PLTREL:
-                plt_type = dyn->d_un.d_val;
-                break;
-            case DT_PLTRELSZ:
-                plt_size = dyn->d_un.d_val;
-                break;
-            case DT_JMPREL:
-                plt_tab = load_base + dyn->d_un.d_ptr;
-                break;
-        }
-    }
-
-    if (rel_tab && ldModuleRelocateCore2(mod, rel_tab, rel_size / sizeof(Elf32_Rel)) != 0) {
-        l_debug("ldModuleRelocateCore(%p): %s failed!", mod, mod->mod_name);
-        return -1;
-    }
-
-    if (plt_tab && plt_type == DT_REL && ldModuleRelocateCore2(mod, (Elf32_Rel *)plt_tab, plt_size / sizeof(Elf32_Rel)) != 0) {
-        l_debug("ldModuleRelocateCore(%p): %s failed!", mod, mod->mod_name);
-        return -1;
-    }
-
-    l_debug("ldModuleRelocateCore(%p): %s success!", mod, mod->mod_name);
-    mod->status = LD_MODULE_STATUS_RELOCATED;
-    return 0;
-}
-
-int ldModuleRelocate(LdModule *mod) {
-    int res;
-
-    if (!mod)
-        return -1;
-
-    if (mod->status > LD_MODULE_STATUS_NONE)
-        return 0;
-
-    for (int i = 0; i < mod->needed_num; i++) {
-        res = ldModuleRelocate(mod->needed_mods[i]);
-        if (res != 0 && mod->needed_mods[i]->load_base)
-            return res;
-    }
-
-    res = ldModuleRelocateCore(mod);
-    if (res == 0 && mod->load_base)
-        ldModuleProtectImage(mod);
-
-    return res;
-}
-
 int ldModuleInitialize(LdModule *mod) {
     if (!mod)
         return -1;
 
-    if (!mod->load_base) {
-        l_debug("ldModuleInitialize(%p): %s, no need to initialize", mod, mod->mod_name);
+    if (!mod->load_mem) {
+        l_debug("ldModuleInitialize(%p): %s, no need to initialize", mod, mod->so_name);
         return 0;
     }
 
     if (mod->status == LD_MODULE_STATUS_INITIALIZED) {
-        l_debug("ldModuleInitialize(%p): %s is already initialized", mod, mod->mod_name);
+        l_debug("ldModuleInitialize(%p): %s is already initialized", mod, mod->so_name);
         return 0;
     }
 
@@ -436,9 +85,9 @@ int ldModuleInitialize(LdModule *mod) {
         ldModuleInitialize(mod->needed_mods[i]);
     }
 
-    uintptr_t  load_base     = (uintptr_t)mod->load_base + mod->load_offset;
+    uintptr_t  load_base     = (uintptr_t)mod->load_mem + mod->load_offset;
     Elf32_Dyn *dynamic       = (Elf32_Dyn *)(load_base + dynamic_phdr->p_vaddr);
-    int        dynamic_num   = dynamic_phdr->p_memsz / sizeof(Elf32_Dyn);
+    int        dynamic_num   = dynamic_phdr->p_filesz / sizeof(Elf32_Dyn);
     int (**init_array)(void) = NULL;
     uint32_t init_array_size = 0;
     int (*init_func)(void)   = NULL;
@@ -459,21 +108,26 @@ int ldModuleInitialize(LdModule *mod) {
         }
     }
 
+    ldModuleInitialize_pre_patch(mod);
+
     // 执行初始化函数
-    if (init_func)
+    if (init_func) {
+        // l_debug("ldModuleInitialize(%p): %s, init_func()", mod, mod->so_name);
         init_func();
+    }
 
     // 执行初始化函数数组
     if (init_array && init_array_size > 0) {
         int init_func_num = init_array_size / sizeof(void *);
         for (int i = 0; i < init_func_num; i++) {
+            // l_debug("ldModuleInitialize(%p): %s, init_array[%d]()", mod, mod->so_name, i);
             init_array[i]();
         }
     }
 
     mod->status = LD_MODULE_STATUS_INITIALIZED;
-    l_debug("ldModuleInitialize(%p) %s success!", mod, mod->mod_name);
-    ldModuleInitialize_patch(mod);
+    l_debug("ldModuleInitialize(%p): %s success!", mod, mod->so_name);
+    ldModuleInitialize_post_patch(mod);
     return 0;
 }
 
@@ -481,7 +135,7 @@ int ldModuleDeinitialize(LdModule *mod) {
     if (!mod)
         return -1;
 
-    l_debug("ldModuleDeinitialize(%p): name=%s, status=%u", mod, mod->mod_name, mod->status);
+    l_debug("ldModuleDeinitialize(%p): name=%s, status=%u", mod, mod->so_name, mod->status);
 
     if (mod->context->exit_state) {
         mod->status = LD_MODULE_STATUS_DEINITIALIZED;
@@ -489,7 +143,7 @@ int ldModuleDeinitialize(LdModule *mod) {
     }
 
     if (mod->status != LD_MODULE_STATUS_INITIALIZED) {
-        l_debug("ldModuleDeinitialize(%p): %s is not initialized", mod, mod->mod_name);
+        l_debug("ldModuleDeinitialize(%p): %s no need to deinitialize", mod, mod->so_name);
         return 0;
     }
 
@@ -500,9 +154,9 @@ int ldModuleDeinitialize(LdModule *mod) {
     if (!dynamic_phdr)
         return 0;
 
-    char      *load_base      = (char *)mod->load_base + mod->load_offset;
+    uintptr_t  load_base      = (uintptr_t)mod->load_mem + mod->load_offset;
     Elf32_Dyn *dynamic        = (Elf32_Dyn *)(load_base + dynamic_phdr->p_vaddr);
-    int        dynamic_num    = dynamic_phdr->p_memsz / sizeof(Elf32_Dyn);
+    int        dynamic_num    = dynamic_phdr->p_filesz / sizeof(Elf32_Dyn);
     void (**fini_array)(void) = NULL;
     size_t fini_array_size    = 0;
     void (*fini_func)(void)   = NULL;
@@ -538,7 +192,7 @@ int ldModuleDeinitialize(LdModule *mod) {
 
     mod->status = LD_MODULE_STATUS_DEINITIALIZED;
 
-    l_debug("ldModuleDeinitialize(%p) %s success!", mod, mod->mod_name);
+    l_debug("ldModuleDeinitialize(%p) %s success!", mod, mod->so_name);
     return 0;
 }
 
@@ -548,8 +202,8 @@ so_hook __ldModuleHookAddr(LdModule *mod, uintptr_t vaddr, uintptr_t dst) {
         return h;
     }
 
-    uintptr_t addr = (uintptr_t)mod->load_base + mod->load_offset + vaddr;
-    return hook_addr(addr, dst);
+    uintptr_t addr = (uintptr_t)mod->load_mem + mod->load_offset + vaddr;
+    return so_hook_addr(addr, dst);
 }
 
 so_hook __ldModuleHookSymbol(LdModule *mod, const char *symbol, uintptr_t dst) {
@@ -560,5 +214,5 @@ so_hook __ldModuleHookSymbol(LdModule *mod, const char *symbol, uintptr_t dst) {
 
     uint32_t  hash = ldModuleSymHash(symbol);
     uintptr_t addr = ldModuleLookupSymbol(mod, symbol, hash, STV_DEFAULT, NULL, 0);
-    return hook_addr(addr, dst);
+    return so_hook_addr(addr, dst);
 }

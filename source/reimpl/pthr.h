@@ -70,6 +70,7 @@ int pthread_cond_init_soloader(pthread_cond_t_bionic *cond, const pthread_condat
 int pthread_cond_destroy_soloader(pthread_cond_t_bionic *cond);
 int pthread_cond_wait_soloader(pthread_cond_t_bionic *cond, pthread_mutex_t_bionic *mutex);
 int pthread_cond_timedwait_soloader(pthread_cond_t_bionic *cond, pthread_mutex_t_bionic *mutex, struct timespec *abstime);
+int pthread_cond_timedwait_relative_np_soloader(pthread_cond_t_bionic *cond, pthread_mutex_t_bionic *mutex, struct timespec *reltime);
 int pthread_cond_broadcast_soloader(pthread_cond_t_bionic *cond);
 int pthread_cond_signal_soloader(pthread_cond_t_bionic *cond);
 

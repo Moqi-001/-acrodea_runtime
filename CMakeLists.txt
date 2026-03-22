@@ -63,7 +63,6 @@ add_definitions(-D_GNU_SOURCE -D__POSIX_VISIBLE=999999)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wl,-q -O3 -g -ffast-math -mfloat-abi=softfp -Wno-deprecated")
 set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=gnu++20 -Wno-write-strings -Wno-psabi")
 
-
 add_executable(${CMAKE_PROJECT_NAME}
   source/main.c
   source/controls.c
@@ -84,9 +83,12 @@ add_executable(${CMAKE_PROJECT_NAME}
   source/reimpl/libKD/kd.c
   source/reimpl/libLD/ld.c
   source/reimpl/libLD/ld_patch.c
+  source/reimpl/libLD/ld_image.c
+  source/reimpl/libLD/ld_relocate.c
   source/reimpl/libLD/ld_mem.c
   source/reimpl/bits/_ctype.c
   source/reimpl/egl.c
+  source/reimpl/gl.c
   source/reimpl/errno.c
   source/reimpl/io.c
   source/reimpl/mem.c
@@ -102,7 +104,6 @@ add_executable(${CMAKE_PROJECT_NAME}
   source/java/extension/MyErrorDialog.c
 
   source/utils/dialog.c
-  source/utils/glutil.c
   source/utils/logger.c
   source/utils/utils.c
 

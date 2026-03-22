@@ -7,7 +7,8 @@
 
 extern int (*bootstrap_start)(int argc, char *argv[], char *envp[]);
 
-void ldModuleInitialize_patch(LdModule *mod);
+void ldModuleInitialize_pre_patch(LdModule *mod);
+void ldModuleInitialize_post_patch(LdModule *mod);
 
 int soloader_patch_ld(so_module *mod);
 

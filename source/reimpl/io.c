@@ -26,84 +26,71 @@
 // void stat_newlib_to_bionic(struct stat * src, stat64_bionic * dst);
 #include "reimpl/bits/_struct_converters.c"
 
-void replace(char str[], char old, char new, int count) {
-    for (size_t i = 0; i < count; i++) {
-        if (str[i] == old) {
-            str[i] = new;
-        }
-    }
-}
-
 FILE *fopen_soloader(const char *filename, const char *mode) {
     // TODO: 判断文件名称, 帮他引导到 DATA_PATH/filename 下去 open
-    FILE *ret = fopen(filename, mode);
-    if (ret) {
-        l_debug("fopen(%s, %s): %p", filename, mode, ret);
+    FILE *res = fopen(filename, mode);
+    if (res) {
+        l_debug("fopen(%s, %s): %p", filename, mode, res);
     } else {
-        l_warn("error fopen(%s, %s): %p", filename, mode, ret);
+        l_warn("error fopen(%s, %s): %p", filename, mode, res);
     }
 
-    return ret;
+    return res;
 }
 
-int fclose_soloader(FILE *f) {
-    int ret = fclose(f);
-    l_debug("fclose(%p): %i", f, ret);
-    return ret;
-}
-
-size_t fread_soloader(void *data, size_t _size, size_t _n, FILE *fd) {
-    l_debug("fread:%x  _size:%d  _n:%d", fd, _size, _n);
-    return fread(data, _size, _n, fd);
-}
-
-int fseek_soloader(FILE *stream, long l, int i) {
-    int v = fseek(stream, l, i);
-    l_debug("fseek(%p,%ld,%d): %d", stream, l, i, v);
-    return v;
+int fseek_soloader(FILE *stream, long offset, int whence) {
+    int res = fseek(stream, offset, whence);
+    l_debug("fseek(%p,%ld,%d): %d", stream, offset, whence, res);
+    return res;
 }
 
 long ftell_soloader(FILE *stream) {
-    long v = ftell(stream);
-    l_debug("ftell(%p): %ld", stream, v);
-    return v;
+    long res = ftell(stream);
+    l_debug("ftell(%p): %ld", stream, res);
+    return res;
 }
 
-FILE *fdopen_soloader(int fd, const char *mode) {
-    FILE *ret = fdopen(fd, mode);
-    l_debug("fdopen(%d, %s): %p", fd, mode, ret);
+size_t fread_soloader(void *ptr, size_t size, size_t nmemb, FILE *stream) {
+    size_t res = fread(ptr, size, nmemb, stream);
+    l_debug("fread(%p,%zu,%zu,%p): %zu", ptr, size, nmemb, stream, res);
+    return res;
+}
+
+size_t fwrite_soloader(void *ptr, size_t size, size_t nmemb, FILE *stream) {
+    size_t res = fwrite(ptr, size, nmemb, stream);
+    l_debug("fwrite(%p,%zu,%zu,%p): %zu", ptr, size, nmemb, stream, res);
+    return res;
+}
+
+int fclose_soloader(FILE *stream) {
+    int ret = fclose(stream);
+    l_debug("fclose(%p): %d", stream, ret);
     return ret;
 }
 
-int dup_soloader(int fd) {
-    l_debug("dup(fd): %d", fd, fd);
-    return fd;
+FILE *fdopen_soloader(int fd, const char *mode) {
+    FILE *res = fdopen(fd, mode);
+    l_debug("fdopen(%d, %s): %p", fd, mode, res);
+    return res;
 }
 
-static uint64_t rng = 0x123456789abcdef;
+static int fake_urandom_open() {
+    int pipefd[2];
+    if (pipe(pipefd) < 0)
+        return -1;
 
-uint64_t xorshift() {
-    rng ^= rng << 13;
-    rng ^= rng >> 7;
-    rng ^= rng << 17;
-    return rng;
-}
-
-uint8_t buf[256];
-void   *random_writer(void *arg) {
-    int fd = *(int *)arg;
-
-    for (int i = 0; i < sizeof(buf); i += 8) {
-        uint64_t r = xorshift();
-        memcpy(buf + i, &r, 8);
+    uint64_t buffer[64];
+    for (int i = 0; i < sizeof(buffer) / sizeof(buffer[0]); i++) {
+        buffer[i] = ((uint64_t)random() << 32) | (uint64_t)random();
     }
 
-    write(fd, buf, sizeof(buf));
-    return NULL;
+    write(pipefd[1], buffer, sizeof(buffer));
+    close(pipefd[1]);
+    return pipefd[0];
 }
 
 int open_soloader(const char *path, int oflag, ...) {
-    int    ret;
+    int    res;
     mode_t mode = 0666;
     if (((oflag & BIONIC_O_CREAT) == BIONIC_O_CREAT) ||
         ((oflag & BIONIC_O_TMPFILE) == BIONIC_O_TMPFILE)) {
@@ -116,30 +103,28 @@ int open_soloader(const char *path, int oflag, ...) {
     oflag = oflags_bionic_to_newlib(oflag);
 
     if (strcmp(path, "/proc/cpuinfo") == 0) {
-        ret = open("app0:/cpuinfo", oflag, mode);
+        res = open("app0:/cpuinfo", oflag, mode);
     } else if (strcmp(path, "/proc/meminfo") == 0) {
-        ret = open("app0:/cpuinfo", oflag, mode);
+        res = open("app0:/cpuinfo", oflag, mode);
     } else if (strcmp(path, "/dev/urandom") == 0) {
-        int pipefd[2];
-        pipe(pipefd);
-        random_writer(&pipefd[1]);
-        ret = pipefd[0];
+        res = fake_urandom_open();
     } else {
-        ret = open(path, oflag, mode);
+        res = open(path, oflag, mode);
     }
 
-exit_return:
-    if (ret >= 0)
-        l_debug("open(%s, %x): %i", path, oflag, ret);
-    else
-        l_warn("open(%s, %x): %i", path, oflag, ret);
-    return ret;
+    if (res < 0) {
+        l_warn("open(%s, %x): %i", path, oflag, res);
+        return res;
+    }
+
+    l_debug("open(%s,0x%x): %i", path, oflag, res);
+    return res;
 }
 
 int close_soloader(int fd) {
-    int ret = close(fd);
-    l_debug("close(%i): %i", fd, ret);
-    return ret;
+    int res = close(fd);
+    l_debug("close(%i): %i", fd, res);
+    return res;
 }
 
 int fstat_soloader(int fd, stat64_bionic *buf) {
@@ -164,10 +149,30 @@ int stat_soloader(const char *path, stat64_bionic *buf) {
     return res;
 }
 
+int fcntl_soloader(int fd, int cmd, ...) {
+    l_warn("fcntl(%i, %i, ...): not implemented", fd, cmd);
+    return 0;
+}
+
+int ioctl_soloader(int fd, int request, ...) {
+    l_warn("ioctl(%i, %i, ...): not implemented", fd, request);
+    return 0;
+}
+
+int fsync_soloader(int fd) {
+    int ret = fsync(fd);
+    l_debug("fsync(%i): %i", fd, ret);
+    return ret;
+}
+
+int dup_soloader(int fd) {
+    l_debug("dup(fd): %d", fd, fd);
+    return fd;
+}
+
 DIR *opendir_soloader(char *_pathname) {
-    l_debug("opendir(\"%s\")", _pathname);
     DIR *ret = opendir(_pathname);
-    l_debug("opendir(\"%s\"): %p", _pathname, ret);
+    l_debug("opendir(%s): %p", _pathname, ret);
     return ret;
 }
 
@@ -187,8 +192,7 @@ struct dirent64_bionic *readdir_soloader(DIR *dir) {
     return NULL;
 }
 
-int readdir_r_soloader(DIR *dirp, dirent64_bionic *entry,
-                       dirent64_bionic **result) {
+int readdir_r_soloader(DIR *dirp, dirent64_bionic *entry, dirent64_bionic **result) {
     struct dirent  dirent_tmp;
     struct dirent *pdirent_tmp;
 
@@ -208,21 +212,5 @@ int readdir_r_soloader(DIR *dirp, dirent64_bionic *entry,
 int closedir_soloader(DIR *dir) {
     int ret = closedir(dir);
     l_debug("closedir(%p): %i", dir, ret);
-    return ret;
-}
-
-int fcntl_soloader(int fd, int cmd, ...) {
-    l_warn("fcntl(%i, %i, ...): not implemented", fd, cmd);
-    return 0;
-}
-
-int ioctl_soloader(int fd, int request, ...) {
-    l_warn("ioctl(%i, %i, ...): not implemented", fd, request);
-    return 0;
-}
-
-int fsync_soloader(int fd) {
-    int ret = fsync(fd);
-    l_debug("fsync(%i): %i", fd, ret);
     return ret;
 }

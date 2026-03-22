@@ -1,6 +1,4 @@
-// #include <string.h>
-// #include <stdlib.h>
-#include <stdio.h>
+#include <string.h>
 
 #include <kubridge.h>
 #include <so_util/so_util.h>
@@ -13,15 +11,12 @@
 #include "reimpl/libLD/ld_patch.h"
 #include "utils/logger.h"
 
-#define _DWORD uintptr_t
-extern so_module so_mod;
-
 int (*bootstrap_start)(int argc, char *argv[], char *envp[]) = NULL;
 
 int bootstrap_start_soloader(int argc, char *argv[], char *envp[]) {
-    l_debug("bootstrap_start(%d,%p,%p)", argc, argv, envp);
-    for (size_t i = 0; i < argc && argv[i]; i++) {
-        l_debug("bootstrap_start: argv[%d]:(%s)", i, argv[i]);
+    l_debug("[bootstrap] _start(%d,%p,%p)", argc, argv, envp);
+    for (int i = 0; i < argc && argv[i]; i++) {
+        l_debug("    argv[%d]:(%s)", i, argv[i]);
     }
 
     // launch 参数
@@ -47,39 +42,17 @@ int bootstrap_start_soloader(int argc, char *argv[], char *envp[]) {
         "from_manager:log_print",                             // +8 args:    额外参数传入子函数启动?
     };
 
-    int ret = bootstrap_start(sizeof(launch_argv) / sizeof(launch_argv[0]), launch_argv, envp);
-    // int ret = bootstrap_start(argc, argv, envp);
+    // int ret = bootstrap_start(sizeof(launch_argv) / sizeof(launch_argv[0]), launch_argv, envp);
+    int ret = bootstrap_start(argc, argv, envp);
     l_debug("bootstrap_start(%d,%p,%p): %d", argc, argv, envp, ret);
     return ret;
 }
 
-int (*HttpResponse)(void *, int, int, int, void *, void *, void *);
+int soloader_patch(so_module *mod) {
+    soloader_patch_controls(mod);
+    soloader_patch_kd(mod);
+    soloader_patch_ld(mod);
+    soloader_patch_ggee(mod);
 
-void SetRuntimeContext(int index, int value) {
-    char *(*Get)(void *)         = (void *)so_find_symbol(&so_mod, "_ZN14RuntimeContext3GetEv");
-    char *RuntimeContextInstance = Get(NULL);
-    char *F                      = RuntimeContextInstance + index;
-    l_debug("SetRuntimeContext form(%d)", *F);
-    *(F) = value;
-    l_debug("SetRuntimeContext to(%d)", *F);
-}
-
-void plugin_gles_procaddress_terminate() {
-    l_debug("plugin_gles_procaddress_terminate()");
-}
-
-void soloader_patch(void) {
-    soloader_patch_controls(&so_mod);
-    soloader_patch_ld(&so_mod);
-
-    // hook_addr((uintptr_t)so_find_symbol(&so_mod, "kdExit"), (uintptr_t)&kdExit);
-    hook_addr((uintptr_t)so_find_symbol(&so_mod, "__kdMapFilename"), (uintptr_t)&__kdMapFilename);
-    hook_addr((uintptr_t)so_find_symbol(&so_mod, "__kdFlushICache"), (uintptr_t)&__kdFlushICache);
-
-    // hook_addr((uintptr_t)so_find_symbol(&so_mod, "plugin_gles_procaddress_terminate"), (uintptr_t)&plugin_gles_procaddress_terminate);
-
-    ggeeLibExpand = (void *)so_find_symbol(&so_mod, "ggeeLibExpand");
-    HttpResponse  = (void *)(LOAD_ADDRESS + 0x40FB4 + 1);
-
-    // ggeeLibExpandFile("ux0:data/Acrodea/lib4_5_0/libc.so", "ux0:data/Acrodea/libc.so");
+    return 0;
 }

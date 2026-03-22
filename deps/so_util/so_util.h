@@ -51,9 +51,10 @@ typedef struct {
     uintptr_t func;
 } so_dynlib;
 
-so_hook hook_thumb(uintptr_t addr, uintptr_t dst);
-so_hook hook_arm(uintptr_t addr, uintptr_t dst);
-so_hook hook_addr(uintptr_t addr, uintptr_t dst);
+so_hook so_hook_thumb(uintptr_t addr, uintptr_t dst);
+so_hook so_hook_arm(uintptr_t addr, uintptr_t dst);
+so_hook so_hook_addr(uintptr_t addr, uintptr_t dst);
+so_hook so_hook_symbol(so_module *mod, const char *symbol, uintptr_t hook_func);
 
 void      so_flush_caches(so_module *mod);
 int       so_file_load(so_module *mod, const char *filename, uintptr_t load_addr);

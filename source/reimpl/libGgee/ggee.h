@@ -1,10 +1,10 @@
 #ifndef SOLOADED_GGEE_H
 #define SOLOADED_GGEE_H
 
-#include <stdint.h>
-
-extern int (*ggeeLibExpand)(void *compressed_data, uint32_t compressed_size, void *expanded_data, uint32_t *expanded_size);
+#include <so_util/so_util.h>
 
 int ggeeLibExpandFile(const char *srcpath, const char *dstpath);
+
+int soloader_patch_ggee(so_module *mod);
 
 #endif
