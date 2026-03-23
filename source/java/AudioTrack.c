@@ -15,71 +15,128 @@
  * 包名: android/media/AudioTrack
  */
 
-#define AUDIO_TRACK_COUNT  16
-#define AUDIO_OUTPUT_COUNT 512u
-#define AUDIO_BUFFER_COUNT (AUDIO_OUTPUT_COUNT << 4)
+// Android 4.4 audio_channel_mask_t
+#define Android_AUDIO_CHANNEL_OUT_FRONT_LEFT   0x1
+#define Android_AUDIO_CHANNEL_OUT_FRONT_RIGHT  0x2
+#define Android_AUDIO_CHANNEL_OUT_FRONT_CENTER 0x4
+#define Android_AUDIO_CHANNEL_OUT_MONO         0x1
+#define Android_AUDIO_CHANNEL_OUT_STEREO       0x3
+
+// Android 4.4 audio_format_t
+#define Android_AUDIO_FORMAT_PCM_16_BIT   0x1
+#define Android_AUDIO_FORMAT_PCM_8_BIT    0x2
+#define Android_AUDIO_FORMAT_PCM_32_BIT   0x3
+#define Android_AUDIO_FORMAT_PCM_8_24_BIT 0x4
+
+#define AUDIO_MAX_VOLUME 0x8000
+
+#define AUDIO_TRACK_NUM         8                        // 音轨数量
+#define AUDIO_OUTPUT_LEN        512                      // 每次输出的样本数
+#define AUDIO_TRACK_BUFFER_LEN  (AUDIO_OUTPUT_LEN << 8)  // 音轨缓冲区的样本数
+#define AUDIO_OUTPUT_BUFFER_NUM 3                        // 输出缓冲区的缓存个数
+
+enum {
+    AUDIO_STATUS_STOP = 0,
+    AUDIO_STATUS_PLAYYING,
+    AUDIO_STATUS_PAUSE,
+};
 
 typedef struct AudioTrack {
     int                  id;
     int                  is_inited;
     int                  is_using;
+    int                  status;
     int                  has_new;
-    int                  pause;
-    int                  stop;
     int16_t             *buffer;
-    size_t               buffer_count;
-    size_t               output_count;
+    size_t               buffer_len;
     size_t               read_pos;
     size_t               write_pos;
     SceKernelLwMutexWork mutex;
-    SceKernelLwCondWork  cond;
 } AudioTrack;
 
 static SceKernelLwMutexWork audio_main_mutex;
-static SceUID               audio_thid         = -1;
-static int                  audio_inited       = 0;
-static int                  audio_stop         = 0;
-static int                  audio_pause        = 0;
-SceUID                      audio_port         = -1;
-static int                  audio_output_count = 0;
-static int                  audio_buffer_count = 0;
-static AudioTrack           audio_tracks[AUDIO_TRACK_COUNT];
+static SceUID               audio_thid                                                      = -1;
+static int                  audio_inited                                                    = 0;
+static int                  audio_pause                                                     = 0;
+static int                  audio_stop                                                      = 0;
+SceUID                      audio_port                                                      = -1;
+static int16_t              audio_output_buffers[AUDIO_OUTPUT_BUFFER_NUM][AUDIO_OUTPUT_LEN] = {0};
+static AudioTrack           audio_tracks[AUDIO_TRACK_NUM]                                   = {0};
 
-static int AudioThread(SceSize args, void *argp) {
+/*
+#define HEADROOM_FACTOR 0.707f  // -3dB，为峰值预留空间
+static size_t mix_tracks(int16_t *output, size_t output_len, const int16_t *input, size_t input_len) {
+    size_t mixed_len = output_len < input_len ? output_len : input_len;
+
+    for (int i = 0; i < mixed_len; i++) {
+        float sum = (output[i] * HEADROOM_FACTOR) + (input[i] * HEADROOM_FACTOR);
+        if (sum > AUDIO_MAX_VOLUME) sum = AUDIO_MAX_VOLUME;
+        if (sum < -AUDIO_MAX_VOLUME) sum = -AUDIO_MAX_VOLUME;
+        output[i] = (int16_t)sum;
+    }
+
+    return mixed_len;
+}
+*/
+static size_t mix_tracks(int16_t *output, size_t output_len, const int16_t *input, size_t input_len) {
+    size_t mixed_len = output_len < input_len ? output_len : input_len;
+
+    for (int i = 0; i < mixed_len; i++) {
+        int32_t sum = (int32_t)output[i] + (int32_t)input[i];
+        if (sum > AUDIO_MAX_VOLUME) sum = AUDIO_MAX_VOLUME;
+        if (sum < -AUDIO_MAX_VOLUME) sum = -AUDIO_MAX_VOLUME;
+        output[i] = (int16_t)sum;
+    }
+
+    return mixed_len;
+}
+
+static int audio_thread(SceSize args, void *argp) {
     l_debug("[AUDIO] Audio thread start run.\n");
 
-    size_t available;
-    size_t playing_num;
+    size_t   available;
+    size_t   active_tracks;
+    int16_t *output_buffer;
+    size_t   buffer_idx = 0;
 
     while (!audio_stop) {
-        playing_num = 0;
+        active_tracks = 0;
+        output_buffer = audio_output_buffers[buffer_idx];
 
-        for (int i = 0; i < AUDIO_TRACK_COUNT; i++) {
-            if (!audio_tracks[i].is_inited)
+        memset(output_buffer, 0, AUDIO_OUTPUT_LEN * sizeof(int16_t));
+
+        for (int i = 0; i < AUDIO_TRACK_NUM; i++) {
+            AudioTrack *track = &audio_tracks[i];
+            if (!track->is_inited)
                 continue;
 
-            sceKernelLockLwMutex(&audio_tracks[i].mutex, 1, NULL);
-            if (audio_tracks[i].is_using && audio_tracks[i].has_new) {
-                if (audio_tracks[i].write_pos >= audio_tracks[i].read_pos) {
-                    available = audio_tracks[i].write_pos - audio_tracks[i].read_pos;
+            sceKernelLockLwMutex(&track->mutex, 1, NULL);
+            if (track->is_using && track->status == AUDIO_STATUS_PLAYYING && track->has_new) {
+                if (track->write_pos >= track->read_pos) {
+                    available = track->write_pos - track->read_pos;
                 } else {
-                    available = audio_tracks[i].write_pos + audio_buffer_count - audio_tracks[i].read_pos;
+                    available = track->write_pos + AUDIO_TRACK_BUFFER_LEN - track->read_pos;
                 }
-                if (available >= audio_output_count) {
-                    sceAudioOutOutput(audio_port, audio_tracks[i].buffer + audio_tracks[i].read_pos);
-                    audio_tracks[i].read_pos += audio_output_count;
-                    if (audio_tracks[i].read_pos >= audio_buffer_count)
-                        audio_tracks[i].read_pos = 0;
-
-                    playing_num++;
+                if (available > AUDIO_OUTPUT_LEN) {
+                    mix_tracks(output_buffer, AUDIO_OUTPUT_LEN, track->buffer + track->read_pos, AUDIO_OUTPUT_LEN);
+                    track->read_pos = (track->read_pos + AUDIO_OUTPUT_LEN) % AUDIO_TRACK_BUFFER_LEN;
+                    active_tracks++;
+                } else if (available > 0) {
+                    mix_tracks(output_buffer, AUDIO_OUTPUT_LEN, track->buffer + track->read_pos, available);
+                    track->read_pos = (track->read_pos + available) % AUDIO_TRACK_BUFFER_LEN;
+                    track->has_new  = 0;
+                    active_tracks++;
                 } else {
-                    audio_tracks[i].has_new = 0;
+                    track->has_new = 0;
                 }
             }
-            sceKernelUnlockLwMutex(&audio_tracks[i].mutex, 1);
+            sceKernelUnlockLwMutex(&track->mutex, 1);
         }
 
-        if (playing_num == 0) {
+        if (active_tracks > 0) {
+            sceAudioOutOutput(audio_port, output_buffer);
+            buffer_idx = (buffer_idx + 1) % AUDIO_OUTPUT_BUFFER_NUM;
+        } else {
             sceKernelDelayThread(10 * 1000);
         }
     }
@@ -99,25 +156,27 @@ jobject AudioTrack_init(jclass clazz, jmethodID id, va_list args) {
     int         bufferSizeInBytes = va_arg(args, int);  // 4096
     int         mode              = va_arg(args, int);  // 1
 
-    if (audio_port < 0) {
-        int             audio_channels = (channelConfig == 4) ? 2 : 1;
+    if (!audio_inited) {
+        int             audio_channels = (channelConfig == Android_AUDIO_CHANNEL_OUT_STEREO) ? 2 : 1;
         SceAudioOutMode audio_mode     = (audio_channels == 2) ? SCE_AUDIO_OUT_MODE_STEREO : SCE_AUDIO_OUT_MODE_MONO;
-        audio_output_count             = AUDIO_OUTPUT_COUNT * audio_channels;
-        audio_buffer_count             = AUDIO_BUFFER_COUNT * audio_channels;
-        audio_port                     = sceAudioOutOpenPort(SCE_AUDIO_OUT_PORT_TYPE_BGM, audio_output_count,
+        audio_port                     = sceAudioOutOpenPort(SCE_AUDIO_OUT_PORT_TYPE_BGM, AUDIO_OUTPUT_LEN,
                                                              sampleRateInHz, audio_mode);
         if (audio_port < 0) {
             l_error("[JNI] AudioTrack::<init>: sceAudioOutOpenPort failed!");
             return NULL;
         }
 
-        for (int i = 0; i < AUDIO_TRACK_COUNT; i++) {
+        for (int i = 0; i < AUDIO_TRACK_NUM; i++) {
             memset(&audio_tracks[i], 0, sizeof(AudioTrack));
             audio_tracks[i].id = i;
         }
 
-        audio_thid = sceKernelCreateThread("audio_thread", AudioThread, 0x10000100, 0x40000, 0, 0, NULL);
+        memset(&audio_output_buffers, 0, sizeof(audio_output_buffers));
+
+        audio_thid = sceKernelCreateThread("audio_thread", audio_thread, 0x10000100, 0x40000, 0, 0, NULL);
         if (audio_thid < 0) {
+            sceAudioOutReleasePort(audio_port);
+            audio_port = -1;
             l_error("[JNI] AudioTrack::<init>: failed to create thread!");
             return NULL;
         }
@@ -126,11 +185,14 @@ jobject AudioTrack_init(jclass clazz, jmethodID id, va_list args) {
         audio_stop = 0;
         if (sceKernelStartThread(audio_thid, 0, NULL) < 0) {
             sceKernelDeleteLwMutex(&audio_main_mutex);
+            sceAudioOutReleasePort(audio_port);
+            audio_port = -1;
             l_error("[JNI] AudioTrack::<init>: failed to start thread!");
             return NULL;
         }
 
-        l_debug("[JNI] AudioTrack::<init>: Audio context init OK!");
+        audio_inited = 1;
+        l_debug("[JNI] AudioTrack::<init>: Audio context initialize OK!");
     } else {
         l_debug("[JNI] AudioTrack::<init>: Already initialized!");
     }
@@ -139,7 +201,7 @@ jobject AudioTrack_init(jclass clazz, jmethodID id, va_list args) {
     sceKernelLockLwMutex(&audio_main_mutex, 1, NULL);
 
     int track_id = -1;
-    for (int i = 0; i < AUDIO_TRACK_COUNT; i++) {
+    for (int i = 0; i < AUDIO_TRACK_NUM; i++) {
         if (!audio_tracks[i].is_using) {
             track_id = i;
             break;
@@ -152,13 +214,12 @@ jobject AudioTrack_init(jclass clazz, jmethodID id, va_list args) {
     }
 
     if (!audio_tracks[track_id].is_inited) {
-        audio_tracks[track_id].buffer = malloc(audio_buffer_count * sizeof(int16_t));
+        audio_tracks[track_id].buffer = malloc(AUDIO_TRACK_BUFFER_LEN * sizeof(int16_t));
         if (!audio_tracks[track_id].buffer) {
             l_error("[JNI] AudioTrack::<init>: failed to alloc audio buffer!");
             return NULL;
         }
         sceKernelCreateLwMutex(&audio_tracks[track_id].mutex, "audio_track_mutex", 2, 0, NULL);
-        sceKernelCreateLwCond(&audio_tracks[track_id].cond, "audio_track_cond", 0, &audio_tracks[track_id].mutex, NULL);
         audio_tracks[track_id].is_inited = 1;
     }
 
@@ -169,14 +230,15 @@ jobject AudioTrack_init(jclass clazz, jmethodID id, va_list args) {
     }
     *res = &audio_tracks[track_id];
 
-    // 加锁，防止可能旧Track还在播放
+    // 加锁，防止旧Track可能还在播放
     sceKernelLockLwMutex(&audio_tracks[track_id].mutex, 1, NULL);
     audio_tracks[track_id].is_using = 1;
+    audio_tracks[track_id].status   = AUDIO_STATUS_STOP;
     sceKernelUnlockLwMutex(&audio_tracks[track_id].mutex, 1);
 
     sceKernelUnlockLwMutex(&audio_main_mutex, 1);
 
-    l_debug("[%d] [JNI] AudioTrack::<init>(%d,%d,%d,%d,%d,%d): %p",
+    l_debug("[JNI] [%d] AudioTrack::<init>(%d,%d,%d,%d,%d,%d): %p",
             track_id, streamType, sampleRateInHz, channelConfig, audioFormat, bufferSizeInBytes, mode, res);
     return (jobject)res;
 }
@@ -189,17 +251,17 @@ jint AudioTrack_write(jobject obj, jmethodID id, va_list args) {
     int        res           = sizeInBytes;
 
     if (!obj) {
-        l_error("[JNI] AudioTrack::write(%p,%p,%d,%d) failed: null obj!");
+        l_error("[JNI] AudioTrack::write(%p,%p,%d,%d) failed: null obj!", obj, audioData, offsetInBytes, sizeInBytes);
         return (jint)res;
     }
 
     AudioTrack *track = *(AudioTrack **)obj;
     if (!track) {
-        l_error("[JNI] AudioTrack::write(%p) failed: null obj!", obj);
+        l_error("[JNI] AudioTrack::write(%p,%p,%d,%d) failed: error obj!", obj, audioData, offsetInBytes, sizeInBytes);
         return (jint)res;
     }
 
-    if (audio_port < 0) {
+    if (!audio_inited) {
         l_error("[JNI] AudioTrack::write(%p,%p,%d,%d): failed!", obj, audioData, offsetInBytes, sizeInBytes);
         return (jint)res;
     }
@@ -208,10 +270,10 @@ jint AudioTrack_write(jobject obj, jmethodID id, va_list args) {
     jbyte *bytes = jni->GetByteArrayElements(&jni, audioData, NULL);
     if (bytes) {
         int16_t *in  = (int16_t *)(bytes + offsetInBytes);
-        int16_t *out = (int16_t *)track->buffer;
+        int16_t *out = (int16_t *)(track->buffer);
         for (int i = 0; i < sizeInBytes / 2; i++) {
             out[track->write_pos++] = in[i];
-            if (track->write_pos >= audio_buffer_count)
+            if (track->write_pos >= AUDIO_TRACK_BUFFER_LEN)
                 track->write_pos = 0;
         }
         jni->ReleaseByteArrayElements(&jni, audioData, bytes, 0);
@@ -219,39 +281,30 @@ jint AudioTrack_write(jobject obj, jmethodID id, va_list args) {
     }
     sceKernelUnlockLwMutex(&track->mutex, 1);
 
-    l_debug("[%d] [JNI] AudioTrack::write(%p,%p,%d,%d): %d", track->id, obj, audioData, offsetInBytes, sizeInBytes, res);
+    // l_debug("[JNI] [%d] AudioTrack::write(%p,%p,%d,%d): %d", track->id, obj, audioData, offsetInBytes, sizeInBytes, res);
     return (jint)res;
 }
 
-// "release", "()V"
-void AudioTrack_release(jobject obj, jmethodID id, va_list args) {
-    if (!obj) {
-        l_error("[JNI] AudioTrack::release(%p,%p,%d,%d) failed: null obj!");
-        return;
-    }
-
-    AudioTrack *track = *(AudioTrack **)obj;
-    if (!track) {
-        l_error("[JNI] AudioTrack::release(%p) failed: null obj!", obj);
-        return;
-    }
-
-    sceKernelLockLwMutex(&track->mutex, 1, NULL);
-    track->is_using = 0;
-    sceKernelUnlockLwMutex(&track->mutex, 1);
-
-    l_debug("[%d] [JNI] AudioTrack::release(%p)", track->id, obj);
-}
-
 // "getMinBufferSize", "(III)I"
-jint AudioTrack_getMinBufferSize(jobject obj, jmethodID id, va_list args) {
+jint AudioTrack_getMinBufferSize(jclass clazz, jmethodID id, va_list args) {
     int sampleRateInHz = va_arg(args, int);
     int channelConfig  = va_arg(args, int);
     int audioFormat    = va_arg(args, int);
 
-    int audio_channels = (channelConfig == 4) ? 2 : 1;
-    int res            = AUDIO_OUTPUT_COUNT * audio_channels * sizeof(int16_t);
-    l_debug("[JNI] AudioTrack::getMinBufferSize(%p,%d,%d,%d): %d", obj, sampleRateInHz, channelConfig, audioFormat, res);
+    int channels       = (channelConfig == Android_AUDIO_CHANNEL_OUT_STEREO) ? 2 : 1;
+    int bytesPerSample = (channels == 2) ? 2 : 1;  // 16-bit = 2 字节
+
+    // 建议值：至少能容纳 10ms 的数据
+    int minFrames = sampleRateInHz / 100;  // 10ms 的帧数
+    int minSize   = minFrames * channels * bytesPerSample;
+
+    // 确保不小于硬件输出块大小
+    if (minSize < AUDIO_OUTPUT_LEN) {
+        minSize = AUDIO_OUTPUT_LEN;
+    }
+
+    int res = minSize;
+    l_debug("[JNI] AudioTrack::getMinBufferSize(%p,%d,%d,%d): %d", clazz, sampleRateInHz, channelConfig, audioFormat, res);
     return (jint)res;
 }
 
@@ -261,36 +314,125 @@ jint AudioTrack_setStereoVolume(jobject obj, jmethodID id, va_list args) {
     float leftVolume  = va_arg(args, double);
     float rightVolume = va_arg(args, double);
 
-    if (audio_port < 0) {
-        l_debug("[JNI] AudioTrack::setStereoVolume(%p,%f,%f): failed!", obj, leftVolume, rightVolume, res);
+    if (!obj) {
+        l_error("[JNI] AudioTrack::setStereoVolume(%p,%f,%f) failed: null obj!", obj, leftVolume, rightVolume);
+        return (jint)res;
+    }
+
+    AudioTrack *track = *(AudioTrack **)obj;
+    if (!track) {
+        l_error("[JNI] AudioTrack::setStereoVolume(%p,%f,%f) failed: error obj!", obj, leftVolume, rightVolume);
+        return (jint)res;
+    }
+
+    if (!audio_inited) {
+        l_error("[JNI] AudioTrack::setStereoVolume(%p,%f,%f) failed: audio not initialized ", obj, leftVolume, rightVolume);
         return (jint)res;
     }
 
     sceKernelLockLwMutex(&audio_main_mutex, 1, NULL);
-    l_debug("[JNI] AudioTrack::setStereoVolume(%p,%f,%f): %d", obj, leftVolume, rightVolume, res);
-    int vols[] = {32767 * leftVolume, 32767 * rightVolume};
+    int vols[] = {AUDIO_MAX_VOLUME * leftVolume, AUDIO_MAX_VOLUME * rightVolume};
     sceAudioOutSetVolume(audio_port, SCE_AUDIO_VOLUME_FLAG_L_CH | SCE_AUDIO_VOLUME_FLAG_R_CH, vols);
     sceKernelUnlockLwMutex(&audio_main_mutex, 1);
 
+    l_debug("[JNI] [%d] AudioTrack::setStereoVolume(%p,%f,%f): %d", track->id, obj, leftVolume, rightVolume, res);
     return (jint)res;
 }
 
 // "play", "()V"
 void AudioTrack_play(jobject obj, jmethodID id, va_list args) {
-    l_debug("[JNI] AudioTrack::play(%p)", obj);
-}
+    if (!obj) {
+        l_error("[JNI] AudioTrack::play(%p) failed: null obj!", obj);
+        return;
+    }
 
-// "stop", "()V"
-void AudioTrack_stop(jobject obj, jmethodID id, va_list args) {
-    l_debug("[JNI] AudioTrack::stop(%p)", obj);
+    AudioTrack *track = *(AudioTrack **)obj;
+    if (!track) {
+        l_error("[JNI] AudioTrack::play(%p) failed: error obj!", obj);
+        return;
+    }
+
+    sceKernelLockLwMutex(&track->mutex, 1, NULL);
+    track->status = AUDIO_STATUS_PLAYYING;
+    sceKernelUnlockLwMutex(&track->mutex, 1);
+
+    l_debug("[JNI] [%d] AudioTrack::play(%p)", track->id, obj);
 }
 
 // "pause", "()V"
 void AudioTrack_pause(jobject obj, jmethodID id, va_list args) {
-    l_debug("[JNI] AudioTrack::pause(%p)", obj);
+    if (!obj) {
+        l_error("[JNI] AudioTrack::pause(%p) failed: null obj!", obj);
+        return;
+    }
+
+    AudioTrack *track = *(AudioTrack **)obj;
+    if (!track) {
+        l_error("[JNI] AudioTrack::pause(%p) failed: error obj!", obj);
+        return;
+    }
+
+    sceKernelLockLwMutex(&track->mutex, 1, NULL);
+    track->status = AUDIO_STATUS_PAUSE;
+    sceKernelUnlockLwMutex(&track->mutex, 1);
+
+    l_debug("[JNI] [%d] AudioTrack::pause(%p)", track->id, obj);
+}
+
+// "stop", "()V"
+void AudioTrack_stop(jobject obj, jmethodID id, va_list args) {
+    if (!obj) {
+        l_error("[JNI] AudioTrack::stop(%p) failed: null obj!", obj);
+        return;
+    }
+
+    AudioTrack *track = *(AudioTrack **)obj;
+    if (!track) {
+        l_error("[JNI] AudioTrack::stop(%p) failed: error obj!", obj);
+        return;
+    }
+
+    sceKernelLockLwMutex(&track->mutex, 1, NULL);
+    track->status    = AUDIO_STATUS_STOP;
+    track->write_pos = track->read_pos = 0;
+    sceKernelUnlockLwMutex(&track->mutex, 1);
+
+    l_debug("[JNI] [%d] AudioTrack::stop(%p)", track->id, obj);
 }
 
 // "flush", "()V"
 void AudioTrack_flush(jobject obj, jmethodID id, va_list args) {
-    l_debug("[JNI] AudioTrack::flush(%p)", obj);
+    if (!obj) {
+        l_error("[JNI] AudioTrack::flush(%p) failed: null obj!", obj);
+        return;
+    }
+
+    AudioTrack *track = *(AudioTrack **)obj;
+    if (!track) {
+        l_error("[JNI] AudioTrack::flush(%p) failed: error obj!", obj);
+        return;
+    }
+
+    l_debug("[JNI] [%d] AudioTrack::flush(%p)", track->id, obj);
+}
+
+// "release", "()V"
+void AudioTrack_release(jobject obj, jmethodID id, va_list args) {
+    if (!obj) {
+        l_error("[JNI] AudioTrack::release(%p) failed: null obj!", obj);
+        return;
+    }
+
+    AudioTrack *track = *(AudioTrack **)obj;
+    if (!track) {
+        l_error("[JNI] AudioTrack::release(%p) failed: error obj!", obj);
+        return;
+    }
+
+    sceKernelLockLwMutex(&track->mutex, 1, NULL);
+    track->status   = AUDIO_STATUS_STOP;
+    track->is_using = 0;
+    sceKernelUnlockLwMutex(&track->mutex, 1);
+
+    l_debug("[JNI] [%d] AudioTrack::release(%p)", track->id, obj);
 }

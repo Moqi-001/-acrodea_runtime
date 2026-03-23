@@ -50,34 +50,34 @@ void _log_print(int t, const char *fmt, ...) {
     va_start(list, fmt);
     sceClibVsnprintf(buffer_a, sizeof(buffer_a), fmt, list);
     va_end(list);
+    sceClibStrncat(buffer_a, "\n", 1);
 
 #ifdef DEBUG_LOGFILE
     SceUID fd = sceIoOpen(LOG_PATH, SCE_O_WRONLY | SCE_O_CREAT | SCE_O_APPEND, 0777);
     if (fd >= 0) {
         sceIoWrite(fd, buffer_a, strlen(buffer_a));
-        sceIoWrite(fd, "\n", 1);
         sceIoClose(fd);
     }
 #endif
 
     switch (t) {
         case LT_DEBUG:
-            sceClibSnprintf(buffer_b, sizeof(buffer_b), "[DEBUG] %s\n", buffer_a);
+            sceClibSnprintf(buffer_b, sizeof(buffer_b), "[DEBUG] %s", buffer_a);
             break;
         case LT_INFO:
-            sceClibSnprintf(buffer_b, sizeof(buffer_b), " %s[INFO]%s %s\n",
+            sceClibSnprintf(buffer_b, sizeof(buffer_b), " %s[INFO]%s %s",
                             COLOR_BLUE, COLOR_END, buffer_a);
             break;
         case LT_WARN:
-            sceClibSnprintf(buffer_b, sizeof(buffer_b), " %s[WARN]%s %s\n",
+            sceClibSnprintf(buffer_b, sizeof(buffer_b), " %s[WARN]%s %s",
                             COLOR_ORANGE, COLOR_END, buffer_a);
             break;
         case LT_ERROR:
-            sceClibSnprintf(buffer_b, sizeof(buffer_b), " %s[ERRROR]%s %s\n",
+            sceClibSnprintf(buffer_b, sizeof(buffer_b), " %s[ERRROR]%s %s",
                             COLOR_RED, COLOR_END, buffer_a);
             break;
         case LT_FATAL:
-            sceClibSnprintf(buffer_b, sizeof(buffer_b), " %s[FATAL]%s %s\n",
+            sceClibSnprintf(buffer_b, sizeof(buffer_b), " %s[FATAL]%s %s",
                             COLOR_RED, COLOR_END, buffer_a);
         default:
             sceClibPrintf(buffer_a);

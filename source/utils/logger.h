@@ -22,6 +22,7 @@ extern "C" {
 #define LT_WARN  2
 #define LT_ERROR 3
 #define LT_FATAL 4
+#define LT_FORCE 5
 
 #ifdef DEBUG_SOLOADER
 #define l_debug(...) _log_print(LT_DEBUG, __VA_ARGS__)
@@ -35,6 +36,9 @@ extern "C" {
 
 #define l_error(...) _log_print(LT_ERROR, __VA_ARGS__)
 #define l_fatal(...) _log_print(LT_FATAL, __VA_ARGS__)
+
+// 强制日志（总是输出）
+#define l_force(...) _log_print(LT_FORCE, __VA_ARGS__)
 
 void _log_print(int t, const char *fmt, ...)
     __attribute__((format(printf, 2, 3)));
