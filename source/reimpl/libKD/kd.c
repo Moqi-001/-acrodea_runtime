@@ -23,7 +23,7 @@ char *__kdMapFilename(const char *filename, const char *mode) {
     }
 
     if (filename[0] != '/') {
-        snprintf(conv_path, 1024, "%s", DATA_PATH, filename);
+        strcpy(conv_path, filename);
     } else {
         if (strncmp(filename, "/native/", 8) == 0) {
             snprintf(conv_path, 1024, "%s%s", DATA_PATH, filename + 8);
@@ -31,10 +31,6 @@ char *__kdMapFilename(const char *filename, const char *mode) {
             snprintf(conv_path, 1024, "%sassets/%s", DATA_PATH, filename + 5);
         } else if (strncmp(filename, "/data/", 6) == 0) {
             snprintf(conv_path, 1024, "%sruntime/%s", DATA_PATH, filename + 6);
-        } else if (strncmp(filename, "/res/", 5) == 0) {
-            snprintf(conv_path, 1024, "%sRuntimeApps/1760/res/%s", DATA_PATH, filename + 5);
-        } else if (strncmp(filename, "/tmp/", 5) == 0) {
-            snprintf(conv_path, 1024, "%sRuntimeApps/1760/tmp/%s", DATA_PATH, filename + 5);
         } else {
             strcpy(conv_path, filename);
         }

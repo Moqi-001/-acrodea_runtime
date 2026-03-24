@@ -21,49 +21,49 @@ struct ASharedBuffer {
 ASharedBuffer *ASharedBuffer_alloc(size_t size) {
     ASharedBuffer *sb = (ASharedBuffer *)malloc(sizeof(ASharedBuffer) + size);
     if (!sb) {
-        l_debug("[Android] ASharedBuffer_alloc(%u): cannot alloc memory", size);
+        l_error("[Android] ASharedBuffer_alloc(%u): cannot alloc memory", size);
         return NULL;
     }
 
     sb->refs = 1;
     sb->size = size;
 
-    l_debug("[Android] ASharedBuffer_alloc(%u): %p", size, sb);
+    // l_debug("[Android] ASharedBuffer_alloc(%u): %p", size, sb);
     return sb;
 }
 
 int ASharedBuffer_dealloc(ASharedBuffer *sb) {
     if (!sb) {
-        l_debug("[Android] ASharedBuffer_dealloc(%p): null ptr", sb);
+        l_error("[Android] ASharedBuffer_dealloc(%p): null ptr", sb);
         return -1;
     }
 
     if (sb->refs != 0) {
-        l_debug("[Android] ASharedBuffer_dealloc(%p): invalid operation", sb);
+        l_error("[Android] ASharedBuffer_dealloc(%p): invalid operation", sb);
         return -1;  // XXX: invalid operation
     }
 
     free(sb);
 
-    l_debug("[Android] ASharedBuffer_dealloc(%p): 0", sb);
+    // l_debug("[Android] ASharedBuffer_dealloc(%p): 0", sb);
     return 0;
 }
 
 ASharedBuffer *ASharedBuffer_attemptEdit(ASharedBuffer *sb) {
     if (!sb) {
-        l_debug("[Android] ASharedBuffer_attemptEdit(%p): null ptr", sb);
+        l_error("[Android] ASharedBuffer_attemptEdit(%p): null ptr", sb);
         return NULL;
     }
 
     ASharedBuffer *buf = onlyOwner(sb) ? sb : NULL;
 
-    l_debug("[Android] ASharedBuffer_attemptEdit(%p): %p", sb, buf);
+    // l_debug("[Android] ASharedBuffer_attemptEdit(%p): %p", sb, buf);
     return buf;
 }
 
 ASharedBuffer *ASharedBuffer_edit(ASharedBuffer *sb) {
     if (!sb) {
-        l_debug("[Android] ASharedBuffer_edit(%p): null ptr", sb);
+        l_error("[Android] ASharedBuffer_edit(%p): null ptr", sb);
         return NULL;
     }
 
@@ -79,13 +79,13 @@ ASharedBuffer *ASharedBuffer_edit(ASharedBuffer *sb) {
         }
     }
 
-    l_debug("[Android] ASharedBuffer_edit(%p): %p", sb, buf);
+    // l_debug("[Android] ASharedBuffer_edit(%p): %p", sb, buf);
     return buf;
 }
 
 ASharedBuffer *ASharedBuffer_editResize(ASharedBuffer *sb, size_t new_size) {
     if (!sb) {
-        l_debug("[Android] ASharedBuffer_editResize(%p, %u): null ptr", sb, new_size);
+        l_error("[Android] ASharedBuffer_editResize(%p, %u): null ptr", sb, new_size);
         return NULL;
     }
 
@@ -107,30 +107,30 @@ ASharedBuffer *ASharedBuffer_editResize(ASharedBuffer *sb, size_t new_size) {
         }
     }
 
-    l_debug("[Android] ASharedBuffer_editResize(%p): %p", sb, buf);
+    // l_debug("[Android] ASharedBuffer_editResize(%p): %p", sb, buf);
     return buf;
 }
 
 ASharedBuffer *ASharedBuffer_reset(ASharedBuffer *sb, size_t new_size) {
     ASharedBuffer *buf = ASharedBuffer_alloc(new_size);
     if (!sb) {
-        l_debug("[Android] ASharedBuffer_reset(%p,%u): failed!", sb, new_size);
+        l_error("[Android] ASharedBuffer_reset(%p,%u): failed!", sb, new_size);
         return NULL;
     }
     ASharedBuffer_release(sb, 0);
 
-    l_debug("[Android] ASharedBuffer_reset(%p,%u): %p", sb, new_size, buf);
+    // l_debug("[Android] ASharedBuffer_reset(%p,%u): %p", sb, new_size, buf);
     return buf;
 }
 
 void ASharedBuffer_acquire(ASharedBuffer *sb) {
     if (!sb) {
-        l_debug("[Android] ASharedBuffer_acquire(%p): null ptr", sb);
+        l_error("[Android] ASharedBuffer_acquire(%p): null ptr", sb);
         return;
     }
 
     android_atomic_inc(&sb->refs);
-    l_debug("[Android] ASharedBuffer_acquire(%p): %d", sb, sb->refs);
+    // l_debug("[Android] ASharedBuffer_acquire(%p): %d", sb, sb->refs);
 }
 
 int32_t ASharedBuffer_release(ASharedBuffer *sb, uint32_t flags) {
@@ -143,7 +143,7 @@ int32_t ASharedBuffer_release(ASharedBuffer *sb, uint32_t flags) {
         }
     }
 
-    l_debug("[Android] ASharedBuffer_release(%p,0x%x): %d", sb, flags, prev);
+    // l_debug("[Android] ASharedBuffer_release(%p,0x%x): %d", sb, flags, prev);
     return prev;
 }
 

@@ -11,8 +11,8 @@ typedef struct LdMemBlock {
     struct LdMemBlock *next;
     int                prot;
     SceUID             blockid;
-    void              *base;
-    size_t             size;
+    uintptr_t          mem_addr;
+    size_t             mem_size;
     uintptr_t          map_addr;
     size_t             map_size;
 } LdMemBlock;
