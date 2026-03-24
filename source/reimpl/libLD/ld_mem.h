@@ -3,37 +3,34 @@
 
 #include <stdint.h>
 
-#include <psp2common/types.h>
+#define PROT_READ  0x1
+#define PROT_WRITE 0x2
+#define PROT_EXEC  0x4
 
-#ifndef SCE_KERNEL_MEMBLOCK_TYPE_USER_RX
-#define SCE_KERNEL_MEMBLOCK_TYPE_USER_RX (0x0C20D050)
-#endif
+typedef struct LdMemBlock {
+    struct LdMemBlock *next;
+    int                prot;
+    SceUID             blockid;
+    void              *base;
+    size_t             size;
+    uintptr_t          map_addr;
+    size_t             map_size;
+} LdMemBlock;
 
-typedef struct LdLoadMemEntry {
-    struct LdLoadMemEntry *next;
-    int                    flags;
-    SceUID                 blockid;
-    void                  *mem_base;
-    size_t                 mem_size;
-    uintptr_t              addr;
-    size_t                 size;
-} LdLoadMemEntry;
+typedef struct LdMemMapper {
+    LdMemBlock *head;
+    LdMemBlock *tail;
+    size_t      length;
+    SceUID      blockid;
+    uintptr_t   map_addr;
+} LdMemMapper;
 
-typedef struct LdLoadMemContext {
-    LdLoadMemEntry *head;
-    LdLoadMemEntry *tail;
-    size_t          count;
-    size_t          size;
-    SceUID          blockid;
-    uintptr_t       load_addr;
-} LdLoadMemContext;
-
-LdLoadMemContext *ldLoadMemGetContextFromData(const void *data);
-LdLoadMemContext *ldLoadMemCreateContext(uintptr_t addr);
-void              ldLoadMemDestroyContext(LdLoadMemContext *context);
-LdLoadMemEntry   *ldLoadMemCreateEntry(uintptr_t addr, int flags, size_t size, size_t align);
-void             *ldLoadMemDestroyEntry(LdLoadMemEntry *entry);
-int               ldLoadMemAddEntry(LdLoadMemContext *context, LdLoadMemEntry *entry);
-void              ldLoadMemFlushCaches(LdLoadMemContext *context);
+LdMemMapper *LdGetMemMapperFromData(const void *data);
+LdMemMapper *LdMemMapperCreate(uintptr_t addr);
+void         LdMemMapperDestroy(LdMemMapper *mmapper);
+LdMemBlock  *LdAllocMemBlock(uintptr_t addr, int prot, size_t size, size_t align);
+void         LdFreeMemBlock(LdMemBlock *block);
+int          LdMemMapperAddBlock(LdMemMapper *mmapper, LdMemBlock *block);
+void         LdMemMapperFlushCaches(LdMemMapper *mmapper);
 
 #endif

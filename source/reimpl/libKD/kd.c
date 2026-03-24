@@ -46,7 +46,7 @@ char *__kdMapFilename(const char *filename, const char *mode) {
 
 int __kdFlushICache(const void *ptr, size_t len) {
     l_debug("__kdFlushICache(%p,%d)", ptr, len);
-    ldLoadMemFlushCaches(ldLoadMemGetContextFromData(ptr));
+    LdMemMapperFlushCaches(LdGetMemMapperFromData(ptr));
     // kuKernelFlushCaches(ptr, len);
     return 0;
 }

@@ -7,131 +7,128 @@
 #include "ld_mem.h"
 #include "utils/logger.h"
 
+#ifndef SCE_KERNEL_MEMBLOCK_TYPE_USER_RX
+#define SCE_KERNEL_MEMBLOCK_TYPE_USER_RX (0x0C20D050)
+#endif
+
 #define PAGE_SIZE 4096
 
 #define ALIGN_UP(x, align)   (((x) + (align) - 1) & ~((align) - 1))
 #define ALIGN_DOWN(x, align) ((x) & ~((align) - 1))
 
-#define CONTEXT_ALIGN_SIZE (ALIGN_UP(sizeof(LdLoadMemContext), PAGE_SIZE))
+#define MMAPER_ALIGN_SIZE (ALIGN_UP(sizeof(LdMemMapper), PAGE_SIZE))
 
-LdLoadMemContext *ldLoadMemGetContextFromData(const void *data) {
-    return data ? (LdLoadMemContext *)((uintptr_t)data - CONTEXT_ALIGN_SIZE) : NULL;
+LdMemMapper *LdGetMemMapperFromData(const void *data) {
+    return data ? (LdMemMapper *)((uintptr_t)data - MMAPER_ALIGN_SIZE) : NULL;
 }
 
-LdLoadMemContext *ldLoadMemCreateContext(uintptr_t addr) {
-    LdLoadMemContext *context  = NULL;
-    size_t            mem_size = CONTEXT_ALIGN_SIZE;
+LdMemMapper *LdMemMapperCreate(uintptr_t addr) {
+    LdMemMapper *mmapper    = NULL;
+    size_t       align_size = MMAPER_ALIGN_SIZE;
+    uintptr_t    align_addr = addr - align_size;
 
     SceKernelAllocMemBlockKernelOpt opt;
     memset(&opt, 0, sizeof(SceKernelAllocMemBlockKernelOpt));
     opt.size       = sizeof(SceKernelAllocMemBlockKernelOpt);
     opt.attr       = 0x1;
-    opt.field_C    = addr - mem_size;
-    SceUID blockid = kuKernelAllocMemBlock("rw_block", SCE_KERNEL_MEMBLOCK_TYPE_USER_RW, mem_size, &opt);
+    opt.field_C    = align_addr;
+    SceUID blockid = kuKernelAllocMemBlock("rw_block", SCE_KERNEL_MEMBLOCK_TYPE_USER_RW, align_size, &opt);
     if (blockid < 0) {
-        // l_debug("ldLoadMemCreateContext(0x%x) failed: err_code=0x%x", addr, blockid);
+        // l_debug("LdMemMapperCreate(0x%x) failed: 0x%x", addr, blockid);
         return NULL;
     }
 
-    sceKernelGetMemBlockBase(blockid, (void **)&context);
-    memset(context, 0, sizeof(LdLoadMemContext));
-    context->blockid   = blockid;
-    context->load_addr = (uintptr_t)context + mem_size;
+    sceKernelGetMemBlockBase(blockid, (void **)&mmapper);
+    memset(mmapper, 0, sizeof(LdMemMapper));
+    mmapper->blockid  = blockid;
+    mmapper->map_addr = addr;
 
-    // l_debug("ldLoadMemCreateContext success: context=%p, load_addr=0x%x", context, context->load_addr);
-    return context;
+    // l_debug("LdMemMapperCreate(0x%x): %p", addr, mmapper);
+    return mmapper;
 }
 
-void ldLoadMemDestroyContext(LdLoadMemContext *context) {
-    if (context) {
-        // l_debug("ldLoadMemDestroyContext(%p), load_addr=0x%x, count=%u, size=0x%x",
-        //        context, context->load_addr, context->count, context->size);
-        LdLoadMemEntry *entry = context->head;
-        while (entry) {
-            LdLoadMemEntry *next = entry->next;
-            // l_debug("ldLoadMemDestroyEntry(%p): mem_base=%p, mem_size=%u", entry, entry->mem_base, entry->mem_size);
-            sceKernelFreeMemBlock(entry->blockid);
-            free(entry);
-            entry = next;
+void LdMemMapperDestroy(LdMemMapper *mmapper) {
+    if (mmapper) {
+        l_debug("LdMemMapperDestroy(%p): load_addr=0x%x, length=%u", mmapper, mmapper->addr, mmapper->length);
+        LdMemBlock *block = mmapper->head;
+        while (block) {
+            LdMemBlock *next = block->next;
+            LdFreeMemBlock(block);
+            free(block);
+            block = next;
         }
-        sceKernelFreeMemBlock(context->blockid);
+        sceKernelFreeMemBlock(mmapper->blockid);
     }
 }
 
-LdLoadMemEntry *ldLoadMemCreateEntry(uintptr_t addr, int flags, size_t size, size_t align) {
-    LdLoadMemEntry *entry = calloc(1, sizeof(LdLoadMemEntry));
-    if (!entry) {
-        // l_debug("ldLoadMemCreateEntry(0x%x,\"%s\",0x%x,0x%x) failed!", addr,
-        //        (flags == SCE_KERNEL_MEMBLOCK_TYPE_USER_RX) ? "rx" : "rw",
-        //        size, align);
+LdMemBlock *LdAllocMemBlock(uintptr_t addr, int prot, size_t size, size_t align) {
+    LdMemBlock *block = calloc(1, sizeof(LdMemBlock));
+    if (!block) {
         return NULL;
     }
 
-    uintptr_t mem_addr = ALIGN_DOWN(addr, PAGE_SIZE);
-    size_t    mem_size = ALIGN_UP(size + (addr - mem_addr), align);
+    uintptr_t align_addr = ALIGN_DOWN(addr, PAGE_SIZE);
+    size_t    align_size = ALIGN_UP(size + (addr - align_addr), align);
+
+    int type = SCE_KERNEL_MEMBLOCK_TYPE_USER_RW;
+    if (prot & PROT_EXEC)
+        type = SCE_KERNEL_MEMBLOCK_TYPE_USER_RX;
 
     SceKernelAllocMemBlockKernelOpt opt;
     memset(&opt, 0, sizeof(SceKernelAllocMemBlockKernelOpt));
     opt.size       = sizeof(SceKernelAllocMemBlockKernelOpt);
     opt.attr       = 0x1;
-    opt.field_C    = mem_addr;
-    SceUID blockid = kuKernelAllocMemBlock((flags == SCE_KERNEL_MEMBLOCK_TYPE_USER_RX) ? "rx_block" : "rw_block",
-                                           flags, mem_size, &opt);
+    opt.field_C    = align_addr;
+    SceUID blockid = kuKernelAllocMemBlock("ld_block", type, align_size, &opt);
     if (blockid < 0) {
-        // l_debug("ldLoadMemCreateEntry failed: err_code=0x%x, mem_addr=0x%x, mem_size=0x%x", blockid, mem_addr, mem_size);
-        free(entry);
+        l_error("LdAllocMemBlock(0x%x,0x%x,%zu,0x%x) failed: 0x%x", addr, prot, size, align, block);
+        free(block);
         return NULL;
     }
 
-    sceKernelGetMemBlockBase(blockid, &entry->mem_base);
-    entry->mem_size = mem_size;
-    entry->blockid  = blockid;
-    entry->flags    = flags;
-    entry->addr     = addr;
-    entry->size     = size;
+    block->blockid  = blockid;
+    block->prot    = prot;
+    block->map_addr = addr;
+    block->map_size = size;
+    block->size     = align_size;
+    sceKernelGetMemBlockBase(blockid, &block->base);
 
-    // l_debug("ldLoadMemCreateEntry success: entry=%p, mem_base=%p, mem_size=0x%x, mem_end=%p",
-    //        entry, entry->mem_base, entry->mem_size, (char *)entry->mem_base + mem_size);
-    return entry;
+    l_debug("LdAllocMemBlock(0x%x,0x%x,%zu,0x%x): %p", addr, flags, size, align, block);
+    return block;
 }
 
-void *ldLoadMemDestroyEntry(LdLoadMemEntry *entry) {
-    if (entry) {
-        // l_debug("ldLoadMemDestroyEntry(%p): mem_base=%p, mem_size=0x%x", entry, entry->mem_base, entry->mem_size);
-        sceKernelFreeMemBlock(entry->blockid);
-        free(entry);
+void LdFreeMemBlock(LdMemBlock *block) {
+    if (block) {
+        l_debug("LdFreeMemBlock(%p): addr=0x%x, size=0x%x", block, block->map_addr, block->map_size);
+        sceKernelFreeMemBlock(block->blockid);
+        free(block);
     }
 }
 
-int ldLoadMemAddEntry(LdLoadMemContext *context, LdLoadMemEntry *entry) {
-    if (!context || !entry)
+int LdMemMapperAddBlock(LdMemMapper *mmapper, LdMemBlock *block) {
+    if (!mmapper || !block)
         return -1;
 
-    if (!context->head) {
-        context->head = entry;
-        context->tail = entry;
+    if (!mmapper->head) {
+        mmapper->head = block;
+        mmapper->tail = block;
     } else {
-        context->tail->next = entry;
-        context->tail       = entry;
+        mmapper->tail->next = block;
+        mmapper->tail       = block;
     }
 
-    context->count++;
-    context->size += entry->mem_size;
-
-    // l_debug("ldLoadMemAddEntry(%p,%p): mem_base=%p, mem_size=0x%x", context, entry, entry->mem_base, entry->mem_size);
+    mmapper->length++;
+    // l_debug("LdMemMapperAddBlock(%p,%p): addr=%p, size=0x%x", mmapper, block, block->map_addr, block->map_size);
     return 0;
 }
 
-void ldLoadMemFlushCaches(LdLoadMemContext *context) {
-    if (context) {
-        // l_debug("ldLoadMemFlushCaches(%p): load_addr=0x%x", context, context->load_addr);
-        LdLoadMemEntry *entry = context->head;
-        while (entry) {
-            if (entry->flags == SCE_KERNEL_MEMBLOCK_TYPE_USER_RX) {
-                // l_debug("kuKernelFlushCaches(%p,0x%x)", (void *)entry->addr, entry->size);
-                kuKernelFlushCaches((void *)entry->addr, entry->size);
-            }
-            entry = entry->next;
+void LdMemMapperFlushCaches(LdMemMapper *mmapper) {
+    // l_debug("LdMemMapperFlushCaches(%p): addr=0x%x", mmapper, mmapper->map_addr);
+    if (mmapper) {
+        LdMemBlock *block = mmapper->head;
+        while (block) {
+            kuKernelFlushCaches((void *)block->base, block->size);
+            block = block->next;
         }
     }
 }

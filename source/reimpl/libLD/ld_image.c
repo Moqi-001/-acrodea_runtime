@@ -51,33 +51,36 @@ int ldModuleAllocAndLoadImage(LdModule *mod, const char *path, const char *err_m
     // 导出.so文件到 DATA_PATH 路径下
     // dump_so_file(mod, DATA_PATH);
 
-    uintptr_t         load_addr    = LOAD_ADDRESS;
-    LdLoadMemContext *mem_context  = NULL;
-    char             *file_mem     = (char *)mod->load_mem;
-    int               failed_count = 0;
-    mod->load_mem                  = NULL;
-    mod->load_size                 = 0;
-    mod->load_offset               = 0;
+    uintptr_t    load_addr    = LOAD_ADDRESS;
+    LdMemMapper *mapper       = NULL;
+    char        *file_mem     = (char *)mod->load_mem;
+    int          failed_count = 0;
+    mod->load_mem             = NULL;
+    mod->load_size            = 0;
+    mod->load_offset          = 0;
 
 LOAD:
     for (int i = 0; i < mod->ehdr->e_phnum; i++) {
         Elf32_Phdr *phdr = &mod->phdr[i];
         if (phdr->p_type == PT_LOAD) {
-            if (!mem_context) {
-                mem_context = ldLoadMemCreateContext(load_addr);
-                if (!mem_context)
+            if (!mapper) {
+                mapper = LdMemMapperCreate(load_addr);
+                if (!mapper)
                     goto FAILED;
-                mod->load_mem = (void *)mem_context->load_addr;
+                mod->load_mem = (void *)mapper->map_addr;
             }
 
             if (phdr->p_memsz > 0) {
-                int             flags = ((phdr->p_flags & PF_X) == PF_X) ? SCE_KERNEL_MEMBLOCK_TYPE_USER_RX : SCE_KERNEL_MEMBLOCK_TYPE_USER_RW;
-                uintptr_t       addr  = mem_context->load_addr + phdr->p_vaddr;
-                LdLoadMemEntry *entry = ldLoadMemCreateEntry(addr, flags, phdr->p_memsz, phdr->p_align);
-                if (!entry)
-                    goto FAILED;
-                ldLoadMemAddEntry(mem_context, entry);
+                int prot = PROT_READ;
+                if (phdr->p_flags & PF_W) prot |= PROT_WRITE;
+                if (phdr->p_flags & PF_X) prot |= PROT_EXEC;
 
+                uintptr_t   addr  = mapper->map_addr + phdr->p_vaddr;
+                LdMemBlock *block = LdAllocMemBlock(addr, prot, phdr->p_memsz, phdr->p_align);
+                if (!block)
+                    goto FAILED;
+
+                LdMemMapperAddBlock(mapper, block);
                 kuKernelCpuUnrestrictedMemcpy((void *)addr, (void *)((uintptr_t)file_mem + phdr->p_offset), phdr->p_filesz);
 
                 if (phdr->p_memsz > phdr->p_filesz) {
@@ -97,17 +100,17 @@ LOAD:
     }
 
     free(file_mem);
-    l_debug("ldModuleAllocAndLoadImage(%p,%s) success: %s, load_mem=0x%x", mod, path, mod->so_name, mod->load_mem);
+    l_debug("ldModuleAllocAndLoadImage(%p,%s) success: %s, load_addr=0x%x", mod, path, mod->so_name, mod->load_mem);
     return 0;
 
 FAILED:
-    if (mem_context) {
-        ldLoadMemDestroyContext(mem_context);
-        mem_context = NULL;
+    if (mapper) {
+        LdMemMapperDestroy(mapper);
+        mapper = NULL;
     }
 
     if (failed_count < 100) {  // 如果失败次数<100，将映射地址递增，重新尝试
-        // l_debug("ldModuleAllocAndLoadImage(%p) failed on addr 0x%x, will retry!", mod, load_addr);
+        // l_debug("ldModuleAllocAndLoadImage(%p): failed on addr 0x%x, will retry!", mod, load_addr);
         failed_count++;
         load_addr += 0x01000000;
         goto LOAD;
@@ -121,7 +124,7 @@ FAILED:
 void ldModuleDestroyImage(LdModule *mod) {
     if (mod && mod->load_mem) {
         l_debug("ldModuleDestroyImage(%p): %s", mod, mod->so_name);
-        ldLoadMemDestroyContext(ldLoadMemGetContextFromData(mod->load_mem));
+        LdMemMapperDestroy(LdGetMemMapperFromData(mod->load_mem));
         mod->load_mem  = NULL;
         mod->load_size = 0;
     }
