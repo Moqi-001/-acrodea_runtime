@@ -22,7 +22,7 @@ int bootstrap_start_soloader(int argc, char *argv[], char *envp[]) {
     // launch 参数
     char *launch_argv[] = {
         "/native/app/com.acrodea.vividruntime.launcher.apk",  // +0 apkPath  程序包路径
-        "launch",                                             // +1 mode:    启动模式："launch", "navite_marketlaunch", "rorequest", "install", "roinstall", "remove", "verify"
+        "launch",                                             // +1 mode:    启动模式："launch", "marketlaunch", "rorequest", "install", "roinstall", "remove", "verify"
         "/native/RuntimeApps",                                // +2 rootDir: RuntimeApps的路径
         "1760",                                               // +3 appID:   游戏ID，会将RuntimeApps和这ID拼接，鬼泣的ID为1760
         "debug",                                              // +4 params:  "debug", "reschk" // 无实际作用，函数空执行

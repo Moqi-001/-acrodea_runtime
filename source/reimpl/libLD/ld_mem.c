@@ -53,7 +53,7 @@ void LdMemMapperDestroy(LdMemMapper *mmapper) {
         LdMemBlock *block = mmapper->head;
         while (block) {
             LdMemBlock *next = block->next;
-            LdFreeMemBlock(block);
+            sceKernelFreeMemBlock(block->blockid);
             free(block);
             block = next;
         }
@@ -99,12 +99,8 @@ LdMemBlock *LdAllocMemBlock(uintptr_t addr, int prot, size_t size, size_t align)
 
 void LdFreeMemBlock(LdMemBlock *block) {
     if (block) {
-        int ret = sceKernelFreeMemBlock(block->blockid);
-        if (ret < 0) {
-            l_error("LdFreeMemBlock(%p) error: 0x%x", block, ret);
-            return;
-        }
-        l_debug("LdFreeMemBlock(%p): 0x%x", block, ret);
+        // l_debug("LdFreeMemBlock(%p): 0x%x", block);
+        sceKernelFreeMemBlock(block->blockid);
         free(block);
     }
 }
