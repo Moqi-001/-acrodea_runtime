@@ -25,15 +25,15 @@
 
 #define AUDIO_MAX_VOLUME 32767
 
-#define AUDIO_TRACKS_NUM         8                        // 音轨数量
-#define AUDIO_OUTPUT_LEN         512                      // 每次输出的样本数
-#define AUDIO_TRACK_BUFFER_LEN   (AUDIO_OUTPUT_LEN << 8)  // 音轨缓冲区的样本数
-#define AUDIO_OUTPUT_BUFFERS_NUM 3                        // 输出缓冲区的缓存个数
+#define AUDIO_TRACKS_NUM         8                         // 音轨数量
+#define AUDIO_OUTPUT_LEN         256                      // 每次输出的样本数
+#define AUDIO_TRACK_BUFFER_LEN   (1024 << 10)  // 音轨缓冲区的样本数
+#define AUDIO_OUTPUT_BUFFERS_NUM 3                         // 输出缓冲区的缓存个数
 
 enum {
-    AUDIO_STATUS_STOP = 0,
+    AUDIO_STATUS_STOPPED = 0,
+    AUDIO_STATUS_PAUSED,
     AUDIO_STATUS_PLAYYING,
-    AUDIO_STATUS_PAUSE,
 };
 
 typedef struct AudioTrack {
@@ -68,8 +68,8 @@ static size_t mix_track(int16_t *output, size_t output_len, const int16_t *input
 
     for (int i = 0; i < mixed_len; i++) {
         int32_t sum = (int32_t)output[i] + (int32_t)input[i] * volume;
-        if (sum > AUDIO_MAX_VOLUME) sum = AUDIO_MAX_VOLUME;
-        if (sum < -AUDIO_MAX_VOLUME) sum = -AUDIO_MAX_VOLUME;
+        if (sum > 32767) sum = 32767;
+        if (sum < -32768) sum = -32768;
         output[i] = (int16_t)sum;
     }
 
@@ -85,7 +85,7 @@ static int audio_thread(SceSize args, void *argp) {
     size_t   buffer_idx = 0;
 
     while (!audio_stop) {
-        available_len = 0;
+        active_tracks = 0;
         output_buffer = audio_output_buffers[buffer_idx];
 
         memset(output_buffer, 0, AUDIO_OUTPUT_LEN * sizeof(int16_t));
@@ -96,24 +96,25 @@ static int audio_thread(SceSize args, void *argp) {
                 continue;
 
             sceKernelLockLwMutex(&track->mutex, 1, NULL);
-            if (track->is_using && track->status == AUDIO_STATUS_PLAYYING && track->has_new) {
+            if (track->is_using && track->has_new) {
                 if (track->write_pos >= track->read_pos) {
                     available_len = track->write_pos - track->read_pos;
                 } else {
                     available_len = track->write_pos + track->buffer_len - track->read_pos;
                 }
                 if (available_len > 0) {
+                    sceKernelUnlockLwMutex(&track->mutex, 1);
                     size_t input_len = available_len < AUDIO_OUTPUT_LEN ? available_len : AUDIO_OUTPUT_LEN;
                     size_t mixed_len = mix_track(output_buffer, AUDIO_OUTPUT_LEN, track->buffer + track->read_pos, input_len, track->left_volume);
                     track->read_pos  = (track->read_pos + mixed_len) % track->buffer_len;
-                    available_len -= mixed_len;
                     active_tracks++;
-                }
-                if (available_len == 0) {
+                } else {
                     track->has_new = 0;
+                    sceKernelUnlockLwMutex(&track->mutex, 1);
                 }
+            } else {
+                sceKernelUnlockLwMutex(&track->mutex, 1);
             }
-            sceKernelUnlockLwMutex(&track->mutex, 1);
         }
 
         if (active_tracks > 0) {
@@ -219,10 +220,13 @@ jobject AudioTrack_init(jclass clazz, jmethodID id, va_list args) {
     // 加锁，防止旧Track可能还在播放
     sceKernelLockLwMutex(&track->mutex, 1, NULL);
     track->is_using   = 1;
-    track->status     = AUDIO_STATUS_STOP;
+    track->status     = AUDIO_STATUS_STOPPED;
     track->is_stereo  = is_stereo;
     track->is_8bit    = is_8bit;
+    track->has_new    = 0;
     track->output_len = AUDIO_OUTPUT_LEN;
+    track->read_pos = track->write_pos = 0;
+    track->left_volume = track->right_volume = 1.0f;
     sceKernelUnlockLwMutex(&track->mutex, 1);
 
     sceKernelUnlockLwMutex(&audio_main_mutex, 1);
@@ -256,17 +260,19 @@ jint AudioTrack_write(jobject obj, jmethodID id, va_list args) {
     }
 
     sceKernelLockLwMutex(&track->mutex, 1, NULL);
-    jbyte *bytes = jni->GetByteArrayElements(&jni, audioData, NULL);
-    if (bytes) {
-        int16_t *in  = (int16_t *)(bytes + offsetInBytes);
-        int16_t *out = (int16_t *)(track->buffer);
-        for (int i = 0; i < sizeInBytes / 2; i++) {
-            out[track->write_pos++] = in[i];
-            if (track->write_pos >= track->buffer_len)
-                track->write_pos = 0;
+    if (track->status == AUDIO_STATUS_PLAYYING) {
+        jbyte *bytes = jni->GetByteArrayElements(&jni, audioData, NULL);
+        if (bytes) {
+            int16_t *in  = (int16_t *)(bytes + offsetInBytes);
+            int16_t *out = (int16_t *)(track->buffer);
+            for (int i = 0; i < sizeInBytes / 2; i++) {
+                out[track->write_pos++] = in[i];
+                if (track->write_pos >= track->buffer_len)
+                    track->write_pos = 0;
+            }
+            jni->ReleaseByteArrayElements(&jni, audioData, bytes, 0);
+            track->has_new = 1;
         }
-        jni->ReleaseByteArrayElements(&jni, audioData, bytes, 0);
-        track->has_new = 1;
     }
     sceKernelUnlockLwMutex(&track->mutex, 1);
 
@@ -364,7 +370,7 @@ void AudioTrack_pause(jobject obj, jmethodID id, va_list args) {
     }
 
     sceKernelLockLwMutex(&track->mutex, 1, NULL);
-    track->status = AUDIO_STATUS_PAUSE;
+    track->status = AUDIO_STATUS_PAUSED;
     sceKernelUnlockLwMutex(&track->mutex, 1);
 
     l_debug("[JNI] [%d] AudioTrack::pause(%p)", track->id, obj);
@@ -384,8 +390,7 @@ void AudioTrack_stop(jobject obj, jmethodID id, va_list args) {
     }
 
     sceKernelLockLwMutex(&track->mutex, 1, NULL);
-    track->status    = AUDIO_STATUS_STOP;
-    track->write_pos = track->read_pos = 0;
+    track->status = AUDIO_STATUS_STOPPED;
     sceKernelUnlockLwMutex(&track->mutex, 1);
 
     l_debug("[JNI] [%d] AudioTrack::stop(%p)", track->id, obj);
@@ -421,7 +426,7 @@ void AudioTrack_release(jobject obj, jmethodID id, va_list args) {
     }
 
     sceKernelLockLwMutex(&track->mutex, 1, NULL);
-    track->status   = AUDIO_STATUS_STOP;
+    track->status   = AUDIO_STATUS_STOPPED;
     track->is_using = 0;
     sceKernelUnlockLwMutex(&track->mutex, 1);
 
