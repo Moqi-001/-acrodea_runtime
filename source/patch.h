@@ -1,11 +1,16 @@
 #ifndef SOLOADED_PATCH_H
 #define SOLOADED_PATCH_H
 
-#include "reimpl/libLD/ld.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-extern int (*bootstrap_start)(int argc, char *argv[], char *envp[]);
-int bootstrap_start_soloader(int argc, char *argv[], char *envp[]);
+#include <so_linker/so_linker.h>
 
-int soloader_patch(so_module *mod);
+int soloader_patch_runtime(so_module *mod);
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif

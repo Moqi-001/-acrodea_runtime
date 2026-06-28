@@ -1,0 +1,17 @@
+#include <so_linker/so_linker.h>
+#include <zlib.h>
+
+// ==================== libz.so ====================
+static so_symbol libz_symbols[] = {
+    SO_SYMBOL_FUNC("inflate", &inflate),
+    SO_SYMBOL_FUNC("inflateInit_", &inflateInit_),
+    SO_SYMBOL_FUNC("inflateInit2_", &inflateInit2_),
+    SO_SYMBOL_FUNC("inflateEnd", &inflateEnd),
+};
+
+so_library so_libz = {
+    .soname      = "libz.so",
+    .symbols     = libz_symbols,
+    .num_symbols = sizeof(libz_symbols) / sizeof(libz_symbols[0]),
+    .prepare     = NULL,
+};

@@ -14,7 +14,7 @@ SpacesInContainerLiterals: false # 花括号内不加空格
 AlignConsecutiveMacros: true       # 连续宏定义对齐
 AlignConsecutiveDeclarations: true # 连续声明对齐
 AlignConsecutiveAssignments: true  # 连续赋值对齐
-#AlignArrayOfStructures: Left       # 结构体数组初始化对齐
+AlignArrayOfStructures: Left       # 结构体数组初始化对齐
 AlignTrailingComments: true        # 尾随注释对齐
 
 # 格式限制

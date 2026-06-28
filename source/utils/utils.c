@@ -1,16 +1,3 @@
-/*
- * Copyright (C) 2021      Rinnegatamante
- * Copyright (C) 2022-2024 Volodymyr Atamanenko
- *
- * This software may be modified and distributed under the terms
- * of the MIT license. See the LICENSE file for details.
- */
-
-#include "utils/utils.h"
-#include "utils/logger.h"
-
-#include <psp2/io/stat.h>
-
 #include <dirent.h>
 #include <errno.h>
 #include <malloc.h>
@@ -20,7 +7,10 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 
-#include <sha1/sha1.h>
+#include <psp2/io/stat.h>
+#include <so_common/so_logger.h>
+
+#include "utils/utils.h"
 
 uint64_t current_timestamp_ms() {
     struct timeval te;
@@ -30,7 +20,7 @@ uint64_t current_timestamp_ms() {
 
 bool file_copy(const char *path, const char *destination) {
     if (!file_exists(path)) {
-        l_error(
+        so_loge(
             "file_copy: Specified source path \"%s\" "
             "does not exist.",
             path);
@@ -38,7 +28,7 @@ bool file_copy(const char *path, const char *destination) {
     }
 
     if (!file_mkpath(destination, 0755)) {
-        l_error(
+        so_loge(
             "file_copy: Could not create parent directories for the "
             "specified destination path \"%s\".",
             destination);
@@ -49,7 +39,7 @@ bool file_copy(const char *path, const char *destination) {
     size_t   size;
 
     if (!file_load(path, &buffer, &size)) {
-        l_error(
+        so_loge(
             "file_copy: Failed to read data from "
             "the source path \"%s\".",
             path);
@@ -57,7 +47,7 @@ bool file_copy(const char *path, const char *destination) {
     }
 
     if (!file_save(destination, buffer, size)) {
-        l_error(
+        so_loge(
             "file_copy: Failed to write data to the specified "
             "destination path \"%s\".",
             destination);
@@ -75,12 +65,12 @@ bool file_exists(const char *path) {
 
 bool file_load(const char *path, uint8_t **buffer, size_t *size) {
     if (!buffer || !size) {
-        l_error("file_load: Invalid argument(s).");
+        so_loge("file_load: Invalid argument(s).");
         return false;
     }
 
     if (!file_exists(path)) {
-        l_error(
+        so_loge(
             "file_load: Specified source path \"%s\" "
             "does not exist.",
             path);
@@ -89,7 +79,7 @@ bool file_load(const char *path, uint8_t **buffer, size_t *size) {
 
     FILE *f = fopen(path, "rb");
     if (!f) {
-        l_error(
+        so_loge(
             "file_load: Could not open the specified "
             "source path \"%s\".",
             path);
@@ -101,7 +91,7 @@ bool file_load(const char *path, uint8_t **buffer, size_t *size) {
     fseek(f, 0, SEEK_SET);
 
     if (*size <= 0) {
-        l_error("file_load: The specified source file \"%s\" is empty.", path);
+        so_loge("file_load: The specified source file \"%s\" is empty.", path);
         fclose(f);
         return false;
     }
@@ -109,7 +99,7 @@ bool file_load(const char *path, uint8_t **buffer, size_t *size) {
     *buffer = malloc(*size);
 
     if (!*buffer) {
-        l_error(
+        so_loge(
             "file_load: Unable to allocate %d bytes of memory to load "
             "the specified source file \"%s\".",
             path);
@@ -125,7 +115,7 @@ bool file_load(const char *path, uint8_t **buffer, size_t *size) {
 
 bool file_mkpath(const char *path, mode_t mode) {
     if (!path || !*path) {
-        l_error("file_mkpath: Invalid argument.");
+        so_loge("file_mkpath: Invalid argument.");
         return false;
     }
 
@@ -134,7 +124,7 @@ bool file_mkpath(const char *path, mode_t mode) {
         *p = '\0';
         if (mkdir(file_path, mode) == -1) {
             if (errno != EEXIST) {
-                l_error(
+                so_loge(
                     "file_mkpath: Unable to create a directory \"%s\", "
                     "mkdir error code is %s.",
                     file_path, strerror(errno));
@@ -153,7 +143,7 @@ bool file_save(const char *path, const uint8_t *buffer, size_t size) {
     FILE *f = fopen(path, "wb");
 
     if (!f) {
-        l_error(
+        so_loge(
             "file_save: Could not open the specified "
             "target path \"%s\".",
             path);
@@ -170,7 +160,7 @@ size_t file_size(const char *path) {
     size_t ret = -1;
 
     if (!file_exists(path)) {
-        l_error(
+        so_loge(
             "size_t: Specified source path \"%s\" "
             "does not exist.",
             path);
@@ -179,7 +169,7 @@ size_t file_size(const char *path) {
 
     FILE *f = fopen(path, "rb");
     if (!f) {
-        l_error(
+        so_loge(
             "size_t: Could not open the specified "
             "source path \"%s\".",
             path);
@@ -194,24 +184,6 @@ size_t file_size(const char *path) {
     return ret;
 }
 
-char *file_sha1sum(const char *path) {
-    uint8_t *buffer;
-    size_t   size;
-
-    if (!file_load(path, &buffer, &size)) {
-        l_error(
-            "file_sha1sum: Failed to read data from "
-            "the source path \"%s\".",
-            path);
-        return NULL;
-    }
-
-    char *ret = str_sha1sum((const char *)buffer, size);
-
-    free(buffer);
-    return ret;
-}
-
 bool is_dir(const char *path) {
     DIR *d = opendir(path);
 
@@ -221,25 +193,6 @@ bool is_dir(const char *path) {
     }
 
     return false;
-}
-
-SceUID _vshKernelSearchModuleByName(const char *, int *);
-
-bool module_loaded(const char *name) {
-    int search_unk[2];
-    return _vshKernelSearchModuleByName(name, search_unk) >= 0;
-}
-
-int ret0(void) {
-    return 0;
-}
-
-int ret1(void) {
-    return 1;
-}
-
-int retminus1(void) {
-    return -1;
 }
 
 void str_replace(char **str, const char *needle, const char *replacement) {
@@ -339,28 +292,4 @@ bool str_ends_with(const char *str, const char *suffix) {
 
     return (str_len >= suffix_len) &&
            (0 == strcmp(str + (str_len - suffix_len), suffix));
-}
-
-char *str_sha1sum(const char *str, size_t size) {
-    if (size == 0) {
-        size = strlen(str);
-    }
-
-    uint8_t  sha1[20];
-    SHA1_CTX ctx;
-    sha1_init(&ctx);
-    sha1_update(&ctx, (uint8_t *)str, size);
-    sha1_final(&ctx, (uint8_t *)sha1);
-
-    char hash[42];
-    memset(hash, 0, sizeof(hash));
-
-    for (int i = 0; i < 20; i++) {
-        char string[4];
-        sprintf(string, "%02X", sha1[i]);
-        strcat(hash, string);
-    }
-
-    hash[41] = '\0';
-    return strdup(hash);
 }

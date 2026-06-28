@@ -1,9 +1,14 @@
 #ifndef SOLOADER_CONTROLS_H
 #define SOLOADER_CONTROLS_H
 
-void controls_init();
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void controls_poll();
 
-int soloader_patch_controls(so_module *mod);
+#ifdef __cplusplus
+};
+#endif
 
-#endif // SOLOADER_CONTROLS_H
+#endif

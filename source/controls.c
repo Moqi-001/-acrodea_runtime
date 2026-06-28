@@ -5,129 +5,155 @@
 #include <psp2/kernel/clib.h>
 #include <psp2/touch.h>
 
-#include <falso_jni/FalsoJNI.h>
-#include <so_util/so_util.h>
+#include "android/keycodes.h"
+#include "vividruntime/Runtime.h"
 
 #include "config.h"
-#include "utils/logger.h"
 
-#define AKEYCODE_DPAD_UP       19
-#define AKEYCODE_DPAD_DOWN     20
-#define AKEYCODE_DPAD_LEFT     21
-#define AKEYCODE_DPAD_RIGHT    22
-#define AKEYCODE_BUTTON_A      96
-#define AKEYCODE_BUTTON_B      97
-#define AKEYCODE_BUTTON_X      99
-#define AKEYCODE_BUTTON_Y      100
-#define AKEYCODE_BUTTON_L1     102
-#define AKEYCODE_BUTTON_R1     103
-#define AKEYCODE_BUTTON_START  108
-#define AKEYCODE_BUTTON_SELECT 109
+typedef struct ButtonRemap {
+    uint32_t native;
+    uint32_t mapped;
+    uint32_t repeat_count;
+} ButtonRemap;
 
-typedef struct {
-    uint32_t sce_button;
-    uint32_t android_button;
-    int      repeat_count;
-} ButtonMapping;
+typedef struct TouchInfo {
+    int   id;
+    float currX;
+    float currY;
+    float prevX;
+    float prevY;
+} TouchInfo;
 
-typedef struct {
-    uint32_t sce_button;
-    uint32_t x;
-    uint32_t y;
-} ButtonToTouchMapping;
+typedef struct ButtonToTouch {
+    uint32_t  button;
+    int       map_x;
+    int       map_y;
+    TouchInfo info;
+} ButtonToTouch;
 
-static ButtonMapping mapping[] = {
-    {SCE_CTRL_UP, AKEYCODE_DPAD_UP, 0},
-    {SCE_CTRL_DOWN, AKEYCODE_DPAD_DOWN, 0},
-    {SCE_CTRL_LEFT, AKEYCODE_DPAD_LEFT, 0},
-    {SCE_CTRL_RIGHT, AKEYCODE_DPAD_RIGHT, 0},
-    {SCE_CTRL_CROSS, AKEYCODE_BUTTON_B, 0},
-    {SCE_CTRL_CIRCLE, AKEYCODE_BUTTON_A, 0},
-    {SCE_CTRL_SQUARE, AKEYCODE_BUTTON_X, 0},
-    {SCE_CTRL_TRIANGLE, AKEYCODE_BUTTON_Y, 0},
-    {SCE_CTRL_LTRIGGER, AKEYCODE_BUTTON_L1, 0},
-    {SCE_CTRL_RTRIGGER, AKEYCODE_BUTTON_R1, 0},
-    {SCE_CTRL_START, AKEYCODE_BUTTON_START, 0},
-    {SCE_CTRL_SELECT, AKEYCODE_BUTTON_SELECT, 0},
+#define JOYSTICK_CENTER      127.0f
+#define JOYSTICK_DEADZONE    24.0f
+#define JOYSTICK_IS_MOVED(v) (((v) > JOYSTICK_CENTER + JOYSTICK_DEADZONE) || \
+                              ((v) < JOYSTICK_CENTER - JOYSTICK_DEADZONE))
+
+#define JOYSTICK_SCREEN_CENTER_X   152.0f
+#define JOYSTICK_SCREEN_CENTER_Y   400.0f
+#define JOYSTICK_SCREEN_MAX_RADIUS 70.0f
+
+static ButtonRemap btn_remap[] = {
+    {SCE_CTRL_UP,       AKEYCODE_DPAD_UP,       0},
+    {SCE_CTRL_DOWN,     AKEYCODE_DPAD_DOWN,     0},
+    {SCE_CTRL_LEFT,     AKEYCODE_DPAD_LEFT,     0},
+    {SCE_CTRL_RIGHT,    AKEYCODE_DPAD_RIGHT,    0},
+    {SCE_CTRL_CROSS,    AKEYCODE_BUTTON_B,      0},
+    {SCE_CTRL_CIRCLE,   AKEYCODE_BUTTON_A,      0},
+    {SCE_CTRL_SQUARE,   AKEYCODE_BUTTON_X,      0},
+    {SCE_CTRL_TRIANGLE, AKEYCODE_BUTTON_Y,      0},
+    {SCE_CTRL_LTRIGGER, AKEYCODE_BUTTON_L1,     0},
+    {SCE_CTRL_RTRIGGER, AKEYCODE_BUTTON_R1,     0},
+    {SCE_CTRL_START,    AKEYCODE_BUTTON_START,  0},
+    {SCE_CTRL_SELECT,   AKEYCODE_BUTTON_SELECT, 0},
 };
 
-int (*navite_touchDown)(void *env, void *obj, int action, int x, int y, int index);
-int (*navite_touchMove)(void *env, void *obj, int action, int x, int y);
-int (*navite_touchUp)(void *env, void *obj, int action, int x, int y, int index);
-int (*navite_keyDown)(void *env, void *obj, int keyCode, int unicodeChar, int repeatCount);
-int (*navite_keyUp)(void *env, void *obj, int keyCode, int unicodeChar, int repeatCount);
+static ButtonToTouch btn2touch[] = {
+    // {SCE_CTRL_UP,       152.0f, 330.0f, {0, -1, -1, -1, -1}},
+    // {SCE_CTRL_DOWN,     152.0f, 470.0f, {0, -1, -1, -1, -1}},
+    // {SCE_CTRL_LEFT,     82.0f,  400.0f, {0, -1, -1, -1, -1}},
+    // {SCE_CTRL_RIGHT,    222.0f, 400.0f, {0, -1, -1, -1, -1}},
+    {SCE_CTRL_CROSS,    866.0f, 240.0f, {0, -1, -1, -1, -1}}, // 切换为行走状态
+    {SCE_CTRL_CIRCLE,   866.0f, 344.0f, {0, -1, -1, -1, -1}}, // 开枪
+    {SCE_CTRL_SQUARE,   776.0f, 332.0f, {0, -1, -1, -1, -1}}, // 开门/拾取
+    {SCE_CTRL_TRIANGLE, 814.0f, 450.0f, {0, -1, -1, -1, -1}}, // 菜刀
+    {SCE_CTRL_LTRIGGER, 866.0f, 240.0f, {0, -1, -1, -1, -1}}, // 切换为行走状态
+    {SCE_CTRL_RTRIGGER, 866.0f, 344.0f, {0, -1, -1, -1, -1}}, // 开枪
+    {SCE_CTRL_START,    92.0f,  146.0f, {0, -1, -1, -1, -1}}, // 说明
+    {SCE_CTRL_SELECT,   62.0f,  48.0f,  {0, -1, -1, -1, -1}}, // 菜单
+};
 
-void controls_init() {
-    sceCtrlSetSamplingMode(SCE_CTRL_MODE_ANALOG_WIDE);
-    sceTouchSetSamplingState(SCE_TOUCH_PORT_FRONT, SCE_TOUCH_SAMPLING_STATE_START);
-    sceTouchEnableTouchForce(SCE_TOUCH_PORT_FRONT);
+#define touchDown(action, x, y, isPrimary)         Runtime_touchDown(action, x, y, isPrimary)
+#define touchMove(action, x, y)                    Runtime_touchMove(action, x, y)
+#define touchUp(action, x, y, isPrimary)           Runtime_touchUp(action, x, y, isPrimary)
+#define keyDown(keyCode, unicodeChar, repeatCount) Runtime_keyDown(keyCode, unicodeChar, repeatCount)
+#define keyUp(keyCode, unicodeChar, repeatCount)   Runtime_keyUp(keyCode, unicodeChar, repeatCount)
+
+static int joystick_screen_offset(int v) {
+    float off = v - JOYSTICK_CENTER;
+    if (off > JOYSTICK_DEADZONE) {
+        return (off - JOYSTICK_DEADZONE) / (JOYSTICK_CENTER - JOYSTICK_DEADZONE) * JOYSTICK_SCREEN_MAX_RADIUS;
+    }
+    if (off < -JOYSTICK_DEADZONE) {
+        return (off + JOYSTICK_DEADZONE) / (JOYSTICK_CENTER - JOYSTICK_DEADZONE) * JOYSTICK_SCREEN_MAX_RADIUS;
+    }
+
+    return 0;
 }
 
 void controls_poll() {
-    static uint32_t old_buttons = 0;
-    static int      lastX[2]    = {-1, -1};
-    static int      lastY[2]    = {-1, -1};
-    SceCtrlData     pad;
-    SceTouchData    touch;
+    static TouchInfo touchInfo[2] = {
+        {0, -1, -1, -1, -1},
+        {1, -1, -1, -1, -1}
+    };
+    static TouchInfo joyInfo = {0, -1, -1, -1, -1};
 
+    SceCtrlData  pad;
+    SceTouchData touch;
     sceCtrlPeekBufferPositive(0, &pad, 1);
     sceTouchPeek(SCE_TOUCH_PORT_FRONT, &touch, 1);
 
-    // Button
-    if (pad.lx > 162) {
-        pad.buttons |= SCE_CTRL_RIGHT;
-    } else if (pad.lx < 92) {
+    int map_port = 0;
+
+    // JoystickToButton
+    if (pad.lx < JOYSTICK_CENTER - JOYSTICK_DEADZONE) {
         pad.buttons |= SCE_CTRL_LEFT;
+    } else if (pad.lx > JOYSTICK_CENTER + JOYSTICK_DEADZONE) {
+        pad.buttons |= SCE_CTRL_RIGHT;
     }
-    if (pad.ly > 162) {
-        pad.buttons |= SCE_CTRL_DOWN;
-    } else if (pad.ly < 92) {
+    if (pad.ly < JOYSTICK_CENTER - JOYSTICK_DEADZONE) {
         pad.buttons |= SCE_CTRL_UP;
+    } else if (pad.ly > JOYSTICK_CENTER + JOYSTICK_DEADZONE) {
+        pad.buttons |= SCE_CTRL_DOWN;
     }
-    for (int i = 0; i < sizeof(mapping) / sizeof(ButtonMapping); i++) {
-        int cur_pressed = ((pad.buttons & mapping[i].sce_button) == mapping[i].sce_button);
-        int old_pressed = ((old_buttons & mapping[i].sce_button) == mapping[i].sce_button);
-        if (cur_pressed) {
-            if (!old_pressed)
-                navite_keyDown(0, 0, mapping[i].android_button, 0, mapping[i].repeat_count);
-            mapping[i].repeat_count++;
+
+    // ButtonRemap
+    for (int i = 0; i < sizeof(btn_remap) / sizeof(btn_remap[0]); i++) {
+        int curr_pressed = ((pad.buttons & btn_remap[i].native) == btn_remap[i].native);
+        int prev_pressed = (btn_remap[i].repeat_count > 0);
+
+        if (curr_pressed) {
+            if (!prev_pressed)
+                keyDown(btn_remap[i].mapped, 0, btn_remap[i].repeat_count);
+            btn_remap[i].repeat_count++;
         } else {
-            if (old_pressed)
-                navite_keyUp(0, 0, mapping[i].android_button, 0, mapping[i].repeat_count);
-            mapping[i].repeat_count = 0;
+            if (prev_pressed)
+                keyUp(btn_remap[i].mapped, 0, btn_remap[i].repeat_count);
+            btn_remap[i].repeat_count = 0;
         }
     }
-    old_buttons = pad.buttons;
 
     // Touch
     for (int i = 0; i < 2; i++) {
+        TouchInfo *info       = &touchInfo[i];
+        jboolean   is_primary = (map_port == 0);
+
         if (i < touch.reportNum) {
-            int x = (int)((float)touch.report[i].x * (float)SCREEN_W / 1920.0f);
-            int y = (int)((float)touch.report[i].y * (float)SCREEN_H / 1088.0f);
+            info->id    = map_port++;
+            info->currX = (float)touch.report[i].x * (float)SCREEN_W / 1920.0f;
+            info->currY = (float)touch.report[i].y * (float)SCREEN_H / 1088.0f;
 
-            if (lastX[i] == -1 || lastY[i] == -1) {
-                navite_touchDown(0, 0, 0, x, y, i);
-            } else if (lastX[i] != x || lastY[i] != y) {
-                navite_touchMove(0, 0, 0, x, y);
+            if (info->prevX == -1 || info->prevY == -1) {
+                touchDown(0, info->currX, info->currY, is_primary);
+            } else if (info->currX != info->prevX || info->currY != info->prevY) {
+                touchMove(0, info->currX, info->currY);
             }
-            lastX[i] = x;
-            lastY[i] = y;
         } else {
-            if (lastX[i] != -1 || lastY[i] != -1) {
-                navite_touchUp(0, 0, 0, lastX[i], lastY[i], i);
+            if (info->prevX != -1 || info->prevY != -1) {
+                info->id = map_port++;
+                touchUp(0, info->prevX, info->prevY, is_primary);
             }
-            lastX[i] = -1;
-            lastY[i] = -1;
+            info->currX = -1;
+            info->currY = -1;
         }
+        info->prevX = info->currX;
+        info->prevY = info->currY;
     }
-}
-
-int soloader_patch_controls(so_module *mod) {
-    navite_touchDown = (void *)(mod->text_base + 0x000401D0 + 1);
-    navite_touchMove = (void *)(mod->text_base + 0x000401FC + 1);
-    navite_touchUp   = (void *)(mod->text_base + 0x000401A4 + 1);
-    navite_keyDown   = (void *)(mod->text_base + 0x00040234 + 1);
-    navite_keyUp     = (void *)(mod->text_base + 0x00040218 + 1);
-
-    return 0;
 }

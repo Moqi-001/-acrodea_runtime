@@ -4,10 +4,16 @@
 #define SCREEN_W 960
 #define SCREEN_H 544
 
-#define MEMORY_NEWLIB_MB           256
-#define MEMORY_VITAGL_THRESHOLD_MB 20
+#define MEMORY_NEWLIB_MB            256
+#define VITAGL_RAM_THRESHOLD_MB     20
+#define VITAGL_CDRAM_THRESHOLD_MB   0
+#define VITAGL_PHYCONT_THRESHOLD_MB 8
 
-// Base address for the Android .so to be loaded at
-#define LOAD_ADDRESS 0x98000000
+#define SO_APK_PATH   DATA_PATH "base.apk"
+#define SO_LIB_DIR    DATA_PATH
+#define SO_ASSETS_DIR DATA_PATH "assets/"
+#define SO_FILES_DIR  DATA_PATH "files/"
+#define SO_CACHE_DIR  DATA_PATH "cache/"
+#define SO_TTF_PATH   "app0:font.ttf"
 
 #endif

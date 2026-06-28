@@ -1,58 +1,71 @@
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-#include <kubridge.h>
-#include <so_util/so_util.h>
-#include "config.h"
+#include <sys/unistd.h>
 
-#include "controls.h"
-#include "reimpl/libGgee/ggee.h"
-#include "reimpl/libKD/kd.h"
-#include "reimpl/libLD/ld.h"
-#include "reimpl/libLD/ld_patch.h"
-#include "utils/logger.h"
+#include <so_common/so_logger.h>
+#include <so_common/so_utils.h>
+#include <so_jni/so_jni.h>
+#include <so_linker/so_linker.h>
 
-int (*bootstrap_start)(int argc, char *argv[], char *envp[]) = NULL;
+#include "java.h"
+#include "utils/utils.h"
 
-int bootstrap_start_soloader(int argc, char *argv[], char *envp[]) {
-    l_debug("[bootstrap] _start(%d,%p,%p)", argc, argv, envp);
-    for (int i = 0; i < argc && argv[i]; i++) {
-        l_debug("    argv[%d]:(%s)", i, argv[i]);
+#include "patch.h"
+#include "patch/libKD/kd.h"
+#include "patch/libLD/ld.h"
+
+int __wrap_chdir_soloader(const char *dir) {
+    char buf[1024];
+
+    if (strcmp(dir, "/runtime") == 0) {
+        snprintf(buf, sizeof(buf), "%sruntime/", DATA_PATH);
+        dir = buf;
+    } else {
+        int len = strlen(dir);
+        if (dir[len - 1] != '/') {  // psvita的chdir需以/结尾
+            if (dir == buf) {
+                strcat(buf, "/");
+            } else {
+                strcpy(buf, dir);
+                buf[len++] = '/';
+                buf[len]   = '\0';
+                dir        = buf;
+            }
+        }
     }
 
-    // launch 参数
-    char *launch_argv[] = {
-        "/native/app/com.acrodea.vividruntime.launcher.apk",  // +0 apkPath  程序包路径
-        "launch",                                             // +1 mode:    启动模式："launch", "marketlaunch", "rorequest", "install", "roinstall", "remove", "verify"
-        "/native/RuntimeApps",                                // +2 rootDir: RuntimeApps的路径
-        "1760",                                               // +3 appID:   游戏ID，会将RuntimeApps和这ID拼接，鬼泣的ID为1760
-        "debug",                                              // +4 params:  "debug", "reschk" // 无实际作用，函数空执行
-        "",                                                   // +5 args:    额外参数传入子函数启动
-    };
-
-    // marketlaunch 参数
-    char *marketlaunch_argv[] = {
-        "/native/app/com.acrodea.vividruntime.launcher.apk",  // +0 apkPath  程序包路径
-        "marketlaunch",                                       // +1 mode:    启动模式："launch", "navite_marketlaunch", "rorequest", "install", "roinstall", "remove", "verify"
-        "/native/RuntimeApps/",                               // +2 rootDir: RuntimeApps的路径
-        "1760",                                               // +3 appID:   游戏ID，会将RuntimeApps和这ID拼接，鬼泣的ID为1760
-        "/lib/com.acrodea.gamecenter/app.exe",                // +4 exePath: 商店的exe路径
-        "/native/RuntimeApps",                                // +5
-        "/native/com.acrodea.gamecenter/res",                 // +6 resDir:  商店的res路径
-        "/native/com.acrodea.gamecenter/.tmp",                // +7 tmpDir:  商店的tmp路径
-        "from_manager:log_print",                             // +8 args:    额外参数传入子函数启动?
-    };
-
-    // int ret = bootstrap_start(sizeof(launch_argv) / sizeof(launch_argv[0]), launch_argv, envp);
-    int ret = bootstrap_start(argc, argv, envp);
-    l_debug("bootstrap_start(%d,%p,%p): %d", argc, argv, envp, ret);
-    return ret;
+    int result = chdir(dir);
+    so_logd("chdir(%s): %d", dir, result);
+    return result;
 }
 
-int soloader_patch(so_module *mod) {
-    soloader_patch_controls(mod);
-    soloader_patch_kd(mod);
-    soloader_patch_ld(mod);
-    soloader_patch_ggee(mod);
+FILE *__wrap_fopen_soloader(const char *filename, const char *mode) {
+    char buf[1024];
+
+    if (filename[0] == '/') {
+        if (strncmp(filename, "/native/", 8) == 0) {
+            snprintf(buf, 1024, "%s%s", DATA_PATH, filename + 8);
+            filename = buf;
+        } else if (strncmp(filename, "/lib/", 5) == 0) {
+            snprintf(buf, 1024, "%sassets/%s", DATA_PATH, filename + 5);
+            filename = buf;
+        } else if (strncmp(filename, "/data/", 6) == 0) {
+            snprintf(buf, 1024, "%sruntime/%s", DATA_PATH, filename + 6);
+            filename = buf;
+        }
+    }
+
+    FILE *result = fopen(filename, mode);
+    so_logd("fopen_patch('%s','%s'): %p", filename, mode, result);
+    return result;
+}
+
+int soloader_patch_runtime(so_module *mod) {
+    soloader_patch_libKD(mod);
+    soloader_patch_libLD(mod);
 
     return 0;
 }

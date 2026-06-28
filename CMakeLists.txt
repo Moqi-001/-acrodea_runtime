@@ -6,15 +6,15 @@ endif ()
 
 set(CMAKE_TOOLCHAIN_FILE "$ENV{VITASDK}/share/vita.toolchain.cmake" CACHE PATH "Toolchain file")
 
-project(Acrodea C CXX)
+project(AcrodeaRuntime C CXX)
 
 include("${VITASDK}/share/vita.cmake" REQUIRED)
 
 # Vita application configuration
-set(VITA_APP_NAME "Acrodea")
-set(VITA_TITLEID "ACRODEA00")
-set(VITA_VPKNAME "Acrodea")
-set(VITA_VERSION "01.00")
+set(VITA_APP_NAME "AcrodeaRuntime")
+set(VITA_TITLEID  "ACRODEA00")
+set(VITA_VPKNAME  "Acrodea Runtime")
+set(VITA_VERSION  "01.00")
 set(VITA_MKSFOEX_FLAGS "-d ATTRIBUTE2=12")
 
 # Optional: used for "send" and "dump" targets
@@ -23,108 +23,98 @@ set(PARSECOREPATH "$ENV{PARSECOREPATH}" CACHE STRING "vita-parse-core main.py")
 
 # Game-specific definitions
 set(DATA_PATH "ux0:data/Acrodea/" CACHE STRING "Path to data (with trailing /)")
-set(SO_PATH "${DATA_PATH}libacrodea_runtime.so" CACHE STRING "Path to .so")
 set(LOG_PATH "${DATA_PATH}log.txt" CACHE STRING "Path to log.txt")
-
-add_definitions(-DDATA_PATH="${DATA_PATH}" -DSO_PATH="${SO_PATH}" -DLOG_PATH="${LOG_PATH}")
-
-set(SHADER_FORMAT "CG" CACHE STRING "Preferred shader format (one of 'GLSL', 'CG', 'GXP')")
-if (${SHADER_FORMAT} STREQUAL "GLSL")
-  add_definitions(-DUSE_GLSL_SHADERS)
-elseif (${SHADER_FORMAT} STREQUAL "CG")
-  add_definitions(-DUSE_CG_SHADERS)
-elseif (${SHADER_FORMAT} STREQUAL "GXP")
-  add_definitions(-DUSE_GXP_SHADERS)
-else()
-  message(FATAL_ERROR "SHADER_FORMAT option can only be one of: 'GLSL', 'CG', 'GXP'")
-endif()
-
-set(valid_dump_formats GLSL CG)
-option(DUMP_COMPILED_SHADERS "When using GLSL or CG shader format, cache compiled shaders on disk" ON)
-if (DUMP_COMPILED_SHADERS)
-  if (SHADER_FORMAT IN_LIST valid_dump_formats)
-    add_definitions(-DDUMP_COMPILED_SHADERS)
-  else()
-    message(WARNING "DUMP_COMPILED_SHADERS has no effect for the chosen shader format ${SHADER_FORMAT}")
-  endif()
-endif()
+add_definitions(-DDATA_PATH="${DATA_PATH}" -DLOG_PATH="${LOG_PATH}")
 
 # Unique debug definition for loader's logging to not interfere with anything
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-  #add_definitions(-DDEBUG_LOGFILE)
   add_definitions(-DDEBUG_SOLOADER)
-  # Uncomment this for verbose FalsoJNI logging:
-  #add_definitions(-DFALSOJNI_DEBUGLEVEL=0)
+  #add_definitions(-DDEBUG_LOGFILE) # 日志写入文件
 endif()
 
 # makes sincos, sincosf, etc. visible
 add_definitions(-D_GNU_SOURCE -D__POSIX_VISIBLE=999999)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wl,-q -O3 -g -ffast-math -mfloat-abi=softfp -Wno-deprecated")
-set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=gnu++20 -Wno-write-strings -Wno-psabi")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mfloat-abi=softfp -std=gnu11 -Wno-deprecated")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mfloat-abi=softfp -std=gnu++20 -Wno-write-strings -Wno-psabi")
+
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O1 -g3")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O1 -g3")
+else ()
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -g0 -ffast-math")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -g0 -ffast-math")
+endif()
+
+add_link_options(
+    -Wl,-q
+    -Wl,--wrap=chdir_soloader
+    -Wl,--wrap=fopen_soloader
+)
+
+enable_language(ASM)
+
+file(GLOB_RECURSE SO_COMMON_SRC  deps/so_common/*.c)
+file(GLOB_RECURSE SO_LINKER_SRC  deps/so_linker/*.c)
+file(GLOB_RECURSE SO_JNI_SRC     deps/so_jni/*.c deps/so_jni/*.S)
+file(GLOB_RECURSE SO_BIONIC_SRC  deps/so_libs/reimpl/bionic/*.c)
+file(GLOB_RECURSE SO_ANDROID_SRC deps/so_libs/reimpl/android/*.c)
 
 add_executable(${CMAKE_PROJECT_NAME}
-  source/main.c
-  source/controls.c
-  source/dynlib.c
-  source/loader.c
-  source/patch.c
+  ${SO_COMMON_SRC}
+  ${SO_LINKER_SRC}
+  ${SO_JNI_SRC}
+  ${SO_BIONIC_SRC}
+  ${SO_ANDROID_SRC}
 
-  source/reimpl/android/asset_manager.cpp
-  source/reimpl/android/atomic.c
-  source/reimpl/android/AudioTrack.c
-  source/reimpl/android/log.c
-  source/reimpl/android/nativehelper.c
-  source/reimpl/android/RefBase.c
-  source/reimpl/android/SharedBuffer.c
-  source/reimpl/android/String8.c
-  source/reimpl/android/Thread.c
-  source/reimpl/libGgee/ggee.c
-  source/reimpl/libKD/kd.c
-  source/reimpl/libLD/ld.c
-  source/reimpl/libLD/ld_patch.c
-  source/reimpl/libLD/ld_image.c
-  source/reimpl/libLD/ld_relocate.c
-  source/reimpl/libLD/ld_mem.c
-  source/reimpl/bits/_ctype.c
-  source/reimpl/egl.c
-  source/reimpl/gl.c
-  source/reimpl/errno.c
-  source/reimpl/io.c
-  source/reimpl/mem.c
-  source/reimpl/pthr.c
-  source/reimpl/sys.c
-  source/reimpl/time64.c
-
-  source/java/java.c
-  source/java/AudioTrack.c
-  source/java/Runtime.c
-  source/java/extension/ExtensionManager.c
-  source/java/extension/MyDevice.c
-  source/java/extension/MyErrorDialog.c
+  deps/so_libs/libnativehelper.c
+  deps/so_libs/liblog.c
+  deps/so_libs/libcutils.c
+  deps/so_libs/libutils.c
+  deps/so_libs/libGLESv1_CM.c
+  deps/so_libs/libGLESv2.c
+  deps/so_libs/libEGL.c
+  deps/so_libs/libui.c
+  deps/so_libs/libmedia.c
+  deps/so_libs/libsqlite.c
+  deps/so_libs/libdl.c
+  deps/so_libs/libbinder.c
+  deps/so_libs/libc.c
+  deps/so_libs/libstdcpp.c
+  deps/so_libs/libm.c
 
   source/utils/dialog.c
-  source/utils/logger.c
   source/utils/utils.c
 
-  deps/falso_jni/FalsoJNI.c
-  deps/falso_jni/FalsoJNI_Array.c
-  deps/falso_jni/FalsoJNI_SharedBuffer.c
-  deps/falso_jni/FalsoJNI_ImplBridge.c
-  deps/falso_jni/FalsoJNI_Logger.c
-  deps/so_util/so_util.c
-  deps/sha1/sha1.c
-  deps/md5/md5.c
+  source/android/os/Build.c
+  source/android/os/Build_VERSION.c
+  source/android/view/Surface.c
+  source/android/media/AudioTrack.c
+  source/java/lang/System.c
+  
+  source/vividruntime/extension/MyDevice.c
+  source/vividruntime/extension/ExtensionManager.c
+  source/vividruntime/extension/MyGgee.c
+  source/vividruntime/Runtime.c
+
+  source/controls.c
+  source/java.c
+  source/loader.c
+  source/main.c
+  source/patch.c
+  source/patch/libKD/kd.c
+  source/patch/libLD/ld.c
+  source/patch/libLD/ld_libc.c
+  source/patch/libLD/ld_bootstrap.c
+)
+
+target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM
+  PUBLIC ${CMAKE_SOURCE_DIR}/libs/include
+  PUBLIC ${CMAKE_SOURCE_DIR}/deps
 )
 
 target_include_directories(${CMAKE_PROJECT_NAME}
   PUBLIC ${CMAKE_SOURCE_DIR}/source
-)
-
-target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM
-  PUBLIC ${CMAKE_SOURCE_DIR}/source
-  PUBLIC ${CMAKE_SOURCE_DIR}/libs/include
-  PUBLIC ${CMAKE_SOURCE_DIR}/deps
 )
 
 target_link_directories (${CMAKE_PROJECT_NAME}
@@ -133,21 +123,20 @@ target_link_directories (${CMAKE_PROJECT_NAME}
 
 target_link_libraries(${CMAKE_PROJECT_NAME}
   -Wl,--whole-archive pthread -Wl,--no-whole-archive
-  stdc++
-  OpenSLES
-  sndfile
   vitaGL
   vitashark
+  SceShaccCgExt
+  taihen_stub
+  SceShaccCg_stub
+  kubridge_stub
+  mathneon
+  sqlite3
+  png
   z
   m
-  png16
-  sqlite3
-  mathneon
-  SceShaccCgExt
-  SceShaccCg_stub
-  taihen_stub
-  kubridge_stub
+  stdc++
   SceHid_stub
+  SceCtrl_stub
   SceTouch_stub
   SceMotion_stub
   SceAppMgr_stub
@@ -157,25 +146,23 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
   SceCommonDialog_stub
   SceDisplay_stub
   SceKernelDmacMgr_stub
-  SceFios2_stub
-  SceCtrl_stub
   SceGxm_stub
   ScePower_stub
-  SceTouch_stub
   SceVshBridge_stub
+  SceAvPlayer_stub
 )
 
 vita_create_self(eboot.bin ${CMAKE_PROJECT_NAME} UNSAFE NOASLR)
 vita_create_vpk(${VITA_VPKNAME}.vpk ${VITA_TITLEID} eboot.bin
   VERSION ${VITA_VERSION}
   NAME ${VITA_APP_NAME}
-  FILE ${CMAKE_SOURCE_DIR}/extras/cpuinfo cpuinfo
-  ${CMAKE_SOURCE_DIR}/extras/meminfo meminfo
-  ${CMAKE_SOURCE_DIR}/extras/livearea/icon0.png sce_sys/icon0.png
-  ${CMAKE_SOURCE_DIR}/extras/livearea/pic0.png sce_sys/pic0.png
-  ${CMAKE_SOURCE_DIR}/extras/livearea/startup.png sce_sys/livearea/contents/startup.png
-  ${CMAKE_SOURCE_DIR}/extras/livearea/bg0.png sce_sys/livearea/contents/bg0.png
-  ${CMAKE_SOURCE_DIR}/extras/livearea/template.xml sce_sys/livearea/contents/template.xml
+  FILE ${CMAKE_SOURCE_DIR}/resources/cpuinfo cpuinfo
+  FILE ${CMAKE_SOURCE_DIR}/resources/meminfo meminfo
+  FILE ${CMAKE_SOURCE_DIR}/resources/livearea/icon0.png sce_sys/icon0.png
+  FILE ${CMAKE_SOURCE_DIR}/resources/livearea/pic0.png sce_sys/pic0.png
+  FILE ${CMAKE_SOURCE_DIR}/resources/livearea/startup.png sce_sys/livearea/contents/startup.png
+  FILE ${CMAKE_SOURCE_DIR}/resources/livearea/bg0.png sce_sys/livearea/contents/bg0.png
+  FILE ${CMAKE_SOURCE_DIR}/resources/livearea/template.xml sce_sys/livearea/contents/template.xml
 )
 
 add_custom_target(send
@@ -191,13 +178,4 @@ add_custom_target(send_kvdb
   COMMAND curl -T eboot.bin ftp://${PSVITAIP}:1337/ux0:/app/${VITA_TITLEID}/
   COMMAND echo launch ux0:/app/${VITA_TITLEID}/eboot.bin | nc ${PSVITAIP} 1338
   DEPENDS ${VITA_VPKNAME}.vpk-vpk
-)
-
-add_custom_target(dump
-  COMMAND ${CMAKE_SOURCE_DIR}/extras/scripts/get_dump.sh ${PSVITAIP}
-  COMMAND python3 ${PARSECOREPATH} coredump ${CMAKE_PROJECT_NAME}
-)
-
-add_custom_target(reboot
-  COMMAND echo reboot | nc ${PSVITAIP} 1338
 )
