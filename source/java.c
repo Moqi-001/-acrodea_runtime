@@ -9,6 +9,7 @@
 
 #include "vividruntime/extension/ExtensionManager.h"
 #include "vividruntime/extension/MyDevice.h"
+#include "vividruntime/extension/MyErrorDialog.h"
 #include "vividruntime/extension/MyGgee.h"
 #include "vividruntime/Runtime.h"
 
@@ -21,6 +22,7 @@ int soloader_java_init() {
     Runtime_class_init();
     ExtensionManager_class_init();
     MyDevice_class_init();
+    MyErrorDialog_class_init();
     MyGgee_class_init();
 
     return 0;

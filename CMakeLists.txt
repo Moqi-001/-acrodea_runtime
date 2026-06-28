@@ -11,9 +11,9 @@ project(AcrodeaRuntime C CXX)
 include("${VITASDK}/share/vita.cmake" REQUIRED)
 
 # Vita application configuration
-set(VITA_APP_NAME "AcrodeaRuntime")
+set(VITA_APP_NAME "Acrodea Runtime")
 set(VITA_TITLEID  "ACRODEA00")
-set(VITA_VPKNAME  "Acrodea Runtime")
+set(VITA_VPKNAME  "AcrodeaRuntime")
 set(VITA_VERSION  "01.00")
 set(VITA_MKSFOEX_FLAGS "-d ATTRIBUTE2=12")
 
@@ -91,9 +91,10 @@ add_executable(${CMAKE_PROJECT_NAME}
   source/android/view/Surface.c
   source/android/media/AudioTrack.c
   source/java/lang/System.c
-  
-  source/vividruntime/extension/MyDevice.c
+
   source/vividruntime/extension/ExtensionManager.c
+  source/vividruntime/extension/MyDevice.c
+  source/vividruntime/extension/MyErrorDialog.c
   source/vividruntime/extension/MyGgee.c
   source/vividruntime/Runtime.c
 
