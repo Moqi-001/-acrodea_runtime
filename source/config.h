@@ -16,4 +16,6 @@
 #define SO_CACHE_DIR  DATA_PATH "cache/"
 #define SO_TTF_PATH   "app0:font.ttf"
 
+#define RUNTIME_APP_ID "1760"  // "1760" "1761" "1277" "705"
+
 #endif

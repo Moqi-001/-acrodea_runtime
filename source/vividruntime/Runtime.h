@@ -14,6 +14,8 @@ extern "C" {
 
 typedef struct _MyMediaManager *MyMediaManager;
 
+extern jboolean runtimeIsRunning;
+
 void Runtime_class_init(void);
 
 // ====== native ======

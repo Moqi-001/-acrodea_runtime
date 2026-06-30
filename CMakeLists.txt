@@ -92,6 +92,28 @@ add_executable(${CMAKE_PROJECT_NAME}
   source/android/media/AudioTrack.c
   source/java/lang/System.c
 
+  source/vividruntime/extension/MyAlarm.c
+  source/vividruntime/extension/MyAvatar.c
+  source/vividruntime/extension/MyBilling.c
+  source/vividruntime/extension/MyCamera.c
+  source/vividruntime/extension/MyDeviceUtil.c
+  source/vividruntime/extension/MyDialog.c
+  source/vividruntime/extension/MyErrorDialog.c
+  source/vividruntime/extension/MyFacebook.c
+  source/vividruntime/extension/MyFont.c
+  source/vividruntime/extension/MyHttp.c
+  source/vividruntime/extension/MyImagePicker.c
+  source/vividruntime/extension/MyLaunch.c
+  source/vividruntime/extension/MyLocation.c
+  source/vividruntime/extension/MyMediaManager.c
+  source/vividruntime/extension/MyMediaPlayer.c
+  source/vividruntime/extension/MyMovie.c
+  source/vividruntime/extension/MyMovieBridge.c
+  source/vividruntime/extension/MyPopup.c
+  source/vividruntime/extension/MyScreen.c
+  source/vividruntime/extension/MySensor.c
+  source/vividruntime/extension/MyTextInput.c
+
   source/vividruntime/extension/ExtensionManager.c
   source/vividruntime/extension/MyDevice.c
   source/vividruntime/extension/MyErrorDialog.c
@@ -103,6 +125,7 @@ add_executable(${CMAKE_PROJECT_NAME}
   source/loader.c
   source/main.c
   source/patch.c
+  source/patch/libGgee/ggee.c
   source/patch/libKD/kd.c
   source/patch/libLD/ld.c
   source/patch/libLD/ld_libc.c

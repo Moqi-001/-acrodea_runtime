@@ -74,7 +74,7 @@ static int init_needed_modules() {
 }
 
 static int controls_thread(SceSize args, void *argp) {
-    while (1) {
+    while (runtimeIsRunning) {
         controls_poll();
         sceKernelDelayThread(10 * 1000);
     }
@@ -158,7 +158,8 @@ int soloader_run() {
     JString runtimeDir = JavaNewStringUTF("/runtime/");
     JString apkPath    = JavaNewStringUTF("/com.acrodea.vividruntime.launcher.apk");
     JString rootDir    = JavaNewStringUTF("/RuntimeApps");
-    JString appId      = JavaNewStringUTF("1760");
+    JString appId      = JavaNewStringUTF(RUNTIME_APP_ID);
+    jint    params     = 0;  // 2 reschk
 
     jint res = Runtime_launch(
         sdkInt,      // sdkInt
@@ -167,7 +168,7 @@ int soloader_run() {
         apkPath,     // apkPath
         rootDir,     // rootDir
         appId,       // appId
-        0,           // params
+        params,      // params
         NULL,        // fromManager
         NULL,        // args
         0);          // serverEnvId
@@ -177,6 +178,7 @@ int soloader_run() {
         return -1;
     }
 
+    runtimeIsRunning     = 1;
     SceUID controls_thid = sceKernelCreateThread("controls_thread", (SceKernelThreadEntry)controls_thread, 0x40, 128 * 1024, 0, 0, NULL);
     sceKernelStartThread(controls_thid, 0, NULL);
     sceKernelWaitThreadEnd(controls_thid, NULL, NULL);

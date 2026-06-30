@@ -1,37 +1,50 @@
 /*
- * This is an OpenSSL-compatible implementation of the RSA Data Security,
- * Inc. MD5 Message-Digest Algorithm.
- *
- * Written by Solar Designer <solar at openwall.com> in 2001, and placed
- * in the public domain.  See md5.c for more information.
+ * Copyright (c) 1995 - 2001 Kungliga Tekniska Högskolan
+ * (Royal Institute of Technology, Stockholm, Sweden).
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 
+ * 3. Neither the name of the Institute nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE INSTITUTE AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE INSTITUTE OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
  */
 
-#ifndef MD5_H
-#define MD5_H
+/* $Heimdal: md5.h,v 1.8 2001/01/29 02:08:57 assar Exp $
+   $NetBSD: md5.h,v 1.1.1.4 2002/09/12 12:41:42 joda Exp $ */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <stdlib.h>
+#include <sys/types.h>
 
-#define MD5_DIGEST_SZ 16
-#define MD5_BLOCK_SZ  64
-
-/* Any 32-bit or wider unsigned integer data type will do */
-typedef unsigned long MD5_u32plus;
-
-typedef struct {
-    MD5_u32plus   lo, hi;
-    MD5_u32plus   a, b, c, d;
-    unsigned char buffer[MD5_BLOCK_SZ];
-    MD5_u32plus   block[MD5_DIGEST_SZ];
-} MD5_CTX;
-
-extern void MD5_Init(MD5_CTX *ctx);
-extern void MD5_Update(MD5_CTX *ctx, void *data, unsigned long size);
-extern void MD5_Final(unsigned char *result, MD5_CTX *ctx);
-
-#ifdef __cplusplus
+struct md5 {
+  unsigned int sz[2];
+  u_int32_t counter[4];
+  unsigned char save[64];
 };
-#endif
 
-#endif /* MD5_H */
+typedef struct md5 MD5_CTX;
+
+void MD5_Init (struct md5 *m);
+void MD5_Update (struct md5 *m, const void *p, size_t len);
+void MD5_Final (void *res, struct md5 *m); /* u_int32_t res[4] */

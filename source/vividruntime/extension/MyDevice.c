@@ -18,13 +18,13 @@ JString MyDevice_getImei(MyDevice thiz) {
     return JavaNewStringUTF(imei);
 }
 
-jint MyDevice_setNavigationHiddenEnable(jint enable) {
+jint MyDevice_setNavigationHiddenEnable(jint enabled) {
     jint result = 0;
-    so_logd("[MyDevice] setNavigationHiddenEnable(%u): %d", enable, result);
+    so_logd("[MyDevice] setNavigationHiddenEnable(%d): %d", enabled, result);
     return result;
 }
 
-jint MyDevice_getNavigationHiddenState(jboolean enable) {
+jint MyDevice_getNavigationHiddenState() {
     jint result = 0;
     so_logd("[MyDevice] getNavigationHiddenState(): %d", result);
     return result;
@@ -34,6 +34,12 @@ JString MyDevice_getPlatformInfo() {
     const char *result = "Psvita";
     so_logd("[MyDevice] getPlatformInfo(): %s", result);
     return JavaNewStringUTF(result);
+}
+
+jint MyDevice_setMutedEnable(jint enabled) {
+    jint result = 0;
+    so_logd("[MyDevice] setMutedEnable(%d): %d", enabled, result);
+    return result;
 }
 
 jint MyDevice_getMutedState() {
@@ -48,6 +54,7 @@ static JavaSymbol class_symbols[] = {
     JAVA_SYMBOL_METHOD("setNavigationHiddenEnable", "(I)I", &MyDevice_setNavigationHiddenEnable),
     JAVA_SYMBOL_METHOD("getNavigationHiddenState", "()I", &MyDevice_getNavigationHiddenState),
     JAVA_SYMBOL_METHOD("getPlatformInfo", "()Ljava/lang/String;", &MyDevice_getPlatformInfo),
+    JAVA_SYMBOL_METHOD("setMutedEnable", "(I)I", &MyDevice_setMutedEnable),
     JAVA_SYMBOL_METHOD("getMutedState", "()I", &MyDevice_getMutedState),
 };
 

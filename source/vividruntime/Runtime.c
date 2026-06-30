@@ -6,7 +6,8 @@
 
 #include "Runtime.h"
 
-static JClass sClass = NULL;
+static JClass sClass           = NULL;
+jboolean      runtimeIsRunning = 0;
 
 // ====== JNI native fucntions ======
 static void (*surfaceChanged)(JNIEnv *env, jclass clazz, jint width, jint height);
@@ -197,6 +198,7 @@ void Runtime_trialSetTime(jint t) {
 
 void Runtime_appFinish() {
     so_logd("[Runtime] appFinish()");
+    runtimeIsRunning = 0;
 }
 
 void Runtime_updateResourceCheck(JString str, jfloat *arr) {
@@ -215,23 +217,18 @@ jboolean Runtime_isUseRecord() {
 }
 
 JString Runtime_getCommonDir() {
-    char commonDir[1024];
-    snprintf(commonDir, sizeof(commonDir), "%s%s", DATA_PATH, ".ggee/");
-
-    JString result = JavaNewStringUTF(commonDir);
-    so_logd("[Runtime] getCommonDir(): %p ('%s')", result, commonDir);
-    return result;
+    const char *commonDir = "/.ggee/";
+    so_logd("[Runtime] getCommonDir(): '%s'", commonDir);
+    return JavaNewStringUTF(commonDir);
 }
 
 JString Runtime_getCommonAppDir(JString str) {
     char        commonAppDir[1024];
     const char *cstr = JavaGetStringUTFChars(str);
+    snprintf(commonAppDir, sizeof(commonAppDir), "%s%s", "/.ggee/a/", cstr);
 
-    snprintf(commonAppDir, sizeof(commonAppDir), "%s%s", DATA_PATH, "/.ggee/a/");
-
-    JString result = JavaNewStringUTF(commonAppDir);
-    so_logd("[Runtime] getCommonAppDir(%s): %p ('%s')", cstr, result, commonAppDir);
-    return result;
+    so_logd("[Runtime] getCommonAppDir(%s): '%s'", cstr, commonAppDir);
+    return JavaNewStringUTF(commonAppDir);
 }
 
 JString Runtime_getEnv(JString key) {
@@ -251,7 +248,7 @@ JString Runtime_getEnv(JString key) {
     } else if (strcmp(key_cstr, "GL_VERSION_SUPPORTED") == 0) {
         value = "2.0";
     } else if (strcmp(key_cstr, "GL_VENDOR") == 0) {
-        value = "Qualcomm"; // "Imagination Technologies"
+        value = "Qualcomm";  // "Imagination Technologies"
     } else {
         value = "unknown";
     }

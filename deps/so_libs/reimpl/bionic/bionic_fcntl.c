@@ -71,10 +71,10 @@ int open_soloader(const char *path, int oflag, ...) {
     }
 
     if (result < 0) {
-        so_logw("open(%s, %x): %d", path, oflag, result);
+        so_logw("open('%s',0x%x): %d", path, oflag, result);
         return result;
     }
 
-    so_logd("open(%s,0x%x): %d", path, oflag, result);
+    so_logd("open('%s',0x%x): %d", path, oflag, result);
     return result;
 }

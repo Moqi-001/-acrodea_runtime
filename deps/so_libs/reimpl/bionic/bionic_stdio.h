@@ -17,6 +17,7 @@ size_t fread_soloader(void *ptr, size_t size, size_t nmemb, FILE *stream);
 size_t fwrite_soloader(void *ptr, size_t size, size_t nmemb, FILE *stream);
 int    fseeko_soloader(FILE *stream, long offset, int whence);
 off_t  ftello_soloader(FILE *stream);
+int    fileno_soloader(FILE *stream);
 
 #ifdef __cplusplus
 };

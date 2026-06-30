@@ -81,3 +81,9 @@ off_t ftello_soloader(FILE *stream) {
     so_logd("ftello(%p): %ld", stream, result);
     return result;
 }
+
+int fileno_soloader(FILE *stream) {
+    int result = fileno(stream);
+    so_logd("fileno(%p): %d", stream, result);
+    return result;
+}

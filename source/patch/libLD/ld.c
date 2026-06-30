@@ -8,6 +8,7 @@
 #include <so_linker/so_linker.h>
 
 #include "ld.h"
+#include "utils/utils.h"
 
 uint32_t (*ldModuleSymHash)(const uint8_t *name);
 void *(*ldModuleLookupSymbol)(LdModule *mod, const char *sym_name, uint32_t sym_hash, int visibility,
@@ -24,6 +25,17 @@ static int ld_patch(LdModule *mod) {
     }
 
     return 0;
+}
+
+so_hook_ref ldModuleAllocAndLoadImage_hook_ref;
+
+int ldModuleAllocAndLoadImage(LdModule *mod, const char *path, const char *err_msg) {
+    char dump_path[1024];
+    snprintf(dump_path, 1024, "%s%s", DATA_PATH, mod->so_name);
+    file_save(dump_path, mod->load_base, mod->load_size);
+    so_logd("dump_so: %s", dump_path);
+
+    return SO_CONTINUE(int, &ldModuleAllocAndLoadImage_hook_ref, mod, path, err_msg);
 }
 
 int ldModuleInitialize(LdModule *mod) {
@@ -113,9 +125,8 @@ int soloader_patch_libLD(so_module *mod) {
     ldModuleSymHash      = (void *)so_module_find_symbol(mod, "ldModuleSymHash");
     ldModuleLookupSymbol = (void *)so_module_find_symbol(mod, "ldModuleLookupSymbol");
 
-    // so_module_hook_symbol(mod, "ldModuleRelocate", &ldModuleRelocate, NULL);
     so_module_hook_symbol(mod, "ldModuleInitialize", &ldModuleInitialize, NULL);
-    // so_module_hook_symbol(mod, "ldCreateAppContext", &ldCreateAppContext, &ldCreateAppContext_hook_ref);
+    // so_module_hook_symbol(mod, "ldModuleAllocAndLoadImage", &ldModuleAllocAndLoadImage, &ldModuleAllocAndLoadImage_hook_ref);
 
     return 0;
 }

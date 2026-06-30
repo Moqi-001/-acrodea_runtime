@@ -18,7 +18,7 @@ jint MyGgee_commonIsSLESCompatibility() {
 }
 
 static JavaSymbol class_symbols[] = {
-    // java
+    // JAVA
     JAVA_SYMBOL_METHOD("commonIsSLESCompatibility", "()I", &MyGgee_commonIsSLESCompatibility),
 };
 

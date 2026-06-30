@@ -27,23 +27,30 @@ typedef struct LdContext    LdContext;
 typedef struct LdModule     LdModule;
 typedef struct LdModuleNode LdModuleNode;
 
+typedef struct LdSigVerify {
+    LdContext *context;   // +0
+    void      *filepath;  // +4
+    uint8_t   *data_ptr;  // +8
+    size_t     data_len;  // +12
+} LdSigVerify;
+
 typedef struct LdIoVtable {
-    FILE *(*fopen)(const char *filename, const char *mode);                                 // +0
-    size_t (*fread)(void *ptr, void *a2, int a3, size_t size, size_t nmemb, FILE *stream);  // +4
-    long (*ftell)(FILE *stream);                                                            // +8
-    int (*fseek)(FILE *stream, long int offset, int whence);                                // +12
-    int (*fclose)(FILE *stream);                                                            // +16
+    FILE *(*kdFopen)(const char *filename, const char *mode);                                   // +0
+    size_t (*kdFread)(FILE *stream, int offset, int offset_low, int offset_hight, int whence);  // +4
+    long (*kdFtell)(FILE *stream);                                                              // +8
+    int (*kdFseek)(FILE *stream, long int offset, int whence);                                  // +12
+    int (*kdFclose)(FILE *stream);                                                              // +16
 } LdIoVtable;
 
 // 未确认，先占位
-typedef struct LdCallbacks {
+typedef struct LdModuleHooks {
     void (*func_0)();               // +0
     void (*postLoadHook)();         // +4
     void (*func_8)();               // +8
     void (*func_12)();              // +12
     void (*func_16)();              // +16
     void (*setConstraintCBHook)();  // +20
-} LdCallbacks;
+} LdModuleHooks;
 
 struct LdModuleNode {
     LdModule     *mod;
@@ -56,7 +63,7 @@ struct LdContext {
     LdModuleNode   **tail_next_mod_ref;  // +4   已加载的模块链表尾部的next引用
     LdModuleNode    *unloaded_mods;      // +8   未加载的模块链表（后进先出，实为尾部）
     pthread_mutex_t *mutex;              // +12  线程互斥锁
-    LdCallbacks      callbacks;          // +16  callbacks 虚函数表 (用于DRM解密？)
+    LdModuleHooks    hooks;              // +16  (用于DRM解密？)
     LdIoVtable       io_vtable;          // +40  5个io虚函数表
     int32_t          exit_state;         // +60  退出状态
     char             error_msg[256];     // +64  错误信息

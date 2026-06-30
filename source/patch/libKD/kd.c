@@ -6,35 +6,36 @@
 #include <so_common/so_logger.h>
 #include <so_linker/so_linker.h>
 
+#include "config.h"
 #include "kd.h"
 
 char *__kdMapFilename(const char *filename, const char *mode) {
     if (!filename) {
-        so_logd("__kdMapFilename(%s,%s): error!", filename, mode);
+        so_logd("__kdMapFilename('%s','%s'): error!", filename, mode);
         return NULL;
     }
 
     char *map_path = malloc(1024);
     if (!map_path) {
-        so_logd("__kdMapFilename(%s,%s) failed to alloc memory!", filename, mode);
+        so_logd("__kdMapFilename('%s','%s') failed to alloc memory!", filename, mode);
         return NULL;
     }
 
-    if (filename[0] != '/') {
-        strcpy(map_path, filename);
-    } else {
+    if (filename[0] == '/') {
         if (strncmp(filename, "/native/", 8) == 0) {
             snprintf(map_path, 1024, "%s%s", DATA_PATH, filename + 8);
         } else if (strncmp(filename, "/lib/", 5) == 0) {
             snprintf(map_path, 1024, "%sassets/%s", DATA_PATH, filename + 5);
         } else if (strncmp(filename, "/data/", 6) == 0) {
-            snprintf(map_path, 1024, "%sruntime/%s", DATA_PATH, filename + 6);
+            snprintf(map_path, 1024, "%sruntime/%s/%s", DATA_PATH, RUNTIME_APP_ID, filename + 6);
         } else {
             strcpy(map_path, filename);
         }
+    } else {
+        strcpy(map_path, filename);
     }
 
-    so_logd("__kdMapFilename(%s,%s): -> %s", filename, mode, map_path);
+    so_logd("__kdMapFilename('%s','%s'): -> %s", filename, mode, map_path);
     return map_path;
 }
 
