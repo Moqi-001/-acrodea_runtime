@@ -11,12 +11,16 @@ struct _MyMediaPlayer {
 
 static JClass sClass = NULL;
 
-static void dummy() {
+void MyMediaPlayer_ctor(MyMediaPlayer thiz) {
+}
+
+void MyMediaPlayer_destroy(MyMediaPlayer thiz) {
 }
 
 static JavaSymbol class_symbols[] = {
-    // static native
-    JAVA_SYMBOL_STATIC_METHOD("dummy", "()V", &dummy),
+    // JAVA
+    JAVA_SYMBOL_METHOD("<init>", "()V", &MyMediaPlayer_ctor),
+    JAVA_SYMBOL_METHOD("destroy", "()V", &MyMediaPlayer_destroy),
 };
 
 static JavaClassMeta class_meta = {

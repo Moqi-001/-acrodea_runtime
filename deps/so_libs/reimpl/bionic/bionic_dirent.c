@@ -11,8 +11,8 @@
 #define SC_INLINE static inline __attribute__((always_inline))
 
 struct DIR_bionic {
-    DIR          *newlib_dir;
-    dirent_bionic dirent;
+    DIR                 *newlib_dir;
+    struct dirent_bionic dirent;
 };
 
 SC_INLINE void dirent_newlib_to_bionic(const struct dirent *src, struct dirent_bionic *dst) {
@@ -46,8 +46,8 @@ DIR_bionic *fdopendir_soloader(int fd) {
     return result;
 }
 
-dirent_bionic *readdir_soloader(DIR_bionic *dirp) {
-    dirent_bionic *result = NULL;
+struct dirent_bionic *readdir_soloader(DIR_bionic *dirp) {
+    struct dirent_bionic *result = NULL;
 
     struct dirent *dp = readdir(dirp->newlib_dir);
     if (dp) {
@@ -59,7 +59,7 @@ dirent_bionic *readdir_soloader(DIR_bionic *dirp) {
     return result;
 }
 
-int readdir_r_soloader(DIR_bionic *dirp, dirent_bionic *entry, dirent_bionic **result) {
+int readdir_r_soloader(DIR_bionic *dirp, struct dirent_bionic *entry, struct dirent_bionic **result) {
     struct dirent  d;
     struct dirent *dp;
 

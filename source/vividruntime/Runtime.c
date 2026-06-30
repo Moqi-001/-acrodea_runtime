@@ -6,8 +6,9 @@
 
 #include "Runtime.h"
 
+#include "Launcher.h"
+
 static JClass sClass           = NULL;
-jboolean      runtimeIsRunning = 0;
 
 // ====== JNI native fucntions ======
 static void (*surfaceChanged)(JNIEnv *env, jclass clazz, jint width, jint height);
@@ -187,9 +188,8 @@ JString Runtime_getLocale() {
     return JavaNewStringUTF(locale);
 }
 
-void Runtime_launchRuntime(JString str) {
-    const char *cstr = JavaGetStringUTFChars(str);
-    so_logd("[Runtime] launchRuntime(%s)", cstr);
+void Runtime_launchRuntime(JString appid) {
+    Launcher_launchRuntime(appid);
 }
 
 void Runtime_trialSetTime(jint t) {
@@ -197,8 +197,7 @@ void Runtime_trialSetTime(jint t) {
 }
 
 void Runtime_appFinish() {
-    so_logd("[Runtime] appFinish()");
-    runtimeIsRunning = 0;
+    Launcher_appFinish();
 }
 
 void Runtime_updateResourceCheck(JString str, jfloat *arr) {

@@ -118,6 +118,7 @@ add_executable(${CMAKE_PROJECT_NAME}
   source/vividruntime/extension/MyDevice.c
   source/vividruntime/extension/MyErrorDialog.c
   source/vividruntime/extension/MyGgee.c
+  source/vividruntime/Launcher.c
   source/vividruntime/Runtime.c
 
   source/controls.c
@@ -128,7 +129,9 @@ add_executable(${CMAKE_PROJECT_NAME}
   source/patch/libGgee/ggee.c
   source/patch/libKD/kd.c
   source/patch/libLD/ld.c
+  source/patch/libLD/ld_hook.c
   source/patch/libLD/ld_libc.c
+  source/patch/libLD/ld_libcpp.c
   source/patch/libLD/ld_bootstrap.c
 )
 

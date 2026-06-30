@@ -35,11 +35,11 @@ typedef struct LdSigVerify {
 } LdSigVerify;
 
 typedef struct LdIoVtable {
-    FILE *(*kdFopen)(const char *filename, const char *mode);                                   // +0
-    size_t (*kdFread)(FILE *stream, int offset, int offset_low, int offset_hight, int whence);  // +4
-    long (*kdFtell)(FILE *stream);                                                              // +8
-    int (*kdFseek)(FILE *stream, long int offset, int whence);                                  // +12
-    int (*kdFclose)(FILE *stream);                                                              // +16
+    FILE *(*kdFopen)(const char *filename, const char *mode);                                // +0
+    size_t (*kdFread)(void *ptr, size_t size, size_t nmemb, FILE *stream);                   // +4
+    long (*kdFtell)(FILE *stream);                                                           // +8
+    int (*kdFseek)(FILE *stream, int offset, int offset_low, int offset_hight, int whence);  // +12
+    int (*kdFclose)(FILE *stream);                                                           // +16
 } LdIoVtable;
 
 // 未确认，先占位
@@ -109,8 +109,10 @@ extern void *(*ldModuleLookupSymbol)(LdModule *mod, const char *sym_name, uint32
 
 int soloader_patch_libLD(so_module *mod);
 
-int __ldModuleHookAddr(LdModule *mod, uintptr_t vaddr, uintptr_t dst, so_hook_ref *p_hook);
-int __ldModuleHookSymbol(LdModule *mod, const char *symbol, uintptr_t dst, so_hook_ref *p_hook);
+void *__ldModuleFindSymbol(LdModule *mod, const char *name, so_hook_ref *p_hook);
+int   __ldModuleHookAddr(LdModule *mod, uintptr_t vaddr, uintptr_t dst, so_hook_ref *p_hook);
+int   __ldModuleHookExport(LdModule *mod, const char *symbol, uintptr_t dst, so_hook_ref *p_hook);
+int   __ldModuleHookImport(LdModule *mod, const char *symbol, void *replacement);
 
 #ifdef __cplusplus
 };

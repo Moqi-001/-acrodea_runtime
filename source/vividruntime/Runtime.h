@@ -14,8 +14,6 @@ extern "C" {
 
 typedef struct _MyMediaManager *MyMediaManager;
 
-extern jboolean runtimeIsRunning;
-
 void Runtime_class_init(void);
 
 // ====== native ======
@@ -42,7 +40,7 @@ void Runtime_ExtensionInit(ExtensionManager obj);
 // ====== JAVA Impl ======
 void     Runtime_vibrate(jboolean enalbed);
 JString  Runtime_getLocale();
-void     Runtime_launchRuntime(JString str);
+void     Runtime_launchRuntime(JString appid);
 void     Runtime_trialSetTime(jint t);
 void     Runtime_appFinish();
 void     Runtime_updateResourceCheck(JString str, jfloat *arr);

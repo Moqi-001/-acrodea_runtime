@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <psp2/kernel/processmgr.h>
 #include <psp2/vshbridge.h>
 #include <so_common/so_logger.h>
 #include <so_jni/so_jni.h>
@@ -73,16 +72,6 @@ static int init_needed_modules() {
     return 0;
 }
 
-static int controls_thread(SceSize args, void *argp) {
-    while (runtimeIsRunning) {
-        controls_poll();
-        sceKernelDelayThread(10 * 1000);
-    }
-
-    sceKernelExitThread(0);
-    return 0;
-}
-
 so_module *soloader_load_library(const char *soname) {
     char path[1024];
     snprintf(path, 1024, "%slib%s.so", SO_LIB_DIR, soname);
@@ -144,44 +133,9 @@ int soloader_run() {
 
     soloader_jni_onload(runtime_mod);
 
-    Runtime_ExtensionInit(NULL);
-    so_logd("[Runtime] ExtensionInit over");
-
-    Runtime_MediaManagerInit(NULL);
-    so_logd("[Runtime] MediaManagerInit over");
-
-    Runtime_surfaceChanged(SCREEN_W, SCREEN_H);
-    so_logd("[Runtime] surfaceChanged over");
-
-    jint    sdkInt     = 19;
-    Surface surface    = AndroidSurface_new();
-    JString runtimeDir = JavaNewStringUTF("/runtime/");
-    JString apkPath    = JavaNewStringUTF("/com.acrodea.vividruntime.launcher.apk");
-    JString rootDir    = JavaNewStringUTF("/RuntimeApps");
-    JString appId      = JavaNewStringUTF(RUNTIME_APP_ID);
-    jint    params     = 0;  // 2 reschk
-
-    jint res = Runtime_launch(
-        sdkInt,      // sdkInt
-        surface,     // surface
-        runtimeDir,  // runtimeDir
-        apkPath,     // apkPath
-        rootDir,     // rootDir
-        appId,       // appId
-        params,      // params
-        NULL,        // fromManager
-        NULL,        // args
-        0);          // serverEnvId
-
-    if (res != JNI_OK) {
-        so_loge("[Runtime] launch error!");
-        return -1;
-    }
-
-    runtimeIsRunning     = 1;
-    SceUID controls_thid = sceKernelCreateThread("controls_thread", (SceKernelThreadEntry)controls_thread, 0x40, 128 * 1024, 0, 0, NULL);
-    sceKernelStartThread(controls_thid, 0, NULL);
-    sceKernelWaitThreadEnd(controls_thid, NULL, NULL);
+    JString appid = JavaNewStringUTF(RUNTIME_APP_ID);
+    Runtime_launchRuntime(appid);
+    JavaReleaseObject(appid);
 
     so_logd("[LOADER] soloader_run over.");
     return 0;

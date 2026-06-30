@@ -7,7 +7,7 @@ extern "C" {
 
 #include <sys/stat.h>
 
-struct __attribute__((__packed__)) stat_bionic {
+struct stat_bionic {
     unsigned long long st_dev;
     unsigned char      __pad0[4];
     unsigned long      __st_ino;

@@ -21,23 +21,23 @@ extern "C" {
 #define DT_WHT     14
 #endif
 
-typedef struct __attribute__((__packed__)) dirent_bionic {
+struct dirent_bionic {
     uint64_t       d_ino;        // 8 bytes   // offset 0x0
     int64_t        d_off;        // 8 bytes   // offset 0x8
     unsigned short d_reclen;     // 8 bytes   // offset 0x10
     unsigned char  d_type;       // 1 byte    // offset 0x12
     char           d_name[256];  // 256 bytes // offset 0x13
-} dirent_bionic;
+};
 
 typedef struct DIR_bionic DIR_bionic;
 
-DIR_bionic    *opendir_soloader(char *dirpath);
-DIR_bionic    *fdopendir_soloader(int fd);
-dirent_bionic *readdir_soloader(DIR_bionic *dirp);
-int            readdir_r_soloader(DIR_bionic *dirp, dirent_bionic *entry, dirent_bionic **result);
-int            closedir_soloader(DIR_bionic *dirp);
-void           rewinddir_soloader(DIR_bionic *dirp);
-int            dirfd_soloader(DIR_bionic *dirp);
+DIR_bionic           *opendir_soloader(char *dirpath);
+DIR_bionic           *fdopendir_soloader(int fd);
+struct dirent_bionic *readdir_soloader(DIR_bionic *dirp);
+int                   readdir_r_soloader(DIR_bionic *dirp, struct dirent_bionic *entry, struct dirent_bionic **result);
+int                   closedir_soloader(DIR_bionic *dirp);
+void                  rewinddir_soloader(DIR_bionic *dirp);
+int                   dirfd_soloader(DIR_bionic *dirp);
 
 #ifdef __cplusplus
 };

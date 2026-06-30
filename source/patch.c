@@ -23,7 +23,7 @@ int __wrap_chdir_soloader(const char *dir) {
     char buf[1024];
 
     if (strncmp(dir, "/runtime", 8) == 0) {
-        snprintf(buf, sizeof(buf), "%sruntime/%s%s", DATA_PATH, RUNTIME_APP_ID, dir + 9);
+        snprintf(buf, sizeof(buf), "%sruntime/%s%s", DATA_PATH, RUNTIME_APP_ID, dir + 8);
         dir = buf;
     }
 
