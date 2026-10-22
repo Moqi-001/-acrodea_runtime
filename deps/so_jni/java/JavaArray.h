@@ -8,11 +8,11 @@ extern "C" {
 #include "../jni.h"
 #include "JavaTypes.h"
 
-JArray   JavaNewArray(jsize length, JavaType type);
-JavaType JavaGetArrayType(JArray array);
-jsize    JavaGetArrayLength(JArray array);
-jint     JavaGetArrayRegion(JArray array, jsize start, jsize length, void *dst);
-jint     JavaSetArrayRegion(JArray array, jsize start, jsize length, const void *src);
+JavaArray JavaNewArray(jsize length, JavaType type);
+JavaType  JavaGetArrayType(JavaArray array);
+jsize     JavaGetArrayLength(JavaArray array);
+jint      JavaGetArrayRegion(JavaArray array, jsize start, jsize length, void *dst);
+jint      JavaSetArrayRegion(JavaArray array, jsize start, jsize length, const void *src);
 
 #ifdef __cplusplus
 }

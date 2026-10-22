@@ -11,10 +11,10 @@ struct _ExtensionManager {
     uint32_t dummy;
 };
 
-static JClass sClass = NULL;
+static JavaClass sClass = NULL;
 
 // ====== JAVA Impl ======
-MyExtensionInterface ExtensionManager_getExtensonByName(ExtensionManager thiz, JString name) {
+MyExtensionInterface ExtensionManager_getExtensonByName(ExtensionManager thiz, JavaString name) {
     const char *name_cstr = JavaGetStringUTFChars(name);
     so_logd("[ExtensionManager] getExtensonByName(%p,%s)", thiz, name_cstr);
     MyExtensionInterface inst = JavaAllocObjectNoClass(sizeof(struct _MyExtensionInterface), NULL);
@@ -33,6 +33,7 @@ static JavaClassMeta class_meta = {
     .symbols       = class_symbols,
     .num_symbols   = sizeof(class_symbols) / sizeof(class_symbols[0]),
     .instance_size = sizeof(struct _ExtensionManager),
+    .dtor          = NULL,
 };
 
 void ExtensionManager_class_init(void) {

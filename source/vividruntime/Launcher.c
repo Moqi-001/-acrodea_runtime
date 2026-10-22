@@ -21,7 +21,7 @@ static int controls_thread(SceSize args, void *argp) {
     return 0;
 }
 
-void Launcher_launchRuntime(JString appid) {
+void Launcher_launchRuntime(JavaString appid) {
     Runtime_ExtensionInit(NULL);
     so_logd("[Launcher] ExtensionInit over");
     Runtime_MediaManagerInit(NULL);
@@ -31,10 +31,10 @@ void Launcher_launchRuntime(JString appid) {
 
     jint    sdkInt     = 19;
     Surface surface    = AndroidSurface_new();
-    JString runtimeDir = JavaNewStringUTF("/runtime/");
-    JString apkPath    = JavaNewStringUTF("/com.acrodea.vividruntime.launcher.apk");
-    JString rootDir    = JavaNewStringUTF("/RuntimeApps");
-    JString appID      = JavaRetainObject(appid);
+    JavaString runtimeDir = JavaNewStringUTF("/runtime/");
+    JavaString apkPath    = JavaNewStringUTF("/com.acrodea.vividruntime.launcher.apk");
+    JavaString rootDir    = JavaNewStringUTF("/RuntimeApps");
+    JavaString appID      = JavaRetainObject(appid);
     jint    params     = 0;  // 2 reschk
 
     jint result = Runtime_launch(
@@ -55,7 +55,7 @@ void Launcher_launchRuntime(JString appid) {
     }
 
     runtimeIsRunning     = 1;
-    SceUID controls_thid = sceKernelCreateThread("controls_thread", (SceKernelThreadEntry)controls_thread, 0x40, 128 * 1024, 0, 0, NULL);
+    SceUID controls_thid = sceKernelCreateThread("controls_thread", (SceKernelThreadEntry)controls_thread, 0x10000100, 128 * 1024, 0, 0, NULL);
     sceKernelStartThread(controls_thid, 0, NULL);
     sceKernelWaitThreadEnd(controls_thid, NULL, NULL);
 

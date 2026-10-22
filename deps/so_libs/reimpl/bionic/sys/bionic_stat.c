@@ -4,9 +4,9 @@
 
 #include "bionic_stat.h"
 
-#define SC_INLINE static inline __attribute__((always_inline))
+#define INLINE inline __attribute__((always_inline))
 
-SC_INLINE void stat_newlib_to_bionic(const struct stat *src, struct stat_bionic *dst) {
+static INLINE void stat_to_bionic_stat(const struct stat *src, struct stat_bionic *dst) {
     dst->st_dev        = src->st_dev;
     dst->__st_ino      = src->st_ino;
     dst->st_mode       = src->st_mode;
@@ -30,7 +30,7 @@ int fstat_soloader(int fd, struct stat_bionic *st) {
     struct stat buf;
     int         result = fstat(fd, &buf);
     if (result == 0) {
-        stat_newlib_to_bionic(&buf, st);
+        stat_to_bionic_stat(&buf, st);
     }
 
     so_logd("fstat(%d,%p): %d", fd, st, result);
@@ -41,7 +41,7 @@ int stat_soloader(const char *path, struct stat_bionic *st) {
     struct stat buf;
     int         result = stat(path, &buf);
     if (result == 0) {
-        stat_newlib_to_bionic(&buf, st);
+        stat_to_bionic_stat(&buf, st);
     }
 
     so_logd("stat(%s,%p): %d", path, st, result);
@@ -52,7 +52,7 @@ int lstat_soloader(const char *path, struct stat_bionic *st) {
     struct stat buf;
     int         result = lstat(path, &buf);
     if (result == 0) {
-        stat_newlib_to_bionic(&buf, st);
+        stat_to_bionic_stat(&buf, st);
     }
 
     so_logd("lstat(%s,%p): %d", path, st, result);

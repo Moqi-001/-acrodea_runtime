@@ -11,9 +11,9 @@ project(AcrodeaRuntime C CXX)
 include("${VITASDK}/share/vita.cmake" REQUIRED)
 
 # Vita application configuration
-set(VITA_APP_NAME "Acrodea Runtime")
-set(VITA_TITLEID  "ACRODEA00")
-set(VITA_VPKNAME  "AcrodeaRuntime")
+set(VITA_APP_NAME "Devil May Cry 4 refrain")
+set(VITA_TITLEID  "GGEE01760")
+set(VITA_VPKNAME  "DevilMayCry4refrain")
 set(VITA_VERSION  "01.00")
 set(VITA_MKSFOEX_FLAGS "-d ATTRIBUTE2=12")
 
@@ -35,8 +35,8 @@ endif()
 # makes sincos, sincosf, etc. visible
 add_definitions(-D_GNU_SOURCE -D__POSIX_VISIBLE=999999)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mfloat-abi=softfp -std=gnu11 -Wno-deprecated")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mfloat-abi=softfp -std=gnu++20 -Wno-write-strings -Wno-psabi")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mfpu=neon -mfloat-abi=softfp -std=gnu11 -Wno-deprecated")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mfpu=neon -mfloat-abi=softfp -std=gnu++20 -Wno-write-strings -Wno-psabi")
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O1 -g3")
@@ -185,6 +185,7 @@ vita_create_vpk(${VITA_VPKNAME}.vpk ${VITA_TITLEID} eboot.bin
   NAME ${VITA_APP_NAME}
   FILE ${CMAKE_SOURCE_DIR}/resources/cpuinfo cpuinfo
   FILE ${CMAKE_SOURCE_DIR}/resources/meminfo meminfo
+  FILE ${CMAKE_SOURCE_DIR}/resources/urandom urandom
   FILE ${CMAKE_SOURCE_DIR}/resources/livearea/icon0.png sce_sys/icon0.png
   FILE ${CMAKE_SOURCE_DIR}/resources/livearea/pic0.png sce_sys/pic0.png
   FILE ${CMAKE_SOURCE_DIR}/resources/livearea/startup.png sce_sys/livearea/contents/startup.png

@@ -10,28 +10,29 @@
 #include "JavaObject.h"
 
 typedef struct JavaWeakRef {
-    JObject            *ref_ptr;
+    JavaObject         *ref_ptr;
     struct JavaWeakRef *next;
 } JavaWeakRef;
 
-typedef struct JavaObject {
+typedef struct _JavaObject {
     uint32_t     magic;
-    JClass       clazz;
+    JavaClass    clazz;
     jsize        size;
-    JObjectDtor  dtor;
+    JavaDtor     dtor;
     JavaWeakRef *weak_refs;
-} JavaObject;
+    uint32_t     _padding;  // 8字节对齐
+} _JavaObject;
 
 #define JAVA_OBJECT_MAGIC    0x44957421  // "JavaObject".hashCode()
-#define JAVA_OBJECT_CAST(_o) JAVA_BASE_CAST(JavaObject *, _o, JAVA_OBJECT_MAGIC)
+#define JAVA_OBJECT_CAST(_o) JAVA_BASE_CAST(_JavaObject *, _o, JAVA_OBJECT_MAGIC)
 
-#define dataFromObject(_obj)  ((JObject)((_obj) + 1))
-#define objectFromData(_data) JAVA_OBJECT_CAST(((JavaObject *)(_data) - 1))
+#define dataFromObject(_obj)  ((JavaObject)((_obj) + 1))
+#define objectFromData(_data) JAVA_OBJECT_CAST(((_JavaObject *)(_data) - 1))
 
-JObject _alloc_object(JClass clazz, jsize size, JObjectDtor dtor) {
+JavaObject _alloc_object(JavaClass clazz, jsize size, JavaDtor dtor) {
     if (size <= 0) return NULL;
 
-    JavaObject *obj = (JavaObject *)so_shared_buffer_alloc(sizeof(JavaObject) + size);
+    _JavaObject *obj = (_JavaObject *)so_shared_buffer_alloc(sizeof(_JavaObject) + size);
     if (!obj) {
         return NULL;
     }
@@ -42,32 +43,32 @@ JObject _alloc_object(JClass clazz, jsize size, JObjectDtor dtor) {
     obj->dtor      = dtor;
     obj->weak_refs = NULL;
 
-    return (JObject)dataFromObject(obj);
+    return (JavaObject)dataFromObject(obj);
 }
 
-JObject JavaAllocObject(JClass clazz, JObjectDtor dtor) {
-    return _alloc_object(clazz, JavaGetClassInstanceSize(clazz), dtor);
+JavaObject JavaAllocObject(JavaClass clazz) {
+    return _alloc_object(clazz, JavaGetClassInstanceSize(clazz), JavaGetClassDestructor(clazz));
 }
 
-JObject JavaAllocObjectNoClass(jsize size, JObjectDtor dtor) {
+JavaObject JavaAllocObjectNoClass(jsize size, JavaDtor dtor) {
     return _alloc_object(NULL, size, dtor);
 }
 
-JObject JavaRetainObject(JObject object) {
+JavaObject JavaRetainObject(JavaObject object) {
     if (!object) return NULL;
 
-    JavaObject *obj = objectFromData(object);
+    _JavaObject *obj = objectFromData(object);
     if (!obj) return NULL;
     so_shared_buffer_retain(obj);
 
     return object;
 }
 
-int32_t JavaReleaseObject(JObject object) {
+int32_t JavaReleaseObject(JavaObject object) {
     if (!object) return -1;
 
-    JavaObject *obj  = objectFromData(object);
-    int32_t     prev = so_shared_buffer_release_keep(obj);
+    _JavaObject *obj  = objectFromData(object);
+    int32_t      prev = so_shared_buffer_release_keep(obj);
     if (prev == 1) {
         // 调用析构函数
         if (obj->dtor) {
@@ -90,19 +91,19 @@ int32_t JavaReleaseObject(JObject object) {
     return prev;
 }
 
-int32_t JavaReleaseObjectKeep(JObject object) {
+int32_t JavaReleaseObjectKeep(JavaObject object) {
     if (!object) return -1;
 
-    JavaObject *obj  = objectFromData(object);
-    int32_t     prev = so_shared_buffer_release_keep(obj);
+    _JavaObject *obj  = objectFromData(object);
+    int32_t      prev = so_shared_buffer_release_keep(obj);
 
     return prev;
 }
 
-void JavaReleaseObjectForce(JObject object) {
+void JavaReleaseObjectForce(JavaObject object) {
     if (!object) return;
 
-    JavaObject *obj = objectFromData(object);
+    _JavaObject *obj = objectFromData(object);
     if (obj->dtor) {
         obj->dtor(object);
     }
@@ -120,10 +121,10 @@ void JavaReleaseObjectForce(JObject object) {
     so_shared_buffer_release_force(obj);
 }
 
-jint JavaRegisterWeakRef(JObject object, JObject *ref_ptr) {
+jint JavaRegisterWeakRef(JavaObject object, JavaObject *ref_ptr) {
     if (!object || !ref_ptr) return JNI_ERR;
 
-    JavaObject  *obj  = objectFromData(object);
+    _JavaObject *obj  = objectFromData(object);
     JavaWeakRef *node = (JavaWeakRef *)malloc(sizeof(JavaWeakRef));
     if (!node) return JNI_ERR;
 
@@ -134,10 +135,10 @@ jint JavaRegisterWeakRef(JObject object, JObject *ref_ptr) {
     return JNI_OK;
 }
 
-void JavaUnregisterWeakRef(JObject object, JObject *ref_ptr) {
+void JavaUnregisterWeakRef(JavaObject object, JavaObject *ref_ptr) {
     if (!object || !ref_ptr) return;
 
-    JavaObject  *obj  = objectFromData(object);
+    _JavaObject *obj  = objectFromData(object);
     JavaWeakRef *prev = NULL;
     JavaWeakRef *node = obj->weak_refs;
     while (node) {
@@ -155,18 +156,18 @@ void JavaUnregisterWeakRef(JObject object, JObject *ref_ptr) {
     }
 }
 
-JClass JavaGetObjectClass(JObject object) {
+JavaClass JavaGetObjectClass(JavaObject object) {
     if (!object) return 0;
 
-    JavaObject *obj = objectFromData(object);
+    _JavaObject *obj = objectFromData(object);
 
     return obj->clazz;
 }
 
-jsize JavaGetObjectSize(JObject object) {
+jsize JavaGetObjectSize(JavaObject object) {
     if (!object) return 0;
 
-    JavaObject *obj = objectFromData(object);
+    _JavaObject *obj = objectFromData(object);
 
     return obj->size;
 }

@@ -77,11 +77,6 @@ struct so_context {
     // 模块管理
     so_module_node *modules;      // 模块链表头
     size_t          num_modules;  // 模块数量
-
-    // TLS 管理（未实现）
-    uint32_t *tls_free_slots;  // 空闲 TLS 槽位链表
-    size_t    tls_free_count;  // 空闲槽位数量
-    uint32_t  tls_next_slot;   // 下一个新槽位（当无空闲时）
 };
 
 struct so_module_node {

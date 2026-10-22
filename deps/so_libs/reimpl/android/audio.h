@@ -201,7 +201,7 @@ enum {
                                   AUDIO_CHANNEL_OUT_LOW_FREQUENCY |
                                   AUDIO_CHANNEL_OUT_BACK_LEFT |
                                   AUDIO_CHANNEL_OUT_BACK_RIGHT),
-    // matches the correct AudioFormat.CHANNEL_OUT_7POINT1_SURROUND definition for 7.1
+    // matches the correct CHANNEL_OUT_7POINT1_SURROUND definition for 7.1
     AUDIO_CHANNEL_OUT_7POINT1  = (AUDIO_CHANNEL_OUT_FRONT_LEFT |
                                   AUDIO_CHANNEL_OUT_FRONT_RIGHT |
                                   AUDIO_CHANNEL_OUT_FRONT_CENTER |

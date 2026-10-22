@@ -8,14 +8,14 @@
 
 #include "bionic_dirent.h"
 
-#define SC_INLINE static inline __attribute__((always_inline))
+#define INLINE inline __attribute__((always_inline))
 
 struct DIR_bionic {
     DIR                 *newlib_dir;
     struct dirent_bionic dirent;
 };
 
-SC_INLINE void dirent_newlib_to_bionic(const struct dirent *src, struct dirent_bionic *dst) {
+static INLINE void dirent_to_bionic_dirent(const struct dirent *src, struct dirent_bionic *dst) {
     strncpy(dst->d_name, src->d_name, sizeof(dst->d_name));
     dst->d_off    = 0;
     dst->d_reclen = 0;
@@ -42,16 +42,18 @@ DIR_bionic *fdopendir_soloader(int fd) {
         result->newlib_dir = dirp;
     }
 
-    so_logd("opendir(%d): %p", fd, result);
+    so_logd("fdopendir(%d): %p", fd, result);
     return result;
 }
 
 struct dirent_bionic *readdir_soloader(DIR_bionic *dirp) {
+    if (!dirp) return NULL;
+
     struct dirent_bionic *result = NULL;
 
     struct dirent *dp = readdir(dirp->newlib_dir);
     if (dp) {
-        dirent_newlib_to_bionic(dp, &dirp->dirent);
+        dirent_to_bionic_dirent(dp, &dirp->dirent);
         result = &dirp->dirent;
     }
 
@@ -60,12 +62,14 @@ struct dirent_bionic *readdir_soloader(DIR_bionic *dirp) {
 }
 
 int readdir_r_soloader(DIR_bionic *dirp, struct dirent_bionic *entry, struct dirent_bionic **result) {
+    if (!dirp) return -1;
+
     struct dirent  d;
     struct dirent *dp;
 
     int res = readdir_r(dirp->newlib_dir, &d, &dp);
     if (res == 0) {
-        dirent_newlib_to_bionic(&d, entry);
+        dirent_to_bionic_dirent(&d, entry);
         *result = dp ? entry : NULL;
     }
 
@@ -74,19 +78,22 @@ int readdir_r_soloader(DIR_bionic *dirp, struct dirent_bionic *entry, struct dir
 }
 
 int closedir_soloader(DIR_bionic *dirp) {
+    if (!dirp) return -1;
+
     int result = closedir(dirp->newlib_dir);
     free(dirp);
-
     so_logd("closedir(%p): %d", dirp, result);
     return result;
 }
 
 void rewinddir_soloader(DIR_bionic *dirp) {
+    if (!dirp) return;
     rewinddir(dirp->newlib_dir);
     so_logd("rewinddir(%p)", dirp);
 }
 
 int dirfd_soloader(DIR_bionic *dirp) {
+    if (!dirp) return -1;
     int fd = dirfd(dirp->newlib_dir);
     so_logd("dirfd(%p): %d", dirp, fd);
     return fd;

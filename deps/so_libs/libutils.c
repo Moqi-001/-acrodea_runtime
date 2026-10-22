@@ -9,12 +9,11 @@
 #include "reimpl/android/Timers.h"
 
 int AZipFileRO_fake(void) {
-    so_logd("[Error] Android ZipFileRO function called: unsupport!");
+    so_loge("Android ZipFileRO function called: unsupport!");
     return 0;
 }
 
 // ==================== libutils.so ====================
-// Android 基础工具库
 static so_symbol libutils_symbols[] = {
     // ===== RefBase =====
     SO_SYMBOL_FUNC("_ZN7android7RefBaseC2Ev", &ARefBase_ctor),

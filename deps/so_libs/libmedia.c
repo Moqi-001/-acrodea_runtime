@@ -5,7 +5,7 @@
 #include "reimpl/android/AudioTrack.h"
 
 int AAudioRecord_fake(void) {
-    so_logd("[Error] Android AudioRecord function called: unsupport!");
+    so_loge("Android AudioRecord function called: unsupport!");
     return 0;
 }
 // ==================== libmedia.so ====================

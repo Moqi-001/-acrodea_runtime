@@ -7,11 +7,11 @@ extern "C" {
 
 #include "bionic/sys/bionic_atomics.h"
 #include "bionic/sys/bionic_ioctl.h"
+#include "bionic/sys/bionic_select.h"
 #include "bionic/sys/bionic_stat.h"
 #include "bionic/sys/bionic_syscall.h"
 #include "bionic/sys/bionic_system_properties.h"
 #include "bionic/sys/bionic_vfs.h"
-#include "bionic/sys/bionic_select.h"
 
 #include "bionic/bionic_ctype.h"
 #include "bionic/bionic_dirent.h"
@@ -21,6 +21,7 @@ extern "C" {
 #include "bionic/bionic_mman.h"
 #include "bionic/bionic_netdb.h"
 #include "bionic/bionic_pthread.h"
+#include "bionic/bionic_semaphore.h"
 #include "bionic/bionic_stdio.h"
 #include "bionic/bionic_time.h"
 #include "bionic/bionic_unistd.h"

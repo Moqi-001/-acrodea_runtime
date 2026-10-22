@@ -8,7 +8,7 @@
 
 #include "Launcher.h"
 
-static JClass sClass           = NULL;
+static JavaClass sClass           = NULL;
 
 // ====== JNI native fucntions ======
 static void (*surfaceChanged)(JNIEnv *env, jclass clazz, jint width, jint height);
@@ -148,7 +148,7 @@ void Runtime_setSurfaceSize(jboolean isReal, jint width, jint height) {
 }
 
 // ====== native call 2======
-jint Runtime_launch(jint sdkInt, Surface surface, JString runtimeDir, JString apkPath, JString rootDir, JString appId, jint params, JString fromManager, JString *args, jint serverEnvId) {
+jint Runtime_launch(jint sdkInt, Surface surface, JavaString runtimeDir, JavaString apkPath, JavaString rootDir, JavaString appId, jint params, JavaString fromManager, JavaString *args, jint serverEnvId) {
     jint result;
     ENTER_JNI_CALL(0)
     result = launch(&_jni_env, sClass, sdkInt,
@@ -182,13 +182,13 @@ void Runtime_vibrate(jboolean enalbed) {
     so_logd("[Runtime] vibrate(%d)", enalbed);
 }
 
-JString Runtime_getLocale() {
+JavaString Runtime_getLocale() {
     const char *locale = "zh_CN";
     so_logd("[Runtime] getLocale(): '%s'", locale);
     return JavaNewStringUTF(locale);
 }
 
-void Runtime_launchRuntime(JString appid) {
+void Runtime_launchRuntime(JavaString appid) {
     Launcher_launchRuntime(appid);
 }
 
@@ -200,7 +200,7 @@ void Runtime_appFinish() {
     Launcher_appFinish();
 }
 
-void Runtime_updateResourceCheck(JString str, jfloat *arr) {
+void Runtime_updateResourceCheck(JavaString str, jfloat *arr) {
     const char *cstr = JavaGetStringUTFChars(str);
     so_logd("[Runtime] updateResourceCheck(%s,%p)", cstr, arr);
 }
@@ -215,13 +215,13 @@ jboolean Runtime_isUseRecord() {
     return result;
 }
 
-JString Runtime_getCommonDir() {
+JavaString Runtime_getCommonDir() {
     const char *commonDir = "/.ggee/";
     so_logd("[Runtime] getCommonDir(): '%s'", commonDir);
     return JavaNewStringUTF(commonDir);
 }
 
-JString Runtime_getCommonAppDir(JString str) {
+JavaString Runtime_getCommonAppDir(JavaString str) {
     char        commonAppDir[1024];
     const char *cstr = JavaGetStringUTFChars(str);
     snprintf(commonAppDir, sizeof(commonAppDir), "%s%s", "/.ggee/a/", cstr);
@@ -230,7 +230,7 @@ JString Runtime_getCommonAppDir(JString str) {
     return JavaNewStringUTF(commonAppDir);
 }
 
-JString Runtime_getEnv(JString key) {
+JavaString Runtime_getEnv(JavaString key) {
     const char *key_cstr = JavaGetStringUTFChars(key);
     const char *value;
 
@@ -256,18 +256,18 @@ JString Runtime_getEnv(JString key) {
     return JavaNewStringUTF(value);
 }
 
-void Runtime_jniTrackerSetPage(JString str) {
+void Runtime_jniTrackerSetPage(JavaString str) {
     const char *cstr = JavaGetStringUTFChars(str);
     so_logd("[Runtime] jniTrackerSetPage(%s)", cstr);
 }
 
-void Runtime_jniTrackerEvent(JString str1, JString str2) {
+void Runtime_jniTrackerEvent(JavaString str1, JavaString str2) {
     const char *cstr1 = JavaGetStringUTFChars(str1);
     const char *cstr2 = JavaGetStringUTFChars(str2);
     so_logd("[Runtime] jniTrackerSetPage(%s,%s)", cstr1, cstr2);
 }
 
-void Runtime_jniTrackerAssignAttribute(jint id, JString attr) {
+void Runtime_jniTrackerAssignAttribute(jint id, JavaString attr) {
     const char *attr_cstr = JavaGetStringUTFChars(attr);
     so_logd("[Runtime] jniTrackerAssignAttribute(%d,%s)", id, attr_cstr);
 }
@@ -276,7 +276,7 @@ void Runtime_jniTrackerRemoveAttribute(jint id) {
     so_logd("[Runtime] jniTrackerRemoveAttribute(%d)", id);
 }
 
-void Runtime_jniTrackerSetAttribute(jint id, JString attr) {
+void Runtime_jniTrackerSetAttribute(jint id, JavaString attr) {
     const char *attr_cstr = JavaGetStringUTFChars(attr);
     so_logd("[Runtime] jniTrackerSetAttribute(%d,%s)", id, attr_cstr);
 }
@@ -377,6 +377,7 @@ static JavaClassMeta class_meta = {
     .symbols       = class_symbols,
     .num_symbols   = sizeof(class_symbols) / sizeof(class_symbols[0]),
     .instance_size = 0,
+    .dtor          = NULL,
 };
 
 void Runtime_class_init(void) {

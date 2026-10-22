@@ -24,11 +24,11 @@ void so_jni_fini(void);
 // ============================================
 // JNI <=> JAVA
 // ============================================
-JObject      JniObjectToJava(jobject object);
-jobject      JniNewLocalRefFromJava(JObject obj);
-jobjectArray JniNewLocalRefFromJavaArray(JArray arr);
-jobject      JniNewGlobalRefFromJava(JObject obj);
-jweak        JniNewWeakGlobalRefFromJava(JObject obj);
+JavaObject   JniObjectToJava(jobject object);
+jobject      JniNewLocalRefFromJava(JavaObject obj);
+jobjectArray JniNewLocalRefFromJavaArray(JavaArray arr);
+jobject      JniNewGlobalRefFromJava(JavaObject obj);
+jweak        JniNewWeakGlobalRefFromJava(JavaObject obj);
 
 // ============================================
 // JNI 标准函数实现

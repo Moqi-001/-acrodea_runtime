@@ -1,7 +1,7 @@
 #include "so_jni_internal.h"
 
 jobject JniNewDirectByteBuffer(void *address, jlong capacity) {
-    JBuffer buf = JavaNewDirectBuffer(address, capacity, JNI_FALSE, JNI_FALSE);
+    JavaBuffer buf = JavaNewDirectBuffer(address, capacity, JNI_FALSE, JNI_FALSE);
     if (!buf) {
         return NULL;
     }

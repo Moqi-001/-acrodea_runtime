@@ -9,9 +9,9 @@ struct _MyErrorDialog {
     uint32_t dummy;
 };
 
-static JClass sClass = NULL;
+static JavaClass sClass = NULL;
 
-void MyErrorDialog_setMessage(MyErrorDialog thiz, JString msg) {
+void MyErrorDialog_setMessage(MyErrorDialog thiz, JavaString msg) {
     const char *msg_cstr = JavaGetStringUTFChars(msg);
     so_loge("[MyErrorDialog] setMessage(%p,'%s')", thiz, msg_cstr);
 }
@@ -32,6 +32,7 @@ static JavaClassMeta class_meta = {
     .symbols       = class_symbols,
     .num_symbols   = sizeof(class_symbols) / sizeof(class_symbols[0]),
     .instance_size = sizeof(struct _MyErrorDialog),
+    .dtor          = NULL,
 };
 
 void MyErrorDialog_class_init(void) {

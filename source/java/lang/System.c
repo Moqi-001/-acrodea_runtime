@@ -22,6 +22,7 @@ static JavaClassMeta class_meta = {
     .symbols       = class_symbols,
     .num_symbols   = sizeof(class_symbols) / sizeof(class_symbols[0]),
     .instance_size = 0,
+    .dtor          = NULL,
 };
 
 void java_lang_System_class_init() {

@@ -21,6 +21,7 @@ static JavaClassMeta class_meta = {
     .symbols       = class_symbols,
     .num_symbols   = sizeof(class_symbols) / sizeof(class_symbols[0]),
     .instance_size = 0,
+    .dtor          = NULL,
 };
 
 void android_os_Build_VERSION_class_init(void) {

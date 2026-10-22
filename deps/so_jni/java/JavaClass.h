@@ -26,23 +26,26 @@ typedef struct JavaClassMeta {
     JavaSymbol *symbols;        // 符号数组
     jsize       num_symbols;    // 符号数量
     jsize       instance_size;  // 实例数据大小
+    JavaDtor    dtor;           // 析构函数
 } JavaClassMeta;
 
-JClass JavaCreateClass(JavaClassMeta *meta);
-void   JavaClearClassRegister(void);
+JavaClass JavaCreateClass(JavaClassMeta *meta);
+void      JavaClearClassRegister(void);
 
-const JavaSymbol *JavaFindMethodSymbol(const JClass clazz, const char *name, const char *sig, jboolean is_static);
-const JavaSymbol *JavaFindFieldSymbol(const JClass clazz, const char *name, const char *sig, jboolean is_static);
-const JavaSymbol *JavaFindNativeSymbol(const JClass clazz, const char *name, const char *sig);
-JClass            JavaFindClass(const char *name);
-JClass            JavaGetSuperclass(JClass clazz);
-jboolean          JavaIsAssignableFrom(JClass thiz, JClass from);  // JNI 里这个参数应该是搞反了，这里调整了，使用时要注意参数顺序
-jboolean          JavaIsInstanceOf(JObject obj, JClass clazz);
-jint              JavaRegisterNatives(JClass clazz, const JNINativeMethod *methods, jint num_methods);
-jint              JavaUnregisterNatives(JClass clazz);
+const JavaSymbol *JavaFindMethodSymbol(const JavaClass clazz, const char *name, const char *sig, jboolean is_static);
+const JavaSymbol *JavaFindFieldSymbol(const JavaClass clazz, const char *name, const char *sig, jboolean is_static);
+const JavaSymbol *JavaFindNativeSymbol(const JavaClass clazz, const char *name, const char *sig);
+JavaClass         JavaFindClass(const char *name);
+JavaClass         JavaGetSuperclass(JavaClass clazz);
+jboolean          JavaIsAssignableFrom(JavaClass thiz, JavaClass from);  // JNI 里这个参数应该是搞反了，这里调整了，使用时要注意参数顺序
+jboolean          JavaIsInstanceOf(JavaObject obj, JavaClass clazz);
+jint              JavaRegisterNatives(JavaClass clazz, const JNINativeMethod *methods, jint num_methods);
+jint              JavaUnregisterNatives(JavaClass clazz);
 
-const char *JavaGetClassName(JClass clazz);
-jsize       JavaGetClassInstanceSize(JClass clazz);
+JavaClassMeta *JavaGetClassMeta(JavaClass clazz);
+const char    *JavaGetClassName(JavaClass clazz);
+jsize          JavaGetClassInstanceSize(JavaClass clazz);
+JavaDtor       JavaGetClassDestructor(JavaClass clazz);
 
 // ============================================
 // JAVA 符号表定义宏 (简化 JavaSymbol 结构体初始化，免去手动填写标志位等)

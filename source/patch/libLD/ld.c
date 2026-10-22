@@ -10,7 +10,7 @@
 #include "ld.h"
 #include "utils/utils.h"
 
-uint32_t (*ldModuleSymHash)(const uint8_t *name);
+uint32_t (*ldModuleSymHash)(const char *name);
 void *(*ldModuleLookupSymbol)(LdModule *mod, const char *sym_name, uint32_t sym_hash, int visibility,
                               const char *ver_name, uint32_t ver_hash);
 

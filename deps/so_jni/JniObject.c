@@ -1,7 +1,7 @@
 #include "so_jni_internal.h"
 
 jobject JniAllocObject(jclass clazz) {
-    JObject obj = JavaAllocObject(JniObjectToJava(clazz), NULL);
+    JavaObject obj = JavaAllocObject(JniObjectToJava(clazz));
     if (!obj) {
         return NULL;
     }
@@ -44,8 +44,8 @@ jclass JniGetObjectClass(jobject object) {
 }
 
 jboolean JniIsSameObject(jobject ref1, jobject ref2) {
-    JObject *obj1 = JniObjectToJava(ref1);
-    JObject *obj2 = JniObjectToJava(ref2);
+    JavaObject *obj1 = JniObjectToJava(ref1);
+    JavaObject *obj2 = JniObjectToJava(ref2);
 
     return (obj1 == obj2) ? JNI_TRUE : JNI_FALSE;
 }

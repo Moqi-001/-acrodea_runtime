@@ -8,6 +8,10 @@
 #include "so_internal.h"
 #include "so_linker.h"
 
+#define SYM_LOOKUP_SELF  0x1
+#define SYM_LOOKUP_OTHER 0x2
+#define SYM_LOOKUP_ALL   (SYM_LOOKUP_SELF | SYM_LOOKUP_OTHER)
+
 static uint32_t _sysv_hash(const char *name) {
     uint32_t       h = 0, g;
     const uint8_t *p = (const uint8_t *)name;
@@ -49,9 +53,6 @@ static void *_find_symbol_ex(so_module *mod, const char *sym_name, uint32_t sym_
         *out_sym = sym;
     }
 
-    if (ELF32_ST_TYPE(sym->st_info) == STT_TLS) {  // TLS 符号：返回偏移量
-        return (void *)sym->st_value;
-    }
     if (sym->st_shndx == SHN_ABS) {
         return (void *)sym->st_value;
     }
@@ -62,7 +63,7 @@ static void *_find_symbol_ex(so_module *mod, const char *sym_name, uint32_t sym_
     return NULL;
 }
 
-void *so_module_find_symbol_ex(so_module *mod, const char *sym_name, int local_only,
+void *so_module_find_symbol_ex(so_module *mod, const char *sym_name, int flags,
                                so_module **out_mod, const Elf32_Sym **out_sym) {
     if (!mod || !sym_name) {
         return NULL;
@@ -70,44 +71,46 @@ void *so_module_find_symbol_ex(so_module *mod, const char *sym_name, int local_o
 
     uint32_t sym_hash = _sysv_hash(sym_name);
 
-    // 先查找本地
-    void *sym_addr = _find_symbol_ex(mod, sym_name, sym_hash, out_sym);
-    if (sym_addr) {
-        if (out_mod) {
-            *out_mod = mod;
-        }
-        return sym_addr;
-    }
+    void *sym_addr = NULL;
 
-    if (local_only) {
-        return NULL;
-    }
-
-    // 查找全局
-    so_context *context = so_linker_get_context();
-    if (!context) {
-        return NULL;
-    }
-
-    so_module_node *node = context->modules;
-    while (node) {
-        if (node->mod != mod) {
-            sym_addr = _find_symbol_ex(node->mod, sym_name, sym_hash, out_sym);
-            if (sym_addr) {
-                if (out_mod) {
-                    *out_mod = node->mod;
-                }
-                return sym_addr;
+    // 查找自身
+    if (flags & SYM_LOOKUP_SELF) {
+        sym_addr = _find_symbol_ex(mod, sym_name, sym_hash, out_sym);
+        if (sym_addr) {
+            if (out_mod) {
+                *out_mod = mod;
             }
+            return sym_addr;
         }
-        node = node->next;
+    }
+
+    // 查找外部
+    if (flags & SYM_LOOKUP_OTHER) {
+        so_context *context = so_linker_get_context();
+        if (!context) {
+            return NULL;
+        }
+
+        so_module_node *node = context->modules;
+        while (node) {
+            if (node->mod != mod) {
+                sym_addr = _find_symbol_ex(node->mod, sym_name, sym_hash, out_sym);
+                if (sym_addr) {
+                    if (out_mod) {
+                        *out_mod = node->mod;
+                    }
+                    return sym_addr;
+                }
+            }
+            node = node->next;
+        }
     }
 
     return NULL;
 }
 
 void *so_module_find_symbol(so_module *mod, const char *sym_name) {
-    return so_module_find_symbol_ex(mod, sym_name, 1, NULL, NULL);
+    return so_module_find_symbol_ex(mod, sym_name, SYM_LOOKUP_SELF, NULL, NULL);
 }
 
 static int _create_symtab_strtab(so_symbol *symbols, size_t num_symbols,
@@ -298,15 +301,13 @@ so_module *so_module_load_mem(void *buffer, size_t size) {
         if (phdr[i].p_type == PT_LOAD) {
             void *dst = (void *)(phdr[i].p_vaddr + mod->load_bias);
             void *src = (void *)((uintptr_t)buffer + phdr[i].p_offset);
-            so_memcpy(dst, src, phdr[i].p_filesz);
+            memcpy(dst, src, phdr[i].p_filesz);
             if (phdr[i].p_memsz > phdr[i].p_filesz) {
-                so_memset((void *)((uintptr_t)dst + phdr[i].p_filesz), 0, phdr[i].p_memsz - phdr[i].p_filesz);
+                memset((void *)((uintptr_t)dst + phdr[i].p_filesz), 0, phdr[i].p_memsz - phdr[i].p_filesz);
             }
         } else if (phdr[i].p_type == PT_DYNAMIC) {
             mod->dynamic     = (Elf32_Dyn *)(phdr[i].p_vaddr + mod->load_bias);
             mod->num_dynamic = phdr[i].p_memsz / sizeof(Elf32_Dyn);
-        } else if (phdr[i].p_type == PT_TLS) {
-            // 待实现
         }
     }
 
@@ -493,32 +494,28 @@ void so_module_unload(so_module *mod) {
 }
 
 static int _process_relocation(so_module *mod, uint8_t rel_type, uint32_t rel_symidx, uint32_t *rel_target, uint32_t rel_addend) {
-    const Elf32_Sym *sym      = NULL;  // 目标符号条目
-    uintptr_t        sym_addr = 0;     // 目标符号地址
-    so_module       *sym_mod  = NULL;  // 目标符号模块
-    uint32_t         sym_size = 0;     // 目标符号大小
-    const char      *sym_name = NULL;  // 目标符号名称
+    const Elf32_Sym *rel_sym  = NULL;
+    const Elf32_Sym *sym      = NULL;
+    so_module       *sym_mod  = NULL;
+    const char      *sym_name = NULL;
+    uintptr_t        sym_addr = 0;
+    uint32_t         sym_size = 0;
 
     // ===== 查找符号 =====
-    if (rel_symidx) {  // 需重定位的符号位置若不为0，则需查找目标符号地址
-        sym_name = mod->dynstr + mod->dynsym[rel_symidx].st_name;
-
-        if (rel_type == R_ARM_COPY)
-            sym_addr = (uintptr_t)so_module_find_symbol_ex(mod, sym_name, 1, &sym_mod, &sym);
-        else
-            sym_addr = (uintptr_t)so_module_find_symbol_ex(mod, sym_name, 0, &sym_mod, &sym);
+    if (rel_symidx) {
+        rel_sym  = &mod->dynsym[rel_symidx];
+        sym_name = mod->dynstr + rel_sym->st_name;
+        sym_addr = (uintptr_t)so_module_find_symbol_ex(mod, sym_name, SYM_LOOKUP_ALL, &sym_mod, &sym);
 
         if (!sym_addr) {
-            if (ELF32_ST_BIND(mod->dynsym[rel_symidx].st_info) == STB_WEAK) {
-                so_logw("[SOLINKER] process_relocation: weak symbol '%s' not found, skipping", sym_name);
-                return 0;
+            if (ELF32_ST_BIND(rel_sym->st_info) != STB_WEAK || rel_type == R_ARM_COPY) {
+                so_loge("[SOLINKER] process_relocation: symbol '%s' not found", sym_name);
+                return -1;
             }
 
-            so_loge("[SOLINKER] process_relocation: symbol '%s' not found", sym_name);
-            return -1;
+            so_logw("[SOLINKER] process_relocation: weak symbol '%s' not found, skipping", sym_name);
+            return 0;
         }
-
-        sym_size = sym->st_size;
     }
 
     // ===== 执行重定位 =====
@@ -527,41 +524,46 @@ static int _process_relocation(so_module *mod, uint8_t rel_type, uint32_t rel_sy
     switch (rel_type) {
         case R_ARM_NONE:  // 0
             break;
+
         case R_ARM_ABS32:  // 2 (S + A)
             rel_val = sym_addr + rel_addend;
-            so_memcpy(rel_target, &rel_val, sizeof(uint32_t));
+            memcpy(rel_target, &rel_val, sizeof(uint32_t));
             // so_logd("  R_ARM_ABS32: %s -> 0x%x", sym_name, *rel_target);
             break;
+
         case R_ARM_REL32:  // 3 (S + A - P)
             rel_val = sym_addr + rel_addend - (uintptr_t)rel_target;
-            so_memcpy(rel_target, &rel_val, sizeof(uint32_t));
+            memcpy(rel_target, &rel_val, sizeof(uint32_t));
             // so_logd("  R_ARM_REL32: %s -> 0x%x", sym_name, *rel_target);
             break;
-        case R_ARM_TLS_DTPMOD32:  // 17 (MODULE_ID)
-            rel_val = (uintptr_t)sym_mod;
-            so_memcpy(rel_target, &rel_val, sizeof(uint32_t));
-            // so_logd("  R_ARM_TLS_DTPMOD32: %s -> 0x%x", sym_name, *rel_target);
+
+        case R_ARM_COPY:  // 20 (S -> T)  (似乎只有FLAG_EXE才有这种类型?)
+            if ((uintptr_t)rel_target != sym_addr) {
+                so_loge("  R_ARM_COPY: %s relocation target cannot be resolved!", sym_name);
+                return -1;
+            }
+            sym_addr = (uintptr_t)so_module_find_symbol_ex(mod, sym_name, SYM_LOOKUP_OTHER, &sym_mod, &sym);
+            if (!sym_addr || rel_sym->st_size < sym->st_size) {
+                so_loge("  R_ARM_COPY: %s relocation target cannot be resolved!", sym_name);
+                return -1;
+            }
+            memcpy(rel_target, (void *)sym_addr, sym->st_size);
+            // so_logd("  R_ARM_COPY: %s, 0x%x -> %p, size=%zu", sym_name, sym_addr, rel_target, sym->st_size);
             break;
-        case R_ARM_TLS_DTPOFF32:  // 18 (B(S) + A)
-            rel_val = sym->st_value + rel_addend;
-            so_memcpy(rel_target, &rel_val, sizeof(uint32_t));
-            // so_logd("  R_ARM_TLS_DTPOFF32: %s -> 0x%x", sym_name, *rel_target);
-            break;
-        case R_ARM_COPY:  // 20 (S -> T)
-            so_memcpy(rel_target, (void *)sym_addr, sym_size);
-            // so_logd("  R_ARM_COPY: %s, 0x%x -> %p, size=%zu", sym_name, sym_addr, rel_target, sym_size);
-            break;
+
         case R_ARM_GLOB_DAT:   // 21 (S)
         case R_ARM_JUMP_SLOT:  // 22 (S)
             rel_val = sym_addr;
-            so_memcpy(rel_target, &rel_val, sizeof(uint32_t));
+            memcpy(rel_target, &rel_val, sizeof(uint32_t));
             // so_logd("  %s: %s -> 0x%x", rel_type == R_ARM_GLOB_DAT ? "R_ARM_GLOB_DAT" : "R_ARM_JUMP_SLOT", sym_name, *rel_target);
             break;
+
         case R_ARM_RELATIVE:  // 23 (B + A)
-            rel_val = rel_addend + mod->load_bias;
-            so_memcpy(rel_target, &rel_val, sizeof(uint32_t));
+            rel_val = mod->load_bias + rel_addend;
+            memcpy(rel_target, &rel_val, sizeof(uint32_t));
             // so_logd("  R_ARM_RELATIVE: %s -> 0x%x", sym_name, *rel_target);
             break;
+
         default:
             so_loge("[SOLINKER] process_relocation: unsupported type %d for symbol '%s'", rel_type, sym_name ? sym_name : "(null)");
             return -1;
@@ -833,22 +835,22 @@ int so_module_inject_data(so_module *mod, ptrdiff_t vaddr, const void *data, siz
     return so_inject_data_safe(target, boundary, data, len);
 }
 
-const char *so_module_name(so_module *mod) {
+const char *so_module_get_name(so_module *mod) {
     return mod ? mod->soname : NULL;
 }
 
-void *so_module_entry_point(so_module *mod) {
+void *so_module_get_entry_point(so_module *mod) {
     return mod ? mod->entry_point : NULL;
 }
 
-const void *so_module_load_base(so_module *mod) {
+const void *so_module_get_load_base(so_module *mod) {
     return mod ? mod->load_base : NULL;
 }
 
-size_t so_module_load_size(so_module *mod) {
+size_t so_module_get_load_size(so_module *mod) {
     return mod ? mod->load_size : 0;
 }
 
-intptr_t so_module_load_bias(so_module *mod) {
+intptr_t so_module_get_load_bias(so_module *mod) {
     return mod ? mod->load_bias : 0;
 }

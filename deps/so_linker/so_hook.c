@@ -7,7 +7,7 @@ int so_hook_function_safe(void *target, void *boundary, void *replacement, so_ho
     if (!target || !replacement) return -1;
 
     uintptr_t target_addr = (uintptr_t)target;
-    uint8_t   new_instr[16];
+    uint8_t   new_instr[12];
     int       instr_len = 0;
 
     if (target_addr & 1) {

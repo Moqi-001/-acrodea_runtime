@@ -10,8 +10,8 @@ extern "C" {
 typedef struct so_hook_ref {
     void   *target;         // 目标
     int     instr_len;      // 指令长度
-    uint8_t old_instr[16];  // 旧指令
-    uint8_t new_instr[16];  // 新指令 (实现跳转)
+    uint8_t old_instr[12];  // 旧指令
+    uint8_t new_instr[12];  // 新指令 (实现跳转)
 } so_hook_ref;
 
 typedef struct so_symbol {
@@ -93,11 +93,11 @@ int so_module_hook_symbol(so_module *mod, const char *sym_name, void *replacemen
 
 int so_module_inject_data(so_module *mod, ptrdiff_t vaddr, const void *data, size_t len);
 
-const char *so_module_name(so_module *mod);
-void       *so_module_entry_point(so_module *mod);
-const void *so_module_load_base(so_module *mod);
-size_t      so_module_load_size(so_module *mod);
-intptr_t    so_module_load_bias(so_module *mod);
+const char *so_module_get_name(so_module *mod);
+void       *so_module_get_entry_point(so_module *mod);
+const void *so_module_get_load_base(so_module *mod);
+size_t      so_module_get_load_size(so_module *mod);
+intptr_t    so_module_get_load_bias(so_module *mod);
 
 #ifdef __cplusplus
 }

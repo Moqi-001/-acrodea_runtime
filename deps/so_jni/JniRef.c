@@ -15,7 +15,7 @@
 #define WEAK_REF_BIAS   0X30000000u
 
 typedef struct JniRefSlot {
-    JObject obj;  //  Java 对象指针
+    JavaObject obj;  //  Java 对象指针
 } JniRefSlot;
 
 typedef struct JniRefFrame {
@@ -61,7 +61,7 @@ jobjectRefType JniGetObjectRefType(jobject object) {
     return JNIInvalidRefType;
 }
 
-JObject JniObjectToJava(jobject object) {
+JavaObject JniObjectToJava(jobject object) {
     if (!object) return NULL;
 
     uintptr_t ptr = (uintptr_t)object;
@@ -88,7 +88,7 @@ JObject JniObjectToJava(jobject object) {
     return NULL;
 }
 
-jobject JniNewLocalRefFromJava(JObject obj) {
+jobject JniNewLocalRefFromJava(JavaObject obj) {
     if (!obj) return NULL;
 
     JniLocalContext *ctx = &_so_local_ctx;
@@ -131,7 +131,7 @@ jobject JniNewLocalRefFromJava(JObject obj) {
     return (jobject)(index + LOCAL_REF_BIAS);
 }
 
-jobjectArray JniNewLocalRefFromJavaArray(JArray arr) {
+jobjectArray JniNewLocalRefFromJavaArray(JavaArray arr) {
     if (!arr) return NULL;
 
     jobjectArray ref = JniNewLocalRefFromJava(arr);
@@ -143,7 +143,7 @@ jobjectArray JniNewLocalRefFromJavaArray(JArray arr) {
     jsize length = JavaGetArrayLength(arr);
     if (length <= 0) return ref;
 
-    JObject *objs = (JObject *)JniObjectToJava(ref);
+    JavaObject *objs = (JavaObject *)JniObjectToJava(ref);
     for (jint i = 0; i < length; i++) {
         JavaRetainObject(objs[i]);
     }
@@ -171,7 +171,7 @@ void JniDeleteLocalRef(jobject object) {
     ctx->slots[index].obj = NULL;
 }
 
-jobject JniNewGlobalRefFromJava(JObject obj) {
+jobject JniNewGlobalRefFromJava(JavaObject obj) {
     if (!obj) return NULL;
 
     JniGlobalContext *ctx = &_so_global_ctx;
@@ -251,7 +251,7 @@ void JniDeleteGlobalRef(jobject object) {
     pthread_mutex_unlock(&ctx->lock);
 }
 
-jweak JniNewWeakGlobalRefFromJava(JObject obj) {
+jweak JniNewWeakGlobalRefFromJava(JavaObject obj) {
     if (!obj) return NULL;
 
     JniGlobalContext *ctx = &_so_weak_ctx;
@@ -367,7 +367,7 @@ jobject JniPopLocalFrame(jobject result) {
     if (ptr >= LOCAL_REF_BIAS && ptr < LOCAL_REF_BIAS + MAX_REF_CAPACITY) {
         index = ptr - LOCAL_REF_BIAS;
     }
-    JObject res = NULL;
+    JavaObject res = NULL;
     if (index >= 0 && index < ctx->count && ctx->slots[index].obj) {
         res = ctx->slots[index].obj;
     }

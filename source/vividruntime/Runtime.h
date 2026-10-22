@@ -33,27 +33,27 @@ jboolean Runtime_waitFlip(jint timeout);
 void     Runtime_setSurfaceSize(jboolean isReal, jint width, jint height);
 
 // ====== native 2 ======
-jint Runtime_launch(jint sdkInt, Surface surface, JString runtimeDir, JString apkPath, JString rootDir, JString appId, jint params, JString fromManager, JString *args, jint serverEnvId);
+jint Runtime_launch(jint sdkInt, Surface surface, JavaString runtimeDir, JavaString apkPath, JavaString rootDir, JavaString appId, jint params, JavaString fromManager, JavaString *args, jint serverEnvId);
 void Runtime_MediaManagerInit(MyMediaManager mediaManager);
 void Runtime_ExtensionInit(ExtensionManager obj);
 
 // ====== JAVA Impl ======
 void     Runtime_vibrate(jboolean enalbed);
-JString  Runtime_getLocale();
-void     Runtime_launchRuntime(JString appid);
+JavaString  Runtime_getLocale();
+void     Runtime_launchRuntime(JavaString appid);
 void     Runtime_trialSetTime(jint t);
 void     Runtime_appFinish();
-void     Runtime_updateResourceCheck(JString str, jfloat *arr);
+void     Runtime_updateResourceCheck(JavaString str, jfloat *arr);
 void     Runtime_invisibleRuntimeLogo();
 jboolean Runtime_isUseRecord();
-JString  Runtime_getCommonDir();
-JString  Runtime_getCommonAppDir(JString str);
-JString  Runtime_getEnv(JString key);
-void     Runtime_jniTrackerSetPage(JString str);
-void     Runtime_jniTrackerEvent(JString str1, JString str2);
-void     Runtime_jniTrackerAssignAttribute(jint id, JString attr);
+JavaString  Runtime_getCommonDir();
+JavaString  Runtime_getCommonAppDir(JavaString str);
+JavaString  Runtime_getEnv(JavaString key);
+void     Runtime_jniTrackerSetPage(JavaString str);
+void     Runtime_jniTrackerEvent(JavaString str1, JavaString str2);
+void     Runtime_jniTrackerAssignAttribute(jint id, JavaString attr);
 void     Runtime_jniTrackerRemoveAttribute(jint id);
-void     Runtime_jniTrackerSetAttribute(jint id, JString attr);
+void     Runtime_jniTrackerSetAttribute(jint id, JavaString attr);
 jint     Runtime_stereoIsAvailability();
 void     Runtime_stereoSetView(jboolean enalbed);
 jfloat   Runtime_stereoGetDepth();

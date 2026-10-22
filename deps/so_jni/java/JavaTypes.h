@@ -14,13 +14,13 @@ typedef enum JavaType {
     JAVA_TYPE_OBJECT  = 9,  // L
 } JavaType;
 
-typedef void *JObject;
-typedef void (*JObjectDtor)(JObject data);
+typedef void *JavaObject;
+typedef void (*JavaDtor)(JavaObject obj);
 
-typedef JObject JClass;
-typedef JObject JArray;
-typedef JObject JString;
-typedef JObject JBuffer;
+typedef JavaObject JavaClass;
+typedef JavaObject JavaArray;
+typedef JavaObject JavaString;
+typedef JavaObject JavaBuffer;
 
 #ifdef DEBUG_SOLOADER
 #define JAVA_BASE_CAST(_type, _obj, _magic) \

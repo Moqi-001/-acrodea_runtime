@@ -9,9 +9,9 @@ struct _MyDevice {
     uint32_t dummy;
 };
 
-static JClass sClass = NULL;
+static JavaClass sClass = NULL;
 
-JString MyDevice_getImei(MyDevice thiz) {
+JavaString MyDevice_getImei(MyDevice thiz) {
     const char *imei = "MACW:0026e879f969";  // 用于解密 .dat 的密钥
 
     so_logd("[MyDevice] getImei(): %s", imei);
@@ -30,7 +30,7 @@ jint MyDevice_getNavigationHiddenState() {
     return result;
 }
 
-JString MyDevice_getPlatformInfo() {
+JavaString MyDevice_getPlatformInfo() {
     const char *result = "Psvita";
     so_logd("[MyDevice] getPlatformInfo(): %s", result);
     return JavaNewStringUTF(result);
@@ -64,6 +64,7 @@ static JavaClassMeta class_meta = {
     .symbols       = class_symbols,
     .num_symbols   = sizeof(class_symbols) / sizeof(class_symbols[0]),
     .instance_size = sizeof(struct _MyDevice),
+    .dtor          = NULL,
 };
 
 void MyDevice_class_init(void) {

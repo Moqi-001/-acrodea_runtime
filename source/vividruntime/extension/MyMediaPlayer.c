@@ -9,7 +9,7 @@ struct _MyMediaPlayer {
     uint32_t dummy;
 };
 
-static JClass sClass = NULL;
+static JavaClass sClass = NULL;
 
 void MyMediaPlayer_ctor(MyMediaPlayer thiz) {
 }
@@ -29,6 +29,7 @@ static JavaClassMeta class_meta = {
     .symbols       = class_symbols,
     .num_symbols   = sizeof(class_symbols) / sizeof(class_symbols[0]),
     .instance_size = sizeof(struct _MyMediaPlayer),
+    .dtor          = NULL,
 };
 
 void MyMediaPlayer_class_init(void) {

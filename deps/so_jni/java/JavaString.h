@@ -8,15 +8,15 @@ extern "C" {
 #include "../jni.h"
 #include "JavaTypes.h"
 
-JString      JavaNewString(const jchar *utf16, jsize len);
-const jchar *JavaGetStringChars(JString string);
-jsize        JavaGetStringLength(JString string);
-jint         JavaGetStringRegion(JString string, jsize start, jsize length, jchar *dst);
+JavaString   JavaNewString(const jchar *utf16, jsize len);
+const jchar *JavaGetStringChars(JavaString string);
+jsize        JavaGetStringLength(JavaString string);
+jint         JavaGetStringRegion(JavaString string, jsize start, jsize length, jchar *dst);
 
-JString     JavaNewStringUTF(const char *utf8);
-const char *JavaGetStringUTFChars(JString string);
-jsize       JavaGetStringUTFLength(JString string);
-jint        JavaGetStringUTFRegion(JString string, jsize start, jsize length, char *dst);
+JavaString  JavaNewStringUTF(const char *utf8);
+const char *JavaGetStringUTFChars(JavaString string);
+jsize       JavaGetStringUTFLength(JavaString string);
+jint        JavaGetStringUTFRegion(JavaString string, jsize start, jsize length, char *dst);
 
 #ifdef __cplusplus
 }

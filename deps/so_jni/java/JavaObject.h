@@ -4,17 +4,17 @@
 #include "../jni.h"
 #include "JavaTypes.h"
 
-JObject JavaAllocObject(JClass clazz, JObjectDtor dtor);
-JObject JavaAllocObjectNoClass(jsize size, JObjectDtor dtor);
-JObject JavaRetainObject(JObject object);
-int32_t JavaReleaseObject(JObject object);
-int32_t JavaReleaseObjectKeep(JObject object);
-void    JavaReleaseObjectForce(JObject object);
+JavaObject JavaAllocObject(JavaClass clazz);
+JavaObject JavaAllocObjectNoClass(jsize size, JavaDtor dtor);
+JavaObject JavaRetainObject(JavaObject object);
+int32_t    JavaReleaseObject(JavaObject object);
+int32_t    JavaReleaseObjectKeep(JavaObject object);
+void       JavaReleaseObjectForce(JavaObject object);
 
-jint JavaRegisterWeakRef(JObject object, JObject *ref_ptr);
-void JavaUnregisterWeakRef(JObject object, JObject *ref_ptr);
+jint JavaRegisterWeakRef(JavaObject object, JavaObject *ref_ptr);
+void JavaUnregisterWeakRef(JavaObject object, JavaObject *ref_ptr);
 
-JClass JavaGetObjectClass(JObject object);
-jsize  JavaGetObjectSize(JObject object);
+JavaClass JavaGetObjectClass(JavaObject object);
+jsize     JavaGetObjectSize(JavaObject object);
 
 #endif

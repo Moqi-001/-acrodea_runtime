@@ -77,12 +77,11 @@ int so_context_remove_module(so_context *context, so_module *mod) {
 
     if (node->prev) {
         node->prev->next = node->next;
+    } else {
+        context->modules = node->next;
     }
     if (node->next) {
         node->next->prev = node->prev;
-    }
-    if (context->modules == node) {
-        context->modules = node->next;
     }
 
     mod->cookie = NULL;  // 清理 cookie，防止二次使用

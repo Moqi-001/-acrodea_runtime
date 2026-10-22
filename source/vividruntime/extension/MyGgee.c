@@ -9,7 +9,7 @@ struct _MyGgee {
     uint32_t dummy;
 };
 
-static JClass sClass = NULL;
+static JavaClass sClass = NULL;
 
 jint MyGgee_commonIsSLESCompatibility() {
     jint result = 1;
@@ -28,6 +28,7 @@ static JavaClassMeta class_meta = {
     .symbols       = class_symbols,
     .num_symbols   = sizeof(class_symbols) / sizeof(class_symbols[0]),
     .instance_size = sizeof(struct _MyGgee),
+    .dtor          = NULL,
 };
 
 void MyGgee_class_init(void) {

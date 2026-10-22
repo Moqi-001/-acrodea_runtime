@@ -1,11 +1,11 @@
 #include "so_jni_internal.h"
 
 jstring JniNewString(const jchar *utf16, jsize len) {
-    JString str = JavaNewString(utf16, len);
+    JavaString str = JavaNewString(utf16, len);
     if (!str) return NULL;
 
     jstring result = JniNewLocalRefFromJava(str);
-    JavaReleaseObject(str);// 由 LocalRef 托管
+    JavaReleaseObject(str);  // 由 LocalRef 托管
 
     return result;
 }
@@ -30,11 +30,11 @@ jint JniGetStringRegion(jstring string, jsize start, jsize length, jchar *buf) {
 }
 
 jstring JniNewStringUTF(const char *utf8) {
-    JString str = JavaNewStringUTF(utf8);
+    JavaString str = JavaNewStringUTF(utf8);
     if (!str) return NULL;
 
     jstring result = JniNewLocalRefFromJava(str);
-    JavaReleaseObject(str);// 由 LocalRef 托管
+    JavaReleaseObject(str);  // 由 LocalRef 托管
 
     return result;
 }

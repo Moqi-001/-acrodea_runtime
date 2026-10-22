@@ -100,7 +100,7 @@ int soloader_jni_onload(so_module *mod) {
         return -1;
     }
 
-    so_logd("[LOADER] JNI_OnLoad success! ('%s')", so_module_name(mod));
+    so_logd("[LOADER] JNI_OnLoad success! ('%s')", so_module_get_name(mod));
     return 0;
 }
 
@@ -133,7 +133,7 @@ int soloader_run() {
 
     soloader_jni_onload(runtime_mod);
 
-    JString appid = JavaNewStringUTF(RUNTIME_APP_ID);
+    JavaString appid = JavaNewStringUTF(RUNTIME_APP_ID);
     Runtime_launchRuntime(appid);
     JavaReleaseObject(appid);
 

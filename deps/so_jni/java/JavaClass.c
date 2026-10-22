@@ -9,25 +9,25 @@
 
 #include "JavaClass.h"
 
-typedef struct JavaClass    JavaClass;
+typedef struct _JavaClass   _JavaClass;
 typedef struct JavaClassReg JavaClassReg;
 
 struct JavaClassReg {
-    JavaClass    *clazz;
+    _JavaClass   *clazz;
     JavaClassReg *prev;
     JavaClassReg *next;
 };
 
-struct JavaClass {
+struct _JavaClass {
     uint32_t       magic;    // 魔数
-    JavaClass     *super;    // 父类
+    _JavaClass    *super;    // 父类
     uint32_t      *hashtab;  // 哈希表
     JavaClassMeta *meta;     // 元数据
     JavaClassReg  *reg;      // 注册句柄
 };
 
 #define JAVA_CLASS_MAGIC    0x43A23456  // "JavaClass".hashCode()
-#define JAVA_CLASS_CAST(_o) JAVA_BASE_CAST(JavaClass *, _o, JAVA_CLASS_MAGIC)
+#define JAVA_CLASS_CAST(_o) JAVA_BASE_CAST(_JavaClass *, _o, JAVA_CLASS_MAGIC)
 
 JavaClassReg *_java_class_registrations = NULL;
 
@@ -86,7 +86,7 @@ static uint32_t *_class_create_hashtab(JavaSymbol *symbols, jsize num_symbols) {
     return hashtab;
 }
 
-static JavaSymbol *_class_find_symbol(const JavaClass *cls, uint32_t hash, const char *name, const char *sig, int flags) {
+static JavaSymbol *_class_find_symbol(const _JavaClass *cls, uint32_t hash, const char *name, const char *sig, int flags) {
     if (!cls) return NULL;
 
     JavaClassMeta *meta    = cls->meta;
@@ -111,7 +111,7 @@ static JavaSymbol *_class_find_symbol(const JavaClass *cls, uint32_t hash, const
     return NULL;
 }
 
-static jint _class_register(JavaClass *cls, jboolean adopt) {
+static jint _class_register(_JavaClass *cls, jboolean adopt) {
     if (cls->reg) {  // 已注册过
         return JNI_OK;
     }
@@ -136,7 +136,7 @@ static jint _class_register(JavaClass *cls, jboolean adopt) {
     return JNI_OK;
 }
 
-static void _class_unregister(JavaClass *cls) {
+static void _class_unregister(_JavaClass *cls) {
     if (!cls->reg) return;
 
     if (cls->reg->prev) {
@@ -154,7 +154,7 @@ static void _class_unregister(JavaClass *cls) {
     JavaReleaseObject(cls);
 }
 
-static jint _class_ctor(JavaClass *cls, JavaClassMeta *meta) {
+static jint _class_ctor(_JavaClass *cls, JavaClassMeta *meta) {
     if (!cls || !meta) return JNI_EINVAL;
 
     cls->magic   = JAVA_CLASS_MAGIC;
@@ -171,7 +171,7 @@ static jint _class_ctor(JavaClass *cls, JavaClassMeta *meta) {
     return JNI_OK;
 }
 
-static void _class_dtor(JavaClass *cls) {
+static void _class_dtor(_JavaClass *cls) {
     if (!cls) return;
 
     if (cls->reg) {
@@ -183,8 +183,8 @@ static void _class_dtor(JavaClass *cls) {
     }
 }
 
-JClass JavaCreateClass(JavaClassMeta *meta) {
-    JavaClass *cls = (JavaClass *)JavaAllocObjectNoClass(sizeof(JavaClass), (JObjectDtor)_class_dtor);
+JavaClass JavaCreateClass(JavaClassMeta *meta) {
+    _JavaClass *cls = (_JavaClass *)JavaAllocObjectNoClass(sizeof(_JavaClass), (JavaDtor)_class_dtor);
     if (!cls) {
         return NULL;
     }
@@ -195,7 +195,7 @@ JClass JavaCreateClass(JavaClassMeta *meta) {
     }
 
     so_logd("[JNI] JavaCreateClass('%s'): %p", meta->name, cls);
-    return (JClass)cls;
+    return (JavaClass)cls;
 }
 
 void JavaClearClassRegister(void) {
@@ -204,7 +204,7 @@ void JavaClearClassRegister(void) {
     JavaClassReg *reg = _java_class_registrations;
     while (reg) {
         JavaClassReg *next  = reg->next;
-        JavaClass    *clazz = reg->clazz;
+        _JavaClass   *clazz = reg->clazz;
         free(reg);
         if (clazz) {
             clazz->reg = NULL;
@@ -215,8 +215,8 @@ void JavaClearClassRegister(void) {
     _java_class_registrations = NULL;
 }
 
-const JavaSymbol *JavaFindMethodSymbol(const JClass clazz, const char *name, const char *sig, jboolean is_static) {
-    JavaClass *cls = JAVA_CLASS_CAST(clazz);
+const JavaSymbol *JavaFindMethodSymbol(const JavaClass clazz, const char *name, const char *sig, jboolean is_static) {
+    _JavaClass *cls = JAVA_CLASS_CAST(clazz);
     if (!cls || !name || !sig) return NULL;
 
     uint32_t hash  = _java_hash(name, sig);
@@ -226,8 +226,8 @@ const JavaSymbol *JavaFindMethodSymbol(const JClass clazz, const char *name, con
     return _class_find_symbol(cls, hash, name, sig, flags);
 }
 
-const JavaSymbol *JavaFindFieldSymbol(const JClass clazz, const char *name, const char *sig, jboolean is_static) {
-    JavaClass *cls = JAVA_CLASS_CAST(clazz);
+const JavaSymbol *JavaFindFieldSymbol(const JavaClass clazz, const char *name, const char *sig, jboolean is_static) {
+    _JavaClass *cls = JAVA_CLASS_CAST(clazz);
     if (!cls || !name || !sig) return NULL;
 
     uint32_t hash  = _java_hash(name, sig);
@@ -237,8 +237,8 @@ const JavaSymbol *JavaFindFieldSymbol(const JClass clazz, const char *name, cons
     return _class_find_symbol(cls, hash, name, sig, flags);
 }
 
-const JavaSymbol *JavaFindNativeSymbol(const JClass clazz, const char *name, const char *sig) {
-    JavaClass *cls = JAVA_CLASS_CAST(clazz);
+const JavaSymbol *JavaFindNativeSymbol(const JavaClass clazz, const char *name, const char *sig) {
+    _JavaClass *cls = JAVA_CLASS_CAST(clazz);
     if (!cls || !name || !sig) return NULL;
 
     uint32_t hash  = _java_hash(name, sig);
@@ -247,13 +247,13 @@ const JavaSymbol *JavaFindNativeSymbol(const JClass clazz, const char *name, con
     return _class_find_symbol(cls, hash, name, sig, flags);
 }
 
-JClass JavaFindClass(const char *name) {
+JavaClass JavaFindClass(const char *name) {
     if (!name) return NULL;
 
     JavaClassReg *reg = _java_class_registrations;
     while (reg) {
         if (reg->clazz->meta->name && strcmp(reg->clazz->meta->name, name) == 0) {
-            return (JClass)reg->clazz;
+            return (JavaClass)reg->clazz;
         }
         reg = reg->next;
     }
@@ -261,22 +261,22 @@ JClass JavaFindClass(const char *name) {
     return NULL;
 }
 
-JClass JavaGetSuperclass(JClass clazz) {
-    JavaClass *cls = JAVA_CLASS_CAST(clazz);
+JavaClass JavaGetSuperclass(JavaClass clazz) {
+    _JavaClass *cls = JAVA_CLASS_CAST(clazz);
     if (!cls) return NULL;
 
-    return (JClass)cls->super;
+    return (JavaClass)cls->super;
 }
 
-jboolean JavaIsAssignableFrom(JClass _this, JClass _from) {
-    JavaClass *thiz = JAVA_CLASS_CAST(_this);
-    JavaClass *from = JAVA_CLASS_CAST(_from);
+jboolean JavaIsAssignableFrom(JavaClass _this, JavaClass _from) {
+    _JavaClass *thiz = JAVA_CLASS_CAST(_this);
+    _JavaClass *from = JAVA_CLASS_CAST(_from);
     if (!thiz || !from) return JNI_FALSE;
 
     if (thiz == from) return JNI_TRUE;
 
     // 判断 from 是否是 thiz 的子类 (子类包含了父类的所有数据，可以赋值给父类)
-    JavaClass *from_super = from->super;
+    _JavaClass *from_super = from->super;
     while (from_super) {
         if (thiz == from_super) return JNI_TRUE;
         from_super = from_super->super;
@@ -285,13 +285,13 @@ jboolean JavaIsAssignableFrom(JClass _this, JClass _from) {
     return JNI_FALSE;
 }
 
-jboolean JavaIsInstanceOf(JObject object, JClass clazz) {
+jboolean JavaIsInstanceOf(JavaObject object, JavaClass clazz) {
     // object 可作为 clazz 的实例用 ⇔ object 的类可赋值给 clazz
     return JavaIsAssignableFrom(clazz, JavaGetObjectClass(object));
 }
 
-jint JavaRegisterNatives(JClass clazz, const JNINativeMethod *methods, jint num_methods) {
-    JavaClass *cls = JAVA_CLASS_CAST(clazz);
+jint JavaRegisterNatives(JavaClass clazz, const JNINativeMethod *methods, jint num_methods) {
+    _JavaClass *cls = JAVA_CLASS_CAST(clazz);
     if (!cls || !methods || num_methods <= 0) return JNI_EINVAL;
 
     JavaClassMeta *meta = cls->meta;
@@ -315,8 +315,8 @@ jint JavaRegisterNatives(JClass clazz, const JNINativeMethod *methods, jint num_
     return JNI_OK;
 }
 
-jint JavaUnregisterNatives(JClass clazz) {
-    JavaClass *cls = JAVA_CLASS_CAST(clazz);
+jint JavaUnregisterNatives(JavaClass clazz) {
+    _JavaClass *cls = JAVA_CLASS_CAST(clazz);
     if (!cls) return JNI_EINVAL;
 
     JavaClassMeta *meta = cls->meta;
@@ -336,16 +336,30 @@ jint JavaUnregisterNatives(JClass clazz) {
     return JNI_OK;
 }
 
-const char *JavaGetClassName(JClass clazz) {
-    JavaClass *cls = JAVA_CLASS_CAST(clazz);
+JavaClassMeta *JavaGetClassMeta(JavaClass clazz) {
+    _JavaClass *cls = JAVA_CLASS_CAST(clazz);
+    if (!cls) return NULL;
+
+    return cls->meta;
+}
+
+const char *JavaGetClassName(JavaClass clazz) {
+    _JavaClass *cls = JAVA_CLASS_CAST(clazz);
     if (!cls) return NULL;
 
     return cls->meta->name;
 }
 
-jsize JavaGetClassInstanceSize(JClass clazz) {
-    JavaClass *cls = JAVA_CLASS_CAST(clazz);
+jsize JavaGetClassInstanceSize(JavaClass clazz) {
+    _JavaClass *cls = JAVA_CLASS_CAST(clazz);
     if (!cls) return 0;
 
     return cls->meta->instance_size;
+}
+
+JavaDtor JavaGetClassDestructor(JavaClass clazz) {
+    _JavaClass *cls = JAVA_CLASS_CAST(clazz);
+    if (!cls) return 0;
+
+    return cls->meta->dtor;
 }

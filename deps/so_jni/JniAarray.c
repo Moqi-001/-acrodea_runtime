@@ -2,7 +2,7 @@
 
 #define NEW_ARRAY(_jtype, _length, _jtype_enum)                    \
     ({                                                             \
-        JArray        arr    = JavaNewArray(_length, _jtype_enum); \
+        JavaArray     arr    = JavaNewArray(_length, _jtype_enum); \
         _jtype##Array result = JniNewLocalRefFromJava(arr);        \
         JavaReleaseObject(arr);                                    \
         result;                                                    \
@@ -34,13 +34,13 @@ jobjectArray JniNewObjectArray(jsize length, jclass elementClass, jobject initia
         return NULL;
     }
 
-    JObject initElem = JniObjectToJava(initialElement);
+    JavaObject initElem = JniObjectToJava(initialElement);
 
     if (initElem && !JavaIsInstanceOf(initElem, JniObjectToJava(elementClass))) {
         return NULL;
     }
 
-    JObject *arr = (JObject *)JavaNewArray(length, JAVA_TYPE_OBJECT);
+    JavaObject *arr = (JavaObject *)JavaNewArray(length, JAVA_TYPE_OBJECT);
     if (!arr) {
         return NULL;
     }
@@ -56,8 +56,8 @@ jobjectArray JniNewObjectArray(jsize length, jclass elementClass, jobject initia
 }
 
 jobject JniGetObjectArrayElement(jobjectArray array, jsize index) {
-    JObject *arr    = JniObjectToJava(array);
-    jsize    length = JavaGetArrayLength(arr);
+    JavaObject *arr    = JniObjectToJava(array);
+    jsize       length = JavaGetArrayLength(arr);
     if (!arr || index < 0 || index >= length) {
         return NULL;
     }
@@ -66,13 +66,13 @@ jobject JniGetObjectArrayElement(jobjectArray array, jsize index) {
 }
 
 void JniSetObjectArrayElement(jobjectArray array, jsize index, jobject value) {
-    JObject *arr    = JniObjectToJava(array);
-    jsize    length = JavaGetArrayLength(arr);
+    JavaObject *arr    = JniObjectToJava(array);
+    jsize       length = JavaGetArrayLength(arr);
     if (!arr || index < 0 || index >= length) {
         return;
     }
 
-    JObject val = JniObjectToJava(value);
+    JavaObject val = JniObjectToJava(value);
     if (arr[index] == val) return;
 
     if (arr[index]) {

@@ -5,16 +5,14 @@
 extern "C" {
 #endif
 
-#define BIONIC_O_WRONLY    01
-#define BIONIC_O_RDWR      02
-#define BIONIC_O_CREAT     0100
-#define BIONIC_O_EXCL      0200
-#define BIONIC_O_TRUNC     01000
-#define BIONIC_O_APPEND    02000
-#define BIONIC_O_NONBLOCK  04000
-#define BIONIC_O_DIRECTORY 00200000
-#define BIONIC__O_TMPFILE  020000000
-#define BIONIC_O_TMPFILE   (BIONIC__O_TMPFILE | BIONIC_O_DIRECTORY)
+#define BIONIC_O_RDONLY    00000000
+#define BIONIC_O_WRONLY    00000001
+#define BIONIC_O_RDWR      00000002
+#define BIONIC_O_CREAT     00000100
+#define BIONIC_O_EXCL      00000200
+#define BIONIC_O_TRUNC     00001000
+#define BIONIC_O_APPEND    00002000
+#define BIONIC_O_NONBLOCK  00004000
 
 int open_soloader(const char *path, int oflag, ...);
 

@@ -6,13 +6,13 @@
 #include "MyMovieBridge.h"
 
 struct _MyMovieBridge {
-    JString  path;
+    JavaString  path;
     jlong    offset;
     jlong    size;
     jboolean stop;
 };
 
-static JClass sClass = NULL;
+static JavaClass sClass = NULL;
 
 jint MyMovieBridge_setType(MyMovieBridge thiz, jint type) {
     jint result = 0;
@@ -20,7 +20,7 @@ jint MyMovieBridge_setType(MyMovieBridge thiz, jint type) {
     return result;
 }
 
-jint MyMovieBridge_play(MyMovieBridge thiz, JString path, jlong offset, jlong size) {
+jint MyMovieBridge_play(MyMovieBridge thiz, JavaString path, jlong offset, jlong size) {
     jint result  = 0;
     thiz->path   = JavaRetainObject(path);
     thiz->offset = offset;
@@ -43,6 +43,7 @@ static JavaClassMeta class_meta = {
     .symbols       = class_symbols,
     .num_symbols   = sizeof(class_symbols) / sizeof(class_symbols[0]),
     .instance_size = sizeof(struct _MyMovieBridge),
+    .dtor          = NULL,
 };
 
 void MyMovieBridge_class_init(void) {

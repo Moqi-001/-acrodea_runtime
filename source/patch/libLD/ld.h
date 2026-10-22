@@ -62,7 +62,7 @@ struct LdContext {
     LdModuleNode    *loaded_mods;        // +0   已加载的模块链表（头部）
     LdModuleNode   **tail_next_mod_ref;  // +4   已加载的模块链表尾部的next引用
     LdModuleNode    *unloaded_mods;      // +8   未加载的模块链表（后进先出，实为尾部）
-    pthread_mutex_t *mutex;              // +12  线程互斥锁
+    pthread_rwlock_t *mutex;              // +12  线程互斥锁
     LdModuleHooks    hooks;              // +16  (用于DRM解密？)
     LdIoVtable       io_vtable;          // +40  5个io虚函数表
     int32_t          exit_state;         // +60  退出状态
@@ -103,7 +103,7 @@ struct LdModule {
     uint32_t       versymnum;     // +112 符号版本表条目数量
 };  // 总大小: 116 字节
 
-extern uint32_t (*ldModuleSymHash)(const uint8_t *name);
+extern uint32_t (*ldModuleSymHash)(const char *name);
 extern void *(*ldModuleLookupSymbol)(LdModule *mod, const char *sym_name, uint32_t sym_hash, int visibility,
                                      const char *ver_name, uint32_t ver_hash);
 

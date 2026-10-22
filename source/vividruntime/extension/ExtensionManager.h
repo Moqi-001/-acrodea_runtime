@@ -13,7 +13,7 @@ typedef struct _ExtensionManager *ExtensionManager;
 
 void ExtensionManager_class_init(void);
 
-MyExtensionInterface ExtensionManager_getExtensonByName(ExtensionManager thiz, JString name);
+MyExtensionInterface ExtensionManager_getExtensonByName(ExtensionManager thiz, JavaString name);
 
 #ifdef __cplusplus
 }

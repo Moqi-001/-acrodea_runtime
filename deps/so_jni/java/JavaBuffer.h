@@ -8,11 +8,11 @@ extern "C" {
 #include "../jni.h"
 #include "JavaTypes.h"
 
-JBuffer JavaNewBuffer(jlong size);
-JBuffer JavaNewDirectBuffer(void *address, jlong size, jboolean copy, jboolean adopt);
+JavaBuffer JavaNewBuffer(jlong size);
+JavaBuffer JavaNewDirectBuffer(void *address, jlong size, jboolean copy, jboolean adopt);
 
-void *JavaGetBufferData(JBuffer buffer);
-jlong JavaGetBufferSize(JBuffer buffer);
+void *JavaGetBufferData(JavaBuffer buffer);
+jlong JavaGetBufferSize(JavaBuffer buffer);
 
 #ifdef __cplusplus
 }

@@ -6,18 +6,18 @@
 
 #include "JavaArray.h"
 
-typedef struct JavaArray {
+typedef struct _JavaArray {
     uint32_t magic;
     jint     type;
     jsize    length;
     jsize    elem_size;
     void    *elems;
-} JavaArray;
+} _JavaArray;
 
 #define JAVA_ARRAY_MAGIC    0x4388FD37  // "JavaArray".hashCode()
-#define JAVA_ARRAY_CAST(_o) JAVA_BASE_CAST(JavaArray *, _o, JAVA_ARRAY_MAGIC)
+#define JAVA_ARRAY_CAST(_o) JAVA_BASE_CAST(_JavaArray *, _o, JAVA_ARRAY_MAGIC)
 
-#define headerFromArray(_elems) (JavaArray *)(((char *)(_elems) + JavaGetObjectSize(_elems)) - sizeof(JavaArray))
+#define headerFromArray(_elems) (_JavaArray *)(((char *)(_elems) + JavaGetObjectSize(_elems)) - sizeof(_JavaArray))
 
 #define ALIGN_UP(x, align) (((x) + (align) - 1) & ~((align) - 1))
 
@@ -46,10 +46,10 @@ static jsize _type_size(jint type) {
     }
 }
 
-void _array_dtor(JArray arr) {
-    JavaArray *header = headerFromArray(arr);
+void _array_dtor(JavaArray arr) {
+    _JavaArray *header = headerFromArray(arr);
     if (header->type == JAVA_TYPE_OBJECT) {
-        JObject *elems = (JObject *)header->elems;
+        JavaObject *elems = (JavaObject *)header->elems;
         for (int i = 0; i < header->length; i++) {
             if (elems[i]) {
                 JavaReleaseObject(elems[i]);
@@ -58,49 +58,49 @@ void _array_dtor(JArray arr) {
     }
 }
 
-JArray JavaNewArray(jsize length, JavaType type) {
+JavaArray JavaNewArray(jsize length, JavaType type) {
     jsize elem_size = _type_size(type);
     if (length <= 0 || elem_size <= 0) return NULL;
 
     jsize elems_size = elem_size * length;
     elems_size       = ALIGN_UP(elems_size, sizeof(uintptr_t));
-    JArray array     = JavaAllocObjectNoClass(elems_size + sizeof(JavaArray), (JObjectDtor)_array_dtor);
+    JavaArray array  = JavaAllocObjectNoClass(elems_size + sizeof(_JavaArray), (JavaDtor)_array_dtor);
     if (!array) return NULL;
 
     if (type == JAVA_TYPE_OBJECT) {
         memset(array, 0, elems_size);
     }
 
-    JavaArray *header = headerFromArray(array);
-    header->magic     = JAVA_ARRAY_MAGIC;
-    header->type      = type;
-    header->length    = length;
-    header->elem_size = elem_size;
-    header->elems     = array;
+    _JavaArray *header = headerFromArray(array);
+    header->magic      = JAVA_ARRAY_MAGIC;
+    header->type       = type;
+    header->length     = length;
+    header->elem_size  = elem_size;
+    header->elems      = array;
 
     return array;
 }
 
-JavaType JavaGetArrayType(JArray array) {
+JavaType JavaGetArrayType(JavaArray array) {
     if (!array) return JAVA_TYPE_UNKNOWN;
 
-    JavaArray *header = JAVA_ARRAY_CAST(headerFromArray(array));
+    _JavaArray *header = JAVA_ARRAY_CAST(headerFromArray(array));
     if (!header) return JAVA_TYPE_UNKNOWN;
     return header->type;
 }
 
-jsize JavaGetArrayLength(JArray array) {
+jsize JavaGetArrayLength(JavaArray array) {
     if (!array) return 0;
 
-    JavaArray *header = JAVA_ARRAY_CAST(headerFromArray(array));
+    _JavaArray *header = JAVA_ARRAY_CAST(headerFromArray(array));
     if (!header) return 0;
     return header->length;
 }
 
-jint JavaGetArrayRegion(JArray array, jsize start, jsize length, void *dst) {
+jint JavaGetArrayRegion(JavaArray array, jsize start, jsize length, void *dst) {
     if (!array || !dst || start < 0 || length <= 0) return JNI_EINVAL;
 
-    JavaArray *header = JAVA_ARRAY_CAST(headerFromArray(array));
+    _JavaArray *header = JAVA_ARRAY_CAST(headerFromArray(array));
     if (!header) return JNI_ERR;
     if (start + length > header->length) return JNI_ERR;
 
@@ -110,10 +110,10 @@ jint JavaGetArrayRegion(JArray array, jsize start, jsize length, void *dst) {
     return JNI_OK;
 }
 
-jint JavaSetArrayRegion(JArray array, jsize start, jsize length, const void *src) {
+jint JavaSetArrayRegion(JavaArray array, jsize start, jsize length, const void *src) {
     if (!array || !src || start < 0 || length <= 0) return JNI_EINVAL;
 
-    JavaArray *header = JAVA_ARRAY_CAST(headerFromArray(array));
+    _JavaArray *header = JAVA_ARRAY_CAST(headerFromArray(array));
     if (!header) return JNI_ERR;
     if (start + length > header->length) return JNI_ERR;
 

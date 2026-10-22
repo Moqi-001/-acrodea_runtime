@@ -9,7 +9,7 @@ struct _MyImagePicker {
     uint32_t dummy;
 };
 
-static JClass sClass = NULL;
+static JavaClass sClass = NULL;
 
 static void dummy() {
 }
@@ -25,6 +25,7 @@ static JavaClassMeta class_meta = {
     .symbols       = class_symbols,
     .num_symbols   = sizeof(class_symbols) / sizeof(class_symbols[0]),
     .instance_size = sizeof(struct _MyImagePicker),
+    .dtor          = NULL,
 };
 
 void MyImagePicker_class_init(void) {

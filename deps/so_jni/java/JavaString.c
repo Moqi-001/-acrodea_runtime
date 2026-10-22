@@ -7,16 +7,16 @@
 
 #include "JavaString.h"
 
-typedef struct JavaString {
+typedef struct _JavaString {
     uint32_t magic;
     jchar   *utf16;
     jsize    utf16_len;
     char    *utf8;
     jsize    utf8_len;
-} JavaString;
+} _JavaString;
 
-#define JAVA_STRING_MAGIC    0x4C6A30F3  // "JString".hashCode()
-#define JAVA_STRING_CAST(_o) JAVA_BASE_CAST(JavaString *, _o, JAVA_STRING_MAGIC)
+#define JAVA_STRING_MAGIC    0x4C6A30F3  // "JavaString".hashCode()
+#define JAVA_STRING_CAST(_o) JAVA_BASE_CAST(_JavaString *, _o, JAVA_STRING_MAGIC)
 
 static jsize _utf8_to_utf16_length(const char *utf8, jsize utf8_len) {
     if (!utf8 || utf8_len <= 0) return 0;
@@ -197,7 +197,7 @@ static void _utf16_to_utf8(const jchar *utf16, jsize utf16_len, char *utf8_out) 
     *utf8_out = '\0';
 }
 
-static jint _string_utf16_ensure(JavaString *str) {
+static jint _string_utf16_ensure(_JavaString *str) {
     if (!str) return JNI_ERR;
 
     if (str->utf16) return JNI_OK;
@@ -219,7 +219,7 @@ static jint _string_utf16_ensure(JavaString *str) {
     return JNI_OK;
 }
 
-static jint _string_utf8_ensure(JavaString *str) {
+static jint _string_utf8_ensure(_JavaString *str) {
     if (!str) return JNI_ERR;
 
     if (str->utf8) return JNI_OK;
@@ -241,7 +241,7 @@ static jint _string_utf8_ensure(JavaString *str) {
     return JNI_OK;
 }
 
-static jint _string_utf16_ctor(JavaString *str, const jchar *utf16, jsize utf16_len) {
+static jint _string_utf16_ctor(_JavaString *str, const jchar *utf16, jsize utf16_len) {
     if (!str || !utf16 || utf16_len <= 0) return JNI_EINVAL;
 
     str->magic       = JAVA_STRING_MAGIC;
@@ -258,7 +258,7 @@ static jint _string_utf16_ctor(JavaString *str, const jchar *utf16, jsize utf16_
     return JNI_OK;
 }
 
-static jint _string_utf8_ctor(JavaString *str, const char *utf8) {
+static jint _string_utf8_ctor(_JavaString *str, const char *utf8) {
     if (!str || !utf8) return JNI_EINVAL;
 
     str->magic      = JAVA_STRING_MAGIC;
@@ -276,7 +276,7 @@ static jint _string_utf8_ctor(JavaString *str, const char *utf8) {
     return JNI_OK;
 }
 
-static void _string_dtor(JavaString *str) {
+static void _string_dtor(_JavaString *str) {
     if (!str) return;
 
     if (str->utf16) {
@@ -287,8 +287,8 @@ static void _string_dtor(JavaString *str) {
     }
 }
 
-JString JavaNewString(const jchar *utf16, jsize len) {
-    JavaString *str = (JavaString *)JavaAllocObjectNoClass(sizeof(JavaString), (JObjectDtor)_string_dtor);
+JavaString JavaNewString(const jchar *utf16, jsize len) {
+    _JavaString *str = (_JavaString *)JavaAllocObjectNoClass(sizeof(_JavaString), (JavaDtor)_string_dtor);
     if (!str) {
         return NULL;
     }
@@ -298,11 +298,11 @@ JString JavaNewString(const jchar *utf16, jsize len) {
         return NULL;
     }
 
-    return (JString)str;
+    return (JavaString)str;
 }
 
-const jchar *JavaGetStringChars(JString string) {
-    JavaString *str = JAVA_STRING_CAST(string);
+const jchar *JavaGetStringChars(JavaString string) {
+    _JavaString *str = JAVA_STRING_CAST(string);
     if (!str) return NULL;
 
     if (_string_utf16_ensure(str) != JNI_OK) return NULL;
@@ -310,8 +310,8 @@ const jchar *JavaGetStringChars(JString string) {
     return str->utf16;
 }
 
-jsize JavaGetStringLength(JString string) {
-    JavaString *str = JAVA_STRING_CAST(string);
+jsize JavaGetStringLength(JavaString string) {
+    _JavaString *str = JAVA_STRING_CAST(string);
     if (!str) return 0;
 
     if (_string_utf16_ensure(str) != JNI_OK) return 0;
@@ -319,8 +319,8 @@ jsize JavaGetStringLength(JString string) {
     return str->utf16_len;
 }
 
-jint JavaGetStringRegion(JString string, jsize start, jsize length, jchar *dst) {
-    JavaString *str = JAVA_STRING_CAST(string);
+jint JavaGetStringRegion(JavaString string, jsize start, jsize length, jchar *dst) {
+    _JavaString *str = JAVA_STRING_CAST(string);
     if (!str || !dst || start < 0 || length <= 0) return JNI_EINVAL;
 
     if (_string_utf16_ensure(str) != JNI_OK) return JNI_ERR;
@@ -332,8 +332,8 @@ jint JavaGetStringRegion(JString string, jsize start, jsize length, jchar *dst) 
     return JNI_OK;
 }
 
-JString JavaNewStringUTF(const char *utf8) {
-    JavaString *str = (JavaString *)JavaAllocObjectNoClass(sizeof(JavaString), (JObjectDtor)_string_dtor);
+JavaString JavaNewStringUTF(const char *utf8) {
+    _JavaString *str = (_JavaString *)JavaAllocObjectNoClass(sizeof(_JavaString), (JavaDtor)_string_dtor);
     if (!str) {
         return NULL;
     }
@@ -343,11 +343,11 @@ JString JavaNewStringUTF(const char *utf8) {
         return NULL;
     }
 
-    return (JString)str;
+    return (JavaString)str;
 }
 
-const char *JavaGetStringUTFChars(JString string) {
-    JavaString *str = JAVA_STRING_CAST(string);
+const char *JavaGetStringUTFChars(JavaString string) {
+    _JavaString *str = JAVA_STRING_CAST(string);
     if (!str) return NULL;
 
     if (_string_utf8_ensure(str) != JNI_OK) return NULL;
@@ -355,8 +355,8 @@ const char *JavaGetStringUTFChars(JString string) {
     return str->utf8;
 }
 
-jsize JavaGetStringUTFLength(JString string) {
-    JavaString *str = JAVA_STRING_CAST(string);
+jsize JavaGetStringUTFLength(JavaString string) {
+    _JavaString *str = JAVA_STRING_CAST(string);
     if (!str) return 0;
 
     if (_string_utf8_ensure(str) != JNI_OK) return 0;
@@ -364,8 +364,8 @@ jsize JavaGetStringUTFLength(JString string) {
     return str->utf8_len;
 }
 
-jint JavaGetStringUTFRegion(JString string, jsize start, jsize length, char *dst) {
-    JavaString *str = JAVA_STRING_CAST(string);
+jint JavaGetStringUTFRegion(JavaString string, jsize start, jsize length, char *dst) {
+    _JavaString *str = JAVA_STRING_CAST(string);
     if (!str || !dst || start < 0 || length <= 0) return JNI_EINVAL;
 
     if (_string_utf8_ensure(str) != JNI_OK) return JNI_ERR;

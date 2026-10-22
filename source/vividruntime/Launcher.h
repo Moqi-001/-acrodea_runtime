@@ -7,7 +7,7 @@ extern "C" {
 
 #include <so_jni/so_jni.h>
 
-void Launcher_launchRuntime(JString appid);
+void Launcher_launchRuntime(JavaString appid);
 void Launcher_appFinish();
 
 #ifdef __cplusplus

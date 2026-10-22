@@ -1,10 +1,10 @@
+#include <pthread.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
 #include <so_common/so_logger.h>
 
-#include "../bionic/bionic_pthread.h"
 #include "Errors.h"
 
 #include "Thread.h"
@@ -97,15 +97,15 @@ int AThread_run(AThread *thiz, const char *name, int priority, size_t stack) {
     thiz->mRunning     = true;
 
     pthread_attr_init(&attr);
-    if (stack > 0) {
+    if (priority != 0) {
+        struct sched_param param;
+        param.sched_priority = priority;
+        pthread_attr_setschedparam(&attr, &param);
+    }
+    if (stack != 0) {
         pthread_attr_setstacksize(&attr, stack);
     } else {
         pthread_attr_setstacksize(&attr, 512 * 1024);
-    }
-    if (priority > 0) {
-        // struct sched_param param;
-        // param.sched_priority = priority;
-        // pthread_attr_setschedparam(&attr, &param);
     }
 
     res = pthread_create(&thread, &attr, _threadLoop, thiz);

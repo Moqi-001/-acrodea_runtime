@@ -178,7 +178,7 @@ jint JniCallCommonMethodV(void *result, jobject object, jmethodID methodID, va_l
     JniForwardMethod(&frame, result);
 
     if (result && JNI_TYPE_IS_OBJECT(method->retType)) {
-        JObject obj        = *(JObject *)result;
+        JavaObject obj     = *(JavaObject *)result;
         *(jobject *)result = JniNewLocalRefFromJava(obj);
         JavaReleaseObject(obj);
     }
@@ -205,7 +205,7 @@ jint JniCallCommonMethodA(void *result, jobject object, jmethodID methodID, cons
     JniForwardMethod(&frame, result);
 
     if (result && JNI_TYPE_IS_OBJECT(method->retType)) {
-        JObject obj        = *(JObject *)result;
+        JavaObject obj     = *(JavaObject *)result;
         *(jobject *)result = JniNewLocalRefFromJava(obj);
         JavaReleaseObject(obj);
     }
