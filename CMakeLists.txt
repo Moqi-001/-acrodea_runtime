@@ -150,6 +150,7 @@ target_link_directories (${CMAKE_PROJECT_NAME}
 
 target_link_libraries(${CMAKE_PROJECT_NAME}
   -Wl,--whole-archive pthread -Wl,--no-whole-archive
+  speexdsp
   vitaGL
   vitashark
   SceShaccCgExt
@@ -186,11 +187,11 @@ vita_create_vpk(${VITA_VPKNAME}.vpk ${VITA_TITLEID} eboot.bin
   FILE ${CMAKE_SOURCE_DIR}/resources/cpuinfo cpuinfo
   FILE ${CMAKE_SOURCE_DIR}/resources/meminfo meminfo
   FILE ${CMAKE_SOURCE_DIR}/resources/urandom urandom
-  FILE ${CMAKE_SOURCE_DIR}/resources/livearea/icon0.png sce_sys/icon0.png
-  FILE ${CMAKE_SOURCE_DIR}/resources/livearea/pic0.png sce_sys/pic0.png
-  FILE ${CMAKE_SOURCE_DIR}/resources/livearea/startup.png sce_sys/livearea/contents/startup.png
-  FILE ${CMAKE_SOURCE_DIR}/resources/livearea/bg0.png sce_sys/livearea/contents/bg0.png
-  FILE ${CMAKE_SOURCE_DIR}/resources/livearea/template.xml sce_sys/livearea/contents/template.xml
+  FILE ${CMAKE_SOURCE_DIR}/resources/livearea/${VITA_VPKNAME}/icon0.png sce_sys/icon0.png
+  FILE ${CMAKE_SOURCE_DIR}/resources/livearea/${VITA_VPKNAME}/pic0.png sce_sys/pic0.png
+  FILE ${CMAKE_SOURCE_DIR}/resources/livearea/${VITA_VPKNAME}/startup.png sce_sys/livearea/contents/startup.png
+  FILE ${CMAKE_SOURCE_DIR}/resources/livearea/${VITA_VPKNAME}/bg0.png sce_sys/livearea/contents/bg0.png
+  FILE ${CMAKE_SOURCE_DIR}/resources/livearea/${VITA_VPKNAME}/template.xml sce_sys/livearea/contents/template.xml
 )
 
 add_custom_target(send

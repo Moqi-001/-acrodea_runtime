@@ -8,8 +8,8 @@ typedef struct _AudioTrack *AudioTrack;
 void android_media_AudioTrack_class_init(void);
 
 void AudioTrack_ctor(AudioTrack thiz, jint streamType, jint sampleRateInHz, jint channelConfig,
-                     jint audioFormat, int bufferSizeInBytes, int mode);
-jint AudioTrack_write(AudioTrack thiz, jbyte *audioData, int offsetInBytes, int sizeInBytes);
+                     jint audioFormat, jint bufferSizeInBytes, jint mode);
+jint AudioTrack_write(AudioTrack thiz, jbyte *audioData, jint offsetInBytes, jint sizeInBytes);
 jint AudioTrack_setStereoVolume(AudioTrack thiz, jfloat leftVolume, jfloat rightVolume);
 void AudioTrack_play(AudioTrack thiz);
 void AudioTrack_pause(AudioTrack thiz);

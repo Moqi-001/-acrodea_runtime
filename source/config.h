@@ -16,6 +16,11 @@
 #define SO_CACHE_DIR  DATA_PATH "cache/"
 #define SO_TTF_PATH   "app0:font.ttf"
 
+/* 1760 DevilMayCry4
+   1761 GhostTrick
+   1277 iShantae
+   705  Mugenmakai_Disgaea_En_gstore
+*/
 #define RUNTIME_APP_ID "1760"  // "1760" "1761" "1277" "705"
 
 #endif

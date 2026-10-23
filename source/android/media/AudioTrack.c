@@ -6,6 +6,7 @@
 #include <psp2/kernel/processmgr.h>
 #include <so_common/so_logger.h>
 #include <so_jni/so_jni.h>
+#include <speex/speex_resampler.h>
 
 #include "AudioFormat.h"
 #include "AudioTrack.h"
@@ -40,10 +41,17 @@
 #define ERROR_NATIVESETUP_NATIVEINITFAILED   (-20)
 
 // ------------------------------------------------------------------
-#define OUTPUTS_NUM         3                     // 输出缓冲区的缓存数量
-#define OUTPUT_FRAMES       512u                  // 每次输出的帧数
-#define TRACKS_NUM          16                    // 音轨数量
-#define TRACK_BUFFER_FRAMES (OUTPUT_FRAMES << 4)  // 音轨缓冲区的帧数
+#define OUTPUT_SAMPLE_RATE_HZ 48000                 // 输出采样率
+#define OUTPUTS_NUM           3                     // 输出缓冲区的缓存数量
+#define OUTPUT_FRAMES         512u                  // 每次输出的帧数
+#define TRACKS_NUM            16                    // 音轨数量
+#define TRACK_BUFFER_FRAMES   (OUTPUT_FRAMES << 4)  // 音轨缓冲区的帧数
+
+typedef struct AudioResampler {
+    SpeexResamplerState *state;
+    int16_t             *buffer;
+    jint                 buffer_len;
+} AudioResampler;
 
 typedef struct AudioTrackImpl {
     jint                 slot;
@@ -62,6 +70,7 @@ typedef struct AudioTrackImpl {
     size_t               stop_pos;
     SceKernelLwMutexWork mutex __attribute__((aligned(8)));  // 需8字节对齐
     SceKernelLwCondWork  cond __attribute__((aligned(8)));   // 需8字节对齐
+    AudioResampler       resampler;
 } AudioTrackImpl;
 
 struct _AudioTrack {
@@ -73,7 +82,6 @@ static JavaClass sClass = NULL;
 static jboolean             audio_inited               = JNI_FALSE;
 static SceUID               audio_thid                 = -1;
 static SceUID               audio_port                 = -1;
-static jint                 audio_channel_count        = 2;
 static jboolean             audio_pause                = JNI_FALSE;
 static jboolean             audio_stop                 = JNI_FALSE;
 static AudioTrackImpl      *audio_tracks[TRACKS_NUM]   = {0};
@@ -82,14 +90,19 @@ static size_t               audio_output_len           = 0;
 static size_t               audio_output_size          = 0;
 static SceKernelLwMutexWork audio_main_mutex;
 
-static size_t mix_track(int16_t *output, size_t output_len, const int16_t *input, size_t input_len, float volume) {
+static size_t mix_track(int16_t *output, size_t output_len, const int16_t *input, size_t input_len, float left_volume, float right_volume) {
     size_t mixed_len = output_len < input_len ? output_len : input_len;
 
-    for (size_t i = 0; i < mixed_len; i++) {
-        int32_t sum = (int32_t)output[i] + (int32_t)input[i] * volume;
+    for (size_t i = 0; i < mixed_len; i += 2) {
+        int32_t sum = (int32_t)output[i] + (int32_t)input[i] * left_volume;
         if (sum > 32767) sum = 32767;
         if (sum < -32768) sum = -32768;
         output[i] = (int16_t)sum;
+
+        sum = (int32_t)output[i + 1] + (int32_t)input[i + 1] * right_volume;
+        if (sum > 32767) sum = 32767;
+        if (sum < -32768) sum = -32768;
+        output[i + 1] = (int16_t)sum;
     }
 
     return mixed_len;
@@ -154,12 +167,12 @@ static int audio_thread(SceSize args, void *argp) {
                 size_t second_part = mixed_len - first_part;
 
                 mix_track(output_buffer, output_len,
-                          track->buffer + track->read_pos, first_part, track->left_volume);
+                          track->buffer + track->read_pos, first_part, track->left_volume, track->right_volume);
                 mix_track(output_buffer + first_part, output_len - first_part,
-                          track->buffer, second_part, track->left_volume);
+                          track->buffer, second_part, track->left_volume, track->right_volume);
             } else {
                 mix_track(output_buffer, output_len,
-                          track->buffer + track->read_pos, mixed_len, track->left_volume);
+                          track->buffer + track->read_pos, mixed_len, track->left_volume, track->right_volume);
             }
 
             track->read_pos = (track->read_pos + mixed_len) % track->buffer_len;
@@ -186,10 +199,9 @@ static int audio_thread(SceSize args, void *argp) {
     return 0;
 }
 
-static int audio_init(jint sample_rate, jint channel_count) {
-    audio_channel_count = channel_count;
-    audio_output_len    = OUTPUT_FRAMES * audio_channel_count;
-    audio_output_size   = audio_output_len * sizeof(int16_t);
+static int audio_init() {
+    audio_output_len  = OUTPUT_FRAMES * 2;
+    audio_output_size = audio_output_len * sizeof(int16_t);
 
     for (jint i = 0; i < OUTPUTS_NUM; i++) {
         if (audio_outputs[i]) free(audio_outputs[i]);
@@ -201,9 +213,7 @@ static int audio_init(jint sample_rate, jint channel_count) {
         }
     }
 
-    SceAudioOutMode out_mode = channel_count == 2 ? SCE_AUDIO_OUT_MODE_STEREO : SCE_AUDIO_OUT_MODE_MONO;
-
-    audio_port = sceAudioOutOpenPort(SCE_AUDIO_OUT_PORT_TYPE_BGM, OUTPUT_FRAMES, sample_rate, out_mode);
+    audio_port = sceAudioOutOpenPort(SCE_AUDIO_OUT_PORT_TYPE_BGM, OUTPUT_FRAMES, OUTPUT_SAMPLE_RATE_HZ, SCE_AUDIO_OUT_MODE_STEREO);
     if (audio_port < 0) {
         so_loge("[AudioTrack] audio_init: sceAudioOutOpenPort failed!");
         return -1;
@@ -238,7 +248,7 @@ static int audio_init(jint sample_rate, jint channel_count) {
 }
 
 void AudioTrack_ctor(AudioTrack thiz, jint streamType, jint sampleRateInHz, jint channelConfig,
-                     jint audioFormat, jint bufferSizeInBytes, int mode) {  // (3,16000,4,2,4096,1)
+                     jint audioFormat, jint bufferSizeInBytes, jint mode) {  // (3,16000,4,2,4096,1)
     thiz->impl = NULL;
 
     AudioTrackImpl *impl = calloc(1, sizeof(AudioTrackImpl));
@@ -276,7 +286,7 @@ void AudioTrack_ctor(AudioTrack thiz, jint streamType, jint sampleRateInHz, jint
             return;
     }
 
-    if (!audio_inited && audio_init(sampleRateInHz, impl->channel_count) != JNI_OK) {
+    if (!audio_inited && audio_init() != JNI_OK) {
         free(impl);
         return;
     }
@@ -289,12 +299,34 @@ void AudioTrack_ctor(AudioTrack thiz, jint streamType, jint sampleRateInHz, jint
     impl->write_pos    = 0;
     impl->stop_pos     = 0;
 
-    impl->buffer_len = TRACK_BUFFER_FRAMES * impl->channel_count;
+    impl->buffer_len = TRACK_BUFFER_FRAMES * 2;  // 输出双声道
     impl->buffer     = malloc(impl->buffer_len * sizeof(int16_t));
     if (!impl->buffer) {
         so_loge("[AudioTrack] ctor: no free memory!");
         free(impl);
         return;
+    }
+
+    if (sampleRateInHz != OUTPUT_SAMPLE_RATE_HZ) {
+        impl->resampler.state = speex_resampler_init(impl->channel_count, sampleRateInHz, OUTPUT_SAMPLE_RATE_HZ, 1, NULL);
+        if (!impl->resampler.state) {
+            so_loge("[AudioTrack] ctor: speex_resampler_init failed!");
+            free(impl->buffer);
+            free(impl);
+            return;
+        }
+
+        jint input_frames          = bufferSizeInBytes / (sizeof(int16_t) * impl->channel_count);
+        jint output_frames         = (input_frames * OUTPUT_SAMPLE_RATE_HZ + sampleRateInHz - 1) / sampleRateInHz + 64;
+        impl->resampler.buffer_len = output_frames * impl->channel_count;
+        impl->resampler.buffer     = (int16_t *)malloc(impl->buffer_len * sizeof(int16_t));
+        if (!impl->resampler.buffer) {
+            so_loge("[AudioTrack] ctor: no free memory!");
+            speex_resampler_destroy(impl->resampler.state);
+            free(impl->buffer);
+            free(impl);
+            return;
+        }
     }
 
     sceKernelCreateLwMutex(&impl->mutex, "audio_track_mutex", 2, 0, NULL);
@@ -332,21 +364,34 @@ void AudioTrack_dtor(AudioTrack thiz) {
     AudioTrack_release(thiz);
 }
 
-jint AudioTrack_write(AudioTrack thiz, jbyte *audioData, int offsetInBytes, int sizeInBytes) {
+jint AudioTrack_write(AudioTrack thiz, jbyte *audioData, jint offsetInBytes, jint sizeInBytes) {
     AudioTrackImpl *impl = thiz->impl;
     if (!impl || impl->state == STATE_UNINITIALIZED) return -1;
 
     if (!audioData || sizeInBytes == 0) return sizeInBytes;
 
-    jint result = sizeInBytes;
+    jint     result = sizeInBytes;
+    int16_t *in_buf = (int16_t *)(audioData + offsetInBytes);
+    jint     in_len = sizeInBytes / sizeof(int16_t);
+
+    if (impl->resampler.state) {
+        jint in_frames  = in_len / impl->channel_count;
+        jint out_frames = impl->resampler.buffer_len / impl->channel_count;
+        speex_resampler_process_interleaved_int(impl->resampler.state, in_buf, &in_frames, impl->resampler.buffer, &out_frames);
+        in_buf = impl->resampler.buffer;
+        in_len = out_frames * impl->channel_count;
+    }
 
     sceKernelLockLwMutex(&impl->mutex, 1, NULL);
 
-    int16_t *in_buf     = (int16_t *)(audioData + offsetInBytes);
-    size_t   in_len     = sizeInBytes / sizeof(int16_t);
     int16_t *out_buf    = (int16_t *)(impl->buffer);
-    size_t   buffer_len = impl->buffer_len;
+    jint     buffer_len = impl->buffer_len;
     size_t   write_pos  = impl->write_pos;
+
+    jint need_len = in_len;
+    if (impl->channel_count == 1) {
+        need_len = in_len * 2;
+    }
 
     for (;;) {
         size_t free_len;
@@ -355,7 +400,7 @@ jint AudioTrack_write(AudioTrack thiz, jbyte *audioData, int offsetInBytes, int 
         } else {
             free_len = impl->read_pos + buffer_len - write_pos;
         }
-        if (free_len > in_len) break;
+        if (free_len > need_len) break;
 
         sceKernelWaitLwCond(&impl->cond, NULL);  // 等待，防止音频播放跟不上
         if (impl->state == STATE_UNINITIALIZED) {
@@ -364,16 +409,25 @@ jint AudioTrack_write(AudioTrack thiz, jbyte *audioData, int offsetInBytes, int 
         }
     }
 
-    size_t first_part = buffer_len - write_pos;
-    if (first_part < in_len) {
-        size_t second_part = in_len - first_part;
-        memcpy(out_buf + write_pos, in_buf, first_part * sizeof(int16_t));
-        memcpy(out_buf, in_buf + first_part, second_part * sizeof(int16_t));
+    if (impl->channel_count == 1) {
+        for (jint i = 0; i < in_len; i++) {
+            out_buf[write_pos++] = in_buf[i];
+            if (write_pos >= buffer_len) write_pos = 0;
+            out_buf[write_pos++] = in_buf[i];
+            if (write_pos >= buffer_len) write_pos = 0;
+        }
+        impl->write_pos = write_pos;
     } else {
-        memcpy(out_buf + write_pos, in_buf, sizeInBytes);
+        size_t first_part = buffer_len - write_pos;
+        if (first_part < in_len) {
+            size_t second_part = in_len - first_part;
+            memcpy(out_buf + write_pos, in_buf, first_part * sizeof(int16_t));
+            memcpy(out_buf, in_buf + first_part, second_part * sizeof(int16_t));
+        } else {
+            memcpy(out_buf + write_pos, in_buf, in_len * sizeof(int16_t));
+        }
+        impl->write_pos = (impl->write_pos + in_len) % buffer_len;
     }
-
-    impl->write_pos = (impl->write_pos + in_len) % buffer_len;
 
     sceKernelUnlockLwMutex(&impl->mutex, 1);
 
@@ -492,6 +546,7 @@ jint AudioTrack_getMinBufferSize(jint sampleRateInHz, jint channelConfig, jint a
 
     // 建议值：至少能容纳 10ms 的据数
     jint minFrames = sampleRateInHz / 100;  // 10ms 的帧数
+    minFrames      = (minFrames + 7) & ~7;
     // 确保不小于硬件输出块大小
     if (minFrames < OUTPUT_FRAMES) {
         minFrames = OUTPUT_FRAMES;
