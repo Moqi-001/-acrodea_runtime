@@ -5,15 +5,42 @@ if (NOT DEFINED ENV{VITASDK} AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
 endif ()
 
 set(CMAKE_TOOLCHAIN_FILE "$ENV{VITASDK}/share/vita.toolchain.cmake" CACHE PATH "Toolchain file")
+include("$ENV{VITASDK}/share/vita.cmake" REQUIRED)
 
-project(AcrodeaRuntime C CXX)
+if(RUNTIME_APP_ID STREQUAL "705")
+  project(MugenmakaiDisgaea C CXX)
+  set(VITA_APP_NAME "Mugenmakai Disgaea")
+  set(VITA_TITLEID  "GGEE00705")
+  set(VITA_VPKNAME  "MugenmakaiDisgaea")
 
-include("${VITASDK}/share/vita.cmake" REQUIRED)
+elseif(RUNTIME_APP_ID STREQUAL "1277")
+  project(AcrodeaRuntime C CXX)
+  set(VITA_APP_NAME "Shantae Risky's Revenge")
+  set(VITA_TITLEID  "GGEE01277")
+  set(VITA_VPKNAME  "ShantaeRiskysRevenge")
+
+elseif(RUNTIME_APP_ID STREQUAL "1760")
+  project(DevilMayCry4refrain C CXX)
+  set(VITA_APP_NAME "Devil May Cry 4 refrain")
+  set(VITA_TITLEID  "GGEE01760")
+  set(VITA_VPKNAME  "DevilMayCry4refrain")
+
+elseif(RUNTIME_APP_ID STREQUAL "1761")
+  project(GhostTrick C CXX)
+  set(VITA_APP_NAME "Ghost Trick")
+  set(VITA_TITLEID  "GGEE01761")
+  set(VITA_VPKNAME  "GhostTrick")
+
+else()
+  set(RUNTIME_APP_ID "1760")
+  project(AcrodeaRuntime C CXX)
+  set(VITA_APP_NAME "AcrodeaRuntime")
+  set(VITA_TITLEID  "ACRODEA00")
+  set(VITA_VPKNAME  "AcrodeaRuntime")
+
+endif()
 
 # Vita application configuration
-set(VITA_APP_NAME "Devil May Cry 4 refrain")
-set(VITA_TITLEID  "GGEE01760")
-set(VITA_VPKNAME  "DevilMayCry4refrain")
 set(VITA_VERSION  "01.00")
 set(VITA_MKSFOEX_FLAGS "-d ATTRIBUTE2=12")
 
@@ -24,7 +51,11 @@ set(PARSECOREPATH "$ENV{PARSECOREPATH}" CACHE STRING "vita-parse-core main.py")
 # Game-specific definitions
 set(DATA_PATH "ux0:data/Acrodea/" CACHE STRING "Path to data (with trailing /)")
 set(LOG_PATH "${DATA_PATH}log.txt" CACHE STRING "Path to log.txt")
-add_definitions(-DDATA_PATH="${DATA_PATH}" -DLOG_PATH="${LOG_PATH}")
+add_definitions(
+  -DDATA_PATH="${DATA_PATH}" 
+  -DLOG_PATH="${LOG_PATH}"
+  -DRUNTIME_APP_ID="${RUNTIME_APP_ID}"
+)
 
 # Unique debug definition for loader's logging to not interfere with anything
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -39,17 +70,17 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mfpu=neon -mfloat-abi=softfp -std=gnu11 -Wn
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mfpu=neon -mfloat-abi=softfp -std=gnu++20 -Wno-write-strings -Wno-psabi")
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O1 -g3")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O1 -g3")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O1 -g3")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O1 -g3")
 else ()
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -g0 -ffast-math")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -g0 -ffast-math")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -g0 -ffast-math")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -g0 -ffast-math")
 endif()
 
 add_link_options(
-    -Wl,-q
-    -Wl,--wrap=chdir_soloader
-    -Wl,--wrap=fopen_soloader
+  -Wl,-q
+  -Wl,--wrap=chdir_soloader
+  -Wl,--wrap=fopen_soloader
 )
 
 enable_language(ASM)
@@ -57,31 +88,43 @@ enable_language(ASM)
 file(GLOB_RECURSE SO_COMMON_SRC  deps/so_common/*.c)
 file(GLOB_RECURSE SO_LINKER_SRC  deps/so_linker/*.c)
 file(GLOB_RECURSE SO_JNI_SRC     deps/so_jni/*.c deps/so_jni/*.S)
-file(GLOB_RECURSE SO_BIONIC_SRC  deps/so_libs/reimpl/bionic/*.c)
-file(GLOB_RECURSE SO_ANDROID_SRC deps/so_libs/reimpl/android/*.c)
+
+file(GLOB_RECURSE SO_LIBNATIVEHELPER_SRC deps/so_libs/libnativehelper/*.c)
+file(GLOB_RECURSE SO_LIBLOG_SRC          deps/so_libs/liblog/*.c)
+file(GLOB_RECURSE SO_LIBCUTILS_SRC       deps/so_libs/libcutils/*.c)
+file(GLOB_RECURSE SO_LIBUTILS_SRC        deps/so_libs/libutils/*.c)
+file(GLOB_RECURSE SO_libGLESv1_CM_SRC    deps/so_libs/libGLESv1_CM/*.c)
+file(GLOB_RECURSE SO_LIBGLESV2_SRC       deps/so_libs/libGLESv2/*.c)
+file(GLOB_RECURSE SO_LIBEGL_SRC          deps/so_libs/libEGL/*.c)
+file(GLOB_RECURSE SO_LIBUI_SRC           deps/so_libs/libui/*.c)
+file(GLOB_RECURSE SO_LIBMEDIA_SRC        deps/so_libs/libmedia/*.c)
+file(GLOB_RECURSE SO_LIBSQLITE_SRC       deps/so_libs/libsqlite/*.c)
+file(GLOB_RECURSE SO_LIBDL_SRC           deps/so_libs/libdl/*.c)
+file(GLOB_RECURSE SO_LIBBINDER_SRC       deps/so_libs/libbinder/*.c)
+file(GLOB_RECURSE SO_LIBC_SRC            deps/so_libs/libc/*.c)
+file(GLOB_RECURSE SO_LIBSTDCPP_SRC       deps/so_libs/libstdcpp/*.c)
+file(GLOB_RECURSE SO_LIBM_SRC            deps/so_libs/libm/*.c)
 
 add_executable(${CMAKE_PROJECT_NAME}
   ${SO_COMMON_SRC}
   ${SO_LINKER_SRC}
   ${SO_JNI_SRC}
-  ${SO_BIONIC_SRC}
-  ${SO_ANDROID_SRC}
 
-  deps/so_libs/libnativehelper.c
-  deps/so_libs/liblog.c
-  deps/so_libs/libcutils.c
-  deps/so_libs/libutils.c
-  deps/so_libs/libGLESv1_CM.c
-  deps/so_libs/libGLESv2.c
-  deps/so_libs/libEGL.c
-  deps/so_libs/libui.c
-  deps/so_libs/libmedia.c
-  deps/so_libs/libsqlite.c
-  deps/so_libs/libdl.c
-  deps/so_libs/libbinder.c
-  deps/so_libs/libc.c
-  deps/so_libs/libstdcpp.c
-  deps/so_libs/libm.c
+  ${SO_LIBNATIVEHELPER_SRC}
+  ${SO_LIBLOG_SRC}
+  ${SO_LIBCUTILS_SRC}
+  ${SO_LIBUTILS_SRC}
+  ${SO_libGLESv1_CM_SRC}
+  ${SO_LIBGLESV2_SRC}
+  ${SO_LIBEGL_SRC}
+  ${SO_LIBUI_SRC}
+  ${SO_LIBMEDIA_SRC}
+  ${SO_LIBSQLITE_SRC}
+  ${SO_LIBDL_SRC}
+  ${SO_LIBBINDER_SRC}
+  ${SO_LIBC_SRC}
+  ${SO_LIBSTDCPP_SRC}
+  ${SO_LIBM_SRC}
 
   source/utils/dialog.c
   source/utils/utils.c
@@ -92,15 +135,18 @@ add_executable(${CMAKE_PROJECT_NAME}
   source/android/media/AudioTrack.c
   source/java/lang/System.c
 
+  source/vividruntime/extension/ExtensionManager.c
   source/vividruntime/extension/MyAlarm.c
   source/vividruntime/extension/MyAvatar.c
   source/vividruntime/extension/MyBilling.c
   source/vividruntime/extension/MyCamera.c
+  source/vividruntime/extension/MyDevice.c
   source/vividruntime/extension/MyDeviceUtil.c
   source/vividruntime/extension/MyDialog.c
   source/vividruntime/extension/MyErrorDialog.c
   source/vividruntime/extension/MyFacebook.c
   source/vividruntime/extension/MyFont.c
+  source/vividruntime/extension/MyGgee.c
   source/vividruntime/extension/MyHttp.c
   source/vividruntime/extension/MyImagePicker.c
   source/vividruntime/extension/MyLaunch.c
@@ -114,25 +160,23 @@ add_executable(${CMAKE_PROJECT_NAME}
   source/vividruntime/extension/MySensor.c
   source/vividruntime/extension/MyTextInput.c
 
-  source/vividruntime/extension/ExtensionManager.c
-  source/vividruntime/extension/MyDevice.c
-  source/vividruntime/extension/MyErrorDialog.c
-  source/vividruntime/extension/MyGgee.c
   source/vividruntime/Launcher.c
   source/vividruntime/Runtime.c
+
+  source/patch/libGgee/ggee.c
+  source/patch/libKD/kd.c
+  source/patch/libLD/ld.c
+  source/patch/libLD/ld_bootstrap.c
+  source/patch/libLD/ld_hook.c
+  source/patch/libLD/ld_libc.c
+  source/patch/libLD/ld_libcpp.c
+  source/patch/libLD/ld_mugenmakai.c
 
   source/controls.c
   source/java.c
   source/loader.c
   source/main.c
   source/patch.c
-  source/patch/libGgee/ggee.c
-  source/patch/libKD/kd.c
-  source/patch/libLD/ld.c
-  source/patch/libLD/ld_hook.c
-  source/patch/libLD/ld_libc.c
-  source/patch/libLD/ld_libcpp.c
-  source/patch/libLD/ld_bootstrap.c
 )
 
 target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM

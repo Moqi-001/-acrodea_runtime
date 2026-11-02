@@ -7,11 +7,14 @@ extern "C" {
 
 #include "elf.h"
 
+// 单次 Hook 最多覆盖的原指令字节数
+#define SO_HOOK_MAX_INSTR 32
+
 typedef struct so_hook_ref {
-    void   *target;         // 目标
-    int     instr_len;      // 指令长度
-    uint8_t old_instr[12];  // 旧指令
-    uint8_t new_instr[12];  // 新指令 (实现跳转)
+    void   *target;                        // 目标函数地址（Thumb 保留 bit0）
+    void   *trampoline;                    // 跳板地址，可直接当函数指针调用（Thumb 已置位 bit0）
+    int     instr_len;                     // 被覆盖/备份的原指令字节数
+    uint8_t ori_instr[SO_HOOK_MAX_INSTR];  // 原指令备份（so_unhook 还原用）
 } so_hook_ref;
 
 typedef struct so_symbol {
@@ -42,13 +45,15 @@ void so_linker_fini();
 
 so_module *so_linker_find_module(const char *soname);
 
-int so_cacheflush(void *addr, size_t length);
+#define PROT_NONE  0x0
+#define PROT_READ  0x1
+#define PROT_WRITE 0x2
+#define PROT_EXEC  0x4
 
+int   so_cacheflush(void *addr, size_t length);
 void *so_mmap(size_t length);
 void  so_munmap(void *addr);
-int   so_msync(void *addr, size_t length);
-void *so_memcpy(void *dst, const void *src, size_t n);
-void *so_memset(void *dst, int c, size_t n);
+int   so_mprotect(void *addr, size_t length, int prot);
 
 int so_hook_function_safe(void *target, void *boundary, void *replacement, so_hook_ref *p_hook);  // Thumb 函数需传入 (实际地址 | 1)
 int so_hook_function(void *target, void *replacement, so_hook_ref *p_hook);                       // Thumb 函数需传入 (实际地址 | 1)
@@ -57,16 +62,9 @@ int so_unhook(so_hook_ref *p_hook);
 int so_inject_data_safe(void *target, void *boundary, const void *data, size_t len);
 int so_inject_data(void *target, const void *data, size_t len);
 
-// 调用原函数
-#define SO_CONTINUE(type, p_hook, ...) ({                             \
-    void *target_real = (void *)((uintptr_t)(p_hook)->target & ~1);   \
-    so_memcpy(target_real, (p_hook)->old_instr, (p_hook)->instr_len); \
-    so_cacheflush(target_real, (p_hook)->instr_len);                  \
-    type r = ((type (*)())((p_hook)->target))(__VA_ARGS__);           \
-    so_memcpy(target_real, (p_hook)->new_instr, (p_hook)->instr_len); \
-    so_cacheflush(target_real, (p_hook)->instr_len);                  \
-    r;                                                                \
-})
+// 在 Hook 函数里调用原函数：直接跳进跳板执行被搬走的原指令，不做任何代码改写
+#define SO_CONTINUE(type, p_hook, ...) \
+    (((type (*)())((p_hook)->trampoline))(__VA_ARGS__))
 
 so_module *so_module_create(const so_library *library);    // 从 so_library 创建模块
 so_module *so_module_load(const char *filename);           // 从文件加载模块
@@ -82,7 +80,10 @@ so_module *so_module_open_mem(void *buffer, size_t size);  // 从内存打开模
 void       so_module_close(so_module *mod);                // 关闭模块 (unload + fini)
 
 void *so_module_find_symbol(so_module *mod, const char *sym_name);
-void *so_module_find_symbol_ex(so_module *mod, const char *sym_name, int self_only,
+#define SO_SYM_LOOKUP_SELF  0x1
+#define SO_SYM_LOOKUP_OTHER 0x2
+#define SO_SYM_LOOKUP_ALL   (SO_SYM_LOOKUP_SELF | SO_SYM_LOOKUP_OTHER)
+void *so_module_find_symbol_ex(so_module *mod, const char *sym_name, int flags,
                                so_module **out_mod, const Elf32_Sym **out_sym);
 
 int  so_module_retain(so_module *mod);

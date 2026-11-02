@@ -47,14 +47,14 @@ static JniGlobalContext         _so_weak_ctx   = {0};
 jobjectRefType JniGetObjectRefType(jobject object) {
     if (!object) return JNIInvalidRefType;
 
-    uintptr_t ptr = (uintptr_t)object;
-    if (ptr >= LOCAL_REF_BIAS && ptr < LOCAL_REF_BIAS + MAX_REF_CAPACITY) {
+    uintptr_t addr = (uintptr_t)object;
+    if (addr >= LOCAL_REF_BIAS && addr < LOCAL_REF_BIAS + MAX_REF_CAPACITY) {
         return JNILocalRefType;
     }
-    if (ptr >= GLOBAL_REF_BIAS && ptr < GLOBAL_REF_BIAS + MAX_REF_CAPACITY) {
+    if (addr >= GLOBAL_REF_BIAS && addr < GLOBAL_REF_BIAS + MAX_REF_CAPACITY) {
         return JNIGlobalRefType;
     }
-    if (ptr >= WEAK_REF_BIAS && ptr < WEAK_REF_BIAS + MAX_REF_CAPACITY) {
+    if (addr >= WEAK_REF_BIAS && addr < WEAK_REF_BIAS + MAX_REF_CAPACITY) {
         return JNIWeakGlobalRefType;
     }
 
@@ -64,23 +64,23 @@ jobjectRefType JniGetObjectRefType(jobject object) {
 JavaObject JniObjectToJava(jobject object) {
     if (!object) return NULL;
 
-    uintptr_t ptr = (uintptr_t)object;
+    uintptr_t addr = (uintptr_t)object;
 
-    if (ptr >= LOCAL_REF_BIAS && ptr < LOCAL_REF_BIAS + MAX_REF_CAPACITY) {
+    if (addr >= LOCAL_REF_BIAS && addr < LOCAL_REF_BIAS + MAX_REF_CAPACITY) {
         JniLocalContext *ctx   = &_so_local_ctx;
-        jint             index = ptr - LOCAL_REF_BIAS;
+        jint             index = addr - LOCAL_REF_BIAS;
         if (index >= ctx->count) return NULL;
         return ctx->slots[index].obj;
     }
-    if (ptr >= GLOBAL_REF_BIAS && ptr < GLOBAL_REF_BIAS + MAX_REF_CAPACITY) {
+    if (addr >= GLOBAL_REF_BIAS && addr < GLOBAL_REF_BIAS + MAX_REF_CAPACITY) {
         JniGlobalContext *ctx   = &_so_global_ctx;
-        jint              index = ptr - GLOBAL_REF_BIAS;
+        jint              index = addr - GLOBAL_REF_BIAS;
         if (index >= ctx->capacity) return NULL;
         return ctx->slots[index].obj;
     }
-    if (ptr >= WEAK_REF_BIAS && ptr < WEAK_REF_BIAS + MAX_REF_CAPACITY) {
+    if (addr >= WEAK_REF_BIAS && addr < WEAK_REF_BIAS + MAX_REF_CAPACITY) {
         JniGlobalContext *ctx   = &_so_weak_ctx;
-        jint              index = ptr - WEAK_REF_BIAS;
+        jint              index = addr - WEAK_REF_BIAS;
         if (index >= ctx->capacity) return NULL;
         return ctx->slots[index].obj;
     }
@@ -131,26 +131,6 @@ jobject JniNewLocalRefFromJava(JavaObject obj) {
     return (jobject)(index + LOCAL_REF_BIAS);
 }
 
-jobjectArray JniNewLocalRefFromJavaArray(JavaArray arr) {
-    if (!arr) return NULL;
-
-    jobjectArray ref = JniNewLocalRefFromJava(arr);
-    if (!ref) return NULL;
-
-    if (JavaGetArrayType(arr) != JAVA_TYPE_OBJECT) return ref;
-
-    // 对象列表需要对每个元素进行引用
-    jsize length = JavaGetArrayLength(arr);
-    if (length <= 0) return ref;
-
-    JavaObject *objs = (JavaObject *)JniObjectToJava(ref);
-    for (jint i = 0; i < length; i++) {
-        JavaRetainObject(objs[i]);
-    }
-
-    return ref;
-}
-
 jobject JniNewLocalRef(jobject object) {
     return JniNewLocalRefFromJava(JniObjectToJava(object));
 }
@@ -160,9 +140,9 @@ void JniDeleteLocalRef(jobject object) {
     if (!ctx->slots) return;
 
     jint      index = -1;
-    uintptr_t ptr   = (uintptr_t)object;
-    if (ptr >= LOCAL_REF_BIAS && ptr < LOCAL_REF_BIAS + MAX_REF_CAPACITY) {
-        index = ptr - LOCAL_REF_BIAS;
+    uintptr_t addr  = (uintptr_t)object;
+    if (addr >= LOCAL_REF_BIAS && addr < LOCAL_REF_BIAS + MAX_REF_CAPACITY) {
+        index = addr - LOCAL_REF_BIAS;
     }
     if (index < 0 || index >= ctx->count || !ctx->slots[index].obj) return;
 
@@ -232,9 +212,9 @@ void JniDeleteGlobalRef(jobject object) {
     pthread_mutex_lock(&ctx->lock);
 
     jint      index = -1;
-    uintptr_t ptr   = (uintptr_t)object;
-    if (ptr >= GLOBAL_REF_BIAS && ptr < GLOBAL_REF_BIAS + MAX_REF_CAPACITY) {
-        index = ptr - GLOBAL_REF_BIAS;
+    uintptr_t addr  = (uintptr_t)object;
+    if (addr >= GLOBAL_REF_BIAS && addr < GLOBAL_REF_BIAS + MAX_REF_CAPACITY) {
+        index = addr - GLOBAL_REF_BIAS;
     }
     if (index < 0 || index >= ctx->capacity || !ctx->slots[index].obj) {
         pthread_mutex_unlock(&ctx->lock);
@@ -316,9 +296,9 @@ void JniDeleteWeakGlobalRef(jweak object) {
     pthread_mutex_lock(&ctx->lock);
 
     jint      index = -1;
-    uintptr_t ptr   = (uintptr_t)object;
-    if (ptr >= WEAK_REF_BIAS && ptr < WEAK_REF_BIAS + MAX_REF_CAPACITY) {
-        index = ptr - WEAK_REF_BIAS;
+    uintptr_t addr  = (uintptr_t)object;
+    if (addr >= WEAK_REF_BIAS && addr < WEAK_REF_BIAS + MAX_REF_CAPACITY) {
+        index = addr - WEAK_REF_BIAS;
     }
     if (index < 0 || index >= ctx->capacity || !ctx->slots[index].obj) {
         pthread_mutex_unlock(&ctx->lock);
@@ -362,27 +342,15 @@ jobject JniPopLocalFrame(jobject result) {
     JniLocalContext *ctx = &_so_local_ctx;
     if (!ctx->slots || !ctx->frame) return NULL;
 
-    jint      index = -1;
-    uintptr_t ptr   = (uintptr_t)result;
-    if (ptr >= LOCAL_REF_BIAS && ptr < LOCAL_REF_BIAS + MAX_REF_CAPACITY) {
-        index = ptr - LOCAL_REF_BIAS;
-    }
-    JavaObject res = NULL;
-    if (index >= 0 && index < ctx->count && ctx->slots[index].obj) {
-        res = ctx->slots[index].obj;
-    }
-
     JniRefSlot  *slots = ctx->slots;
     JniRefFrame *frame = ctx->frame;
     ctx->frame         = frame->prev;
 
+    if (result) result = JniNewLocalRef(result);
+
     for (jint i = frame->start; i < ctx->count; i++) {
         if (slots[i].obj) {
-            if (i == index) {
-                JavaReleaseObjectKeep(slots[i].obj);  // 保留 java object
-            } else {
-                JavaReleaseObject(slots[i].obj);
-            }
+            JavaReleaseObject(slots[i].obj);
             slots[i].obj = NULL;
         }
     }
@@ -390,7 +358,7 @@ jobject JniPopLocalFrame(jobject result) {
     ctx->count = frame->start;  // 回退 index
     free(frame);                // 释放 frame
 
-    return JniNewLocalRefFromJava(res);
+    return result;
 }
 
 jint JniInitLocalRefContext(void) {

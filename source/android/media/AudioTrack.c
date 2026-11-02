@@ -44,7 +44,7 @@
 #define OUTPUT_SAMPLE_RATE_HZ 48000                 // 输出采样率
 #define OUTPUTS_NUM           3                     // 输出缓冲区的缓存数量
 #define OUTPUT_FRAMES         512u                  // 每次输出的帧数
-#define TRACKS_NUM            16                    // 音轨数量
+#define TRACKS_NUM            32                    // 音轨数量（须大于引擎侧 mixer 池的 20 槽）
 #define TRACK_BUFFER_FRAMES   (OUTPUT_FRAMES << 4)  // 音轨缓冲区的帧数
 
 typedef struct AudioResampler {
@@ -559,7 +559,7 @@ jint AudioTrack_getMinBufferSize(jint sampleRateInHz, jint channelConfig, jint a
 }
 
 static JavaSymbol class_symbols[] = {
-    // JAVA
+    // method
     JAVA_SYMBOL_METHOD("<init>", "(IIIIII)V", &AudioTrack_ctor),
     JAVA_SYMBOL_METHOD("write", "([BII)I", &AudioTrack_write),
     JAVA_SYMBOL_METHOD("setStereoVolume", "(FF)I", &AudioTrack_setStereoVolume),
@@ -568,7 +568,7 @@ static JavaSymbol class_symbols[] = {
     JAVA_SYMBOL_METHOD("stop", "()V", &AudioTrack_stop),
     JAVA_SYMBOL_METHOD("flush", "()V", &AudioTrack_flush),
     JAVA_SYMBOL_METHOD("release", "()V", &AudioTrack_release),
-    // static JAVA
+    // static method
     JAVA_SYMBOL_STATIC_METHOD("getMinBufferSize", "(III)I", &AudioTrack_getMinBufferSize),
 };
 

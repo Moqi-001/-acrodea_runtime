@@ -65,7 +65,7 @@ int __ldModuleHookImport(LdModule *mod, const char *symbol, void *replacement) {
         if (strcmp(name, symbol) == 0) {
             if (sym->st_shndx == SHN_UNDEF) {
                 void *target = (void *)(load_bias + rel->r_offset);
-                so_memcpy(target, &replacement, sizeof(void *));
+                memcpy(target, &replacement, sizeof(void *));
                 so_cacheflush(target, sizeof(void *));
                 so_logd("__ldModuleHookImport: '%s' ->%p", symbol, replacement);
                 return 0;

@@ -27,9 +27,9 @@ extern "C" {
 #endif
 
 // 总是输出的日志宏 (无视 DEBUG_SOLOADER)
-#define so_loge(...) so_log_printf(SO_LT_ERROR, __VA_ARGS__)  // 错误
-#define so_logf(...) so_log_printf(SO_LT_FATAL, __VA_ARGS__)  // 致命错误 (会退出程序)
-#define so_loga(...) so_log_printf(SO_LT_ALWAYS, __VA_ARGS__)   // 总是输出
+#define so_loge(...) so_log_printf(SO_LT_ERROR, __VA_ARGS__)   // 错误
+#define so_logf(...) so_log_printf(SO_LT_FATAL, __VA_ARGS__)   // 致命错误 (会退出程序)
+#define so_loga(...) so_log_printf(SO_LT_ALWAYS, __VA_ARGS__)  // 总是输出
 
 void so_log_printf(int t, const char *fmt, ...)
     __attribute__((format(printf, 2, 3)));

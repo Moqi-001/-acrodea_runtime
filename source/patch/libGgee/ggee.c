@@ -4,7 +4,7 @@
 #include <so_common/so_logger.h>
 #include <so_linker/so_linker.h>
 
-#include <so_libs/reimpl/bionic/bionic_md5.h>
+#include <so_libs/libc/bionic_md5.h>
 #include "ggee.h"
 
 void ggeeLibEncodePath(char *out_encode, int out_len, const char *path) {

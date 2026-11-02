@@ -11,13 +11,13 @@
 
 char *__kdMapFilename(const char *filename, const char *mode) {
     if (!filename) {
-        so_logd("__kdMapFilename('%s','%s'): error!", filename, mode);
+        so_loge("__kdMapFilename('%s','%s'): error!", filename, mode);
         return NULL;
     }
 
     char *map_path = malloc(1024);
     if (!map_path) {
-        so_logd("__kdMapFilename('%s','%s') failed to alloc memory!", filename, mode);
+        so_loge("__kdMapFilename('%s','%s') failed to alloc memory!", filename, mode);
         return NULL;
     }
 
@@ -47,6 +47,7 @@ int __kdFlushICache(const void *ptr, size_t len) {
 
 int soloader_patch_libKD(so_module *mod) {
     so_logd("soloader_patch_libKD(%p)", mod);
+
     so_module_hook_symbol(mod, "__kdMapFilename", &__kdMapFilename, NULL);
     so_module_hook_symbol(mod, "__kdFlushICache", &__kdFlushICache, NULL);
 

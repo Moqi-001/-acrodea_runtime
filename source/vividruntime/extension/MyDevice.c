@@ -18,6 +18,13 @@ JavaString MyDevice_getImei(MyDevice thiz) {
     return JavaNewStringUTF(imei);
 }
 
+JavaString MyDevice_getImsi(MyDevice thiz) {
+    const char *imsi = "460010123456789"; // 伪造值
+
+    so_logd("[MyDevice] getImsi(): %s", imsi);
+    return JavaNewStringUTF(imsi);
+}
+
 jint MyDevice_setNavigationHiddenEnable(jint enabled) {
     jint result = 0;
     so_logd("[MyDevice] setNavigationHiddenEnable(%d): %d", enabled, result);
@@ -51,6 +58,7 @@ jint MyDevice_getMutedState() {
 static JavaSymbol class_symbols[] = {
     // JAVA
     JAVA_SYMBOL_METHOD("getImei", "()Ljava/lang/String;", &MyDevice_getImei),
+    JAVA_SYMBOL_METHOD("getImsi", "()Ljava/lang/String;", &MyDevice_getImsi),
     JAVA_SYMBOL_METHOD("setNavigationHiddenEnable", "(I)I", &MyDevice_setNavigationHiddenEnable),
     JAVA_SYMBOL_METHOD("getNavigationHiddenState", "()I", &MyDevice_getNavigationHiddenState),
     JAVA_SYMBOL_METHOD("getPlatformInfo", "()Ljava/lang/String;", &MyDevice_getPlatformInfo),

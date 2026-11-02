@@ -17,10 +17,19 @@ void MyMediaPlayer_ctor(MyMediaPlayer thiz) {
 void MyMediaPlayer_destroy(MyMediaPlayer thiz) {
 }
 
+// 成功返回 0，失败返回 -4。
+jint MyMediaPlayer_openFile(MyMediaPlayer thiz, JavaString path, jlong offset, jlong size) {
+    const char *path_cstr = JavaGetStringUTFChars(path);
+    so_logd("[MyMediaPlayer] openFile(%p,%s,%lld,%lld): media playback unsupported, return -4",
+            thiz, path_cstr ? path_cstr : "(null)", offset, size);
+    return -4;
+}
+
 static JavaSymbol class_symbols[] = {
     // JAVA
     JAVA_SYMBOL_METHOD("<init>", "()V", &MyMediaPlayer_ctor),
     JAVA_SYMBOL_METHOD("destroy", "()V", &MyMediaPlayer_destroy),
+    JAVA_SYMBOL_METHOD("openFile", "(Ljava/lang/String;JJ)I", &MyMediaPlayer_openFile),
 };
 
 static JavaClassMeta class_meta = {

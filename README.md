@@ -15,13 +15,13 @@ G-GEE 游戏商店启动器 （psvita 安卓游戏移植项目）
 2. 无调试模式：
 
 ```bash
-mkdir build && cmake .. && make
+mkdir build && cmake .. -DRUNTIME_APP_ID=1760 && make
 ```
 
 3. 带调试模式:
 
 ```bash
-mkdir build && cmake .. -DCMAKE_BUILD_TYPE=Debug && make
+mkdir build && cmake .. -DRUNTIME_APP_ID=1760 -DCMAKE_BUILD_TYPE=Debug && make
 ```
 
 ## 依赖

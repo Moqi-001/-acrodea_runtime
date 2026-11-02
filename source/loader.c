@@ -1,6 +1,8 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
+#include <kubridge.h>
 #include <psp2/vshbridge.h>
 #include <so_common/so_logger.h>
 #include <so_jni/so_jni.h>
@@ -33,10 +35,17 @@ extern so_library so_libm;
 
 so_module *runtime_mod = NULL;
 
+static int is_unbound_stub(const void *fn) {
+    if (!fn) return 1;
+
+    const uint32_t *stub = (const uint32_t *)((uintptr_t)fn & ~(uintptr_t)1);
+    return (stub[0] == 0xE24FC008u && stub[1] == 0xE3A0F000u);
+}
+
 static int check_kubridge() {
     int search_unk[2];
-    if (_vshKernelSearchModuleByName("kubridge", search_unk) < 0) {
-        fatal_error("Error: kubridge.skprx is not installed.");
+    if (_vshKernelSearchModuleByName("kubridge", search_unk) < 0 && is_unbound_stub(kuKernelMemProtect)) {
+        fatal_error("[LOADER] kubridge.skprx is not installed.");
         return -1;
     }
     return 0;
@@ -52,7 +61,20 @@ static int check_opengl() {
     return 0;
 }
 
-static int init_needed_modules() {
+static int init_opengl() {
+    static int opengl_inited = 0;
+    if (!opengl_inited) {
+        vglInitWithCustomThreshold(0, SCREEN_W, SCREEN_H,
+                                   VITAGL_RAM_THRESHOLD_MB * 1024 * 1024, VITAGL_CDRAM_THRESHOLD_MB * 1024 * 1024,
+                                   VITAGL_PHYCONT_THRESHOLD_MB * 1024 * 1024, VITAGL_CDIALOG_THRESHOLD_MB * 1024 * 1024,
+                                   SCE_GXM_MULTISAMPLE_4X);
+        opengl_inited = 1;
+    }
+
+    return 0;
+}
+
+static int soloader_create_modules() {
     so_module_create(&so_libnativehelper);
     so_module_create(&so_liblog);
     so_module_create(&so_libcutils);
@@ -111,17 +133,13 @@ int soloader_init() {
     check_opengl();
     so_linker_init();
     so_jni_init();
-    init_needed_modules();
+    soloader_create_modules();
     soloader_java_init();
 
     runtime_mod = soloader_load_library("acrodea_runtime");
     soloader_patch_runtime(runtime_mod);
 
-    vglInitWithCustomThreshold(0, SCREEN_W, SCREEN_H,
-                               VITAGL_RAM_THRESHOLD_MB * 1024 * 1024,
-                               VITAGL_CDRAM_THRESHOLD_MB * 1024 * 1024,
-                               VITAGL_PHYCONT_THRESHOLD_MB * 1024 * 1024,
-                               0, SCE_GXM_MULTISAMPLE_4X);
+    init_opengl();
 
     so_logd("[LOADER] soloader_init success!");
 

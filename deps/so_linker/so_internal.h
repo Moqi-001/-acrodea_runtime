@@ -28,7 +28,7 @@ enum {
 struct so_module {
     int   ref_count;  // 引用计数
     int   status;     // 模块状态
-    void *cookie;     // 容器标记（不透明指针，由 context 管理）
+    void *cookie;     // 注册表节点回指（不透明，由 so_linker 维护）
 
     char *soname;  // 共享对象名称
 
@@ -74,7 +74,6 @@ struct so_module {
 };
 
 struct so_context {
-    // 模块管理
     so_module_node *modules;      // 模块链表头
     size_t          num_modules;  // 模块数量
 };
@@ -82,6 +81,7 @@ struct so_context {
 struct so_module_node {
     so_module      *mod;
     so_context     *context;
+    uint32_t        hash;
     so_module_node *next;
     so_module_node *prev;
 };
@@ -90,11 +90,18 @@ so_context *so_linker_get_context();
 int         so_linker_register_module(so_module *mod);
 int         so_linker_unregister_module(so_module *mod);
 
-so_context *so_context_create();
-void        so_context_destroy(so_context *context);
-so_module  *so_context_find_module(so_context *context, const char *soname);
-int         so_context_add_module(so_context *context, so_module *mod);
-int         so_context_remove_module(so_context *context, so_module *mod);
+static inline uint32_t so_hash(const char *name) {
+    if (!name) return 0;
+    uint32_t       h = 0, g;
+    const uint8_t *p = (const uint8_t *)name;
+    while (*p) {
+        h = (h << 4) + *p++;
+        if ((g = (h & 0xf0000000)) != 0)
+            h ^= g >> 24;
+        h &= 0x0fffffff;
+    }
+    return h;
+}
 
 #ifdef __cplusplus
 }

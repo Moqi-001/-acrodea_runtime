@@ -26,7 +26,6 @@ void so_jni_fini(void);
 // ============================================
 JavaObject   JniObjectToJava(jobject object);
 jobject      JniNewLocalRefFromJava(JavaObject obj);
-jobjectArray JniNewLocalRefFromJavaArray(JavaArray arr);
 jobject      JniNewGlobalRefFromJava(JavaObject obj);
 jweak        JniNewWeakGlobalRefFromJava(JavaObject obj);
 

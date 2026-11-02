@@ -8,22 +8,6 @@
 #include "so_internal.h"
 #include "so_linker.h"
 
-#define SYM_LOOKUP_SELF  0x1
-#define SYM_LOOKUP_OTHER 0x2
-#define SYM_LOOKUP_ALL   (SYM_LOOKUP_SELF | SYM_LOOKUP_OTHER)
-
-static uint32_t _sysv_hash(const char *name) {
-    uint32_t       h = 0, g;
-    const uint8_t *p = (const uint8_t *)name;
-    while (*p) {
-        h = (h << 4) + *p++;
-        if ((g = (h & 0xf0000000)) != 0)
-            h ^= g >> 24;
-        h &= 0x0fffffff;
-    }
-    return h;
-}
-
 static void *_find_symbol_ex(so_module *mod, const char *sym_name, uint32_t sym_hash, const Elf32_Sym **out_sym) {
     if (!mod || !mod->hash || !mod->dynsym || !mod->dynstr || !sym_name) {
         return NULL;
@@ -69,12 +53,12 @@ void *so_module_find_symbol_ex(so_module *mod, const char *sym_name, int flags,
         return NULL;
     }
 
-    uint32_t sym_hash = _sysv_hash(sym_name);
+    uint32_t sym_hash = so_hash(sym_name);
 
     void *sym_addr = NULL;
 
     // 查找自身
-    if (flags & SYM_LOOKUP_SELF) {
+    if (flags & SO_SYM_LOOKUP_SELF) {
         sym_addr = _find_symbol_ex(mod, sym_name, sym_hash, out_sym);
         if (sym_addr) {
             if (out_mod) {
@@ -85,7 +69,7 @@ void *so_module_find_symbol_ex(so_module *mod, const char *sym_name, int flags,
     }
 
     // 查找外部
-    if (flags & SYM_LOOKUP_OTHER) {
+    if (flags & SO_SYM_LOOKUP_OTHER) {
         so_context *context = so_linker_get_context();
         if (!context) {
             return NULL;
@@ -110,7 +94,7 @@ void *so_module_find_symbol_ex(so_module *mod, const char *sym_name, int flags,
 }
 
 void *so_module_find_symbol(so_module *mod, const char *sym_name) {
-    return so_module_find_symbol_ex(mod, sym_name, SYM_LOOKUP_SELF, NULL, NULL);
+    return so_module_find_symbol_ex(mod, sym_name, SO_SYM_LOOKUP_SELF, NULL, NULL);
 }
 
 static int _create_symtab_strtab(so_symbol *symbols, size_t num_symbols,
@@ -182,7 +166,7 @@ static uint32_t *_create_hashtab(const Elf32_Sym *symtab, size_t num_symtab, con
 
     // 遍历符号表，从索引 1 开始（跳过索引 0 的 STN_UNDEF）
     for (size_t i = 1; i < num_symtab; i++) {
-        uint32_t hash       = _sysv_hash(strtab + symtab[i].st_name);
+        uint32_t hash       = so_hash(strtab + symtab[i].st_name);
         uint32_t bucket_idx = hash % nbucket;
 
         // 头插法
@@ -505,7 +489,7 @@ static int _process_relocation(so_module *mod, uint8_t rel_type, uint32_t rel_sy
     if (rel_symidx) {
         rel_sym  = &mod->dynsym[rel_symidx];
         sym_name = mod->dynstr + rel_sym->st_name;
-        sym_addr = (uintptr_t)so_module_find_symbol_ex(mod, sym_name, SYM_LOOKUP_ALL, &sym_mod, &sym);
+        sym_addr = (uintptr_t)so_module_find_symbol_ex(mod, sym_name, SO_SYM_LOOKUP_ALL, &sym_mod, &sym);
 
         if (!sym_addr) {
             if (ELF32_ST_BIND(rel_sym->st_info) != STB_WEAK || rel_type == R_ARM_COPY) {
@@ -542,13 +526,13 @@ static int _process_relocation(so_module *mod, uint8_t rel_type, uint32_t rel_sy
                 so_loge("  R_ARM_COPY: %s relocation target cannot be resolved!", sym_name);
                 return -1;
             }
-            sym_addr = (uintptr_t)so_module_find_symbol_ex(mod, sym_name, SYM_LOOKUP_OTHER, &sym_mod, &sym);
+            sym_addr = (uintptr_t)so_module_find_symbol_ex(mod, sym_name, SO_SYM_LOOKUP_OTHER, &sym_mod, &sym);
             if (!sym_addr || rel_sym->st_size < sym->st_size) {
                 so_loge("  R_ARM_COPY: %s relocation target cannot be resolved!", sym_name);
                 return -1;
             }
             memcpy(rel_target, (void *)sym_addr, sym->st_size);
-            // so_logd("  R_ARM_COPY: %s, 0x%x -> %p, size=%zu", sym_name, sym_addr, rel_target, sym->st_size);
+            // so_logd("  R_ARM_COPY: %s, 0x%x -> %p, size=%u", sym_name, sym_addr, rel_target, sym->st_size);
             break;
 
         case R_ARM_GLOB_DAT:   // 21 (S)
@@ -752,7 +736,7 @@ so_module *so_module_open_mem(void *buffer, size_t size) {
         return NULL;
     }
 
-    so_logd("[SOLINKER] so_module_open_mem(%p,%u): success! load_base=%p, load_size=%zu, load_bias=0x%x, soname='%s'",
+    so_logd("[SOLINKER] so_module_open_mem(%p,%u): success! load_base=%p, load_size=%u, load_bias=0x%x, soname='%s'",
             buffer, size, mod->load_base, mod->load_size, mod->load_bias, mod->soname);
     return mod;
 }
@@ -782,7 +766,7 @@ so_module *so_module_open(const char *filename) {
         return NULL;
     }
 
-    so_logd("[SOLINKER] so_module_open('%s'): success! load_base=%p, load_size=%zu, load_bias=0x%x, soname='%s'",
+    so_logd("[SOLINKER] so_module_open('%s'): success! load_base=%p, load_size=%u, load_bias=0x%x, soname='%s'",
             filename, mod->load_base, mod->load_size, mod->load_bias, mod->soname);
     return mod;
 }

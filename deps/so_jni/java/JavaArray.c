@@ -6,18 +6,18 @@
 
 #include "JavaArray.h"
 
-typedef struct _JavaArray {
+typedef struct JavaArrayHeader {
     uint32_t magic;
     jint     type;
     jsize    length;
     jsize    elem_size;
     void    *elems;
-} _JavaArray;
+} JavaArrayHeader;
 
 #define JAVA_ARRAY_MAGIC    0x4388FD37  // "JavaArray".hashCode()
-#define JAVA_ARRAY_CAST(_o) JAVA_BASE_CAST(_JavaArray *, _o, JAVA_ARRAY_MAGIC)
+#define JAVA_ARRAY_CAST(_o) JAVA_BASE_CAST(JavaArrayHeader *, _o, JAVA_ARRAY_MAGIC)
 
-#define headerFromArray(_elems) (_JavaArray *)(((char *)(_elems) + JavaGetObjectSize(_elems)) - sizeof(_JavaArray))
+#define headerFromArray(_elems) (JavaArrayHeader *)(((char *)(_elems) + JavaGetObjectSize(_elems)) - sizeof(JavaArrayHeader))
 
 #define ALIGN_UP(x, align) (((x) + (align) - 1) & ~((align) - 1))
 
@@ -47,7 +47,7 @@ static jsize _type_size(jint type) {
 }
 
 void _array_dtor(JavaArray arr) {
-    _JavaArray *header = headerFromArray(arr);
+    JavaArrayHeader *header = headerFromArray(arr);
     if (header->type == JAVA_TYPE_OBJECT) {
         JavaObject *elems = (JavaObject *)header->elems;
         for (int i = 0; i < header->length; i++) {
@@ -64,19 +64,19 @@ JavaArray JavaNewArray(jsize length, JavaType type) {
 
     jsize elems_size = elem_size * length;
     elems_size       = ALIGN_UP(elems_size, sizeof(uintptr_t));
-    JavaArray array  = JavaAllocObjectNoClass(elems_size + sizeof(_JavaArray), (JavaDtor)_array_dtor);
+    JavaArray array  = JavaAllocObjectNoClass(elems_size + sizeof(JavaArrayHeader), (JavaDtor)_array_dtor);
     if (!array) return NULL;
 
     if (type == JAVA_TYPE_OBJECT) {
         memset(array, 0, elems_size);
     }
 
-    _JavaArray *header = headerFromArray(array);
-    header->magic      = JAVA_ARRAY_MAGIC;
-    header->type       = type;
-    header->length     = length;
-    header->elem_size  = elem_size;
-    header->elems      = array;
+    JavaArrayHeader *header = headerFromArray(array);
+    header->magic           = JAVA_ARRAY_MAGIC;
+    header->type            = type;
+    header->length          = length;
+    header->elem_size       = elem_size;
+    header->elems           = array;
 
     return array;
 }
@@ -84,7 +84,7 @@ JavaArray JavaNewArray(jsize length, JavaType type) {
 JavaType JavaGetArrayType(JavaArray array) {
     if (!array) return JAVA_TYPE_UNKNOWN;
 
-    _JavaArray *header = JAVA_ARRAY_CAST(headerFromArray(array));
+    JavaArrayHeader *header = JAVA_ARRAY_CAST(headerFromArray(array));
     if (!header) return JAVA_TYPE_UNKNOWN;
     return header->type;
 }
@@ -92,7 +92,7 @@ JavaType JavaGetArrayType(JavaArray array) {
 jsize JavaGetArrayLength(JavaArray array) {
     if (!array) return 0;
 
-    _JavaArray *header = JAVA_ARRAY_CAST(headerFromArray(array));
+    JavaArrayHeader *header = JAVA_ARRAY_CAST(headerFromArray(array));
     if (!header) return 0;
     return header->length;
 }
@@ -100,7 +100,7 @@ jsize JavaGetArrayLength(JavaArray array) {
 jint JavaGetArrayRegion(JavaArray array, jsize start, jsize length, void *dst) {
     if (!array || !dst || start < 0 || length <= 0) return JNI_EINVAL;
 
-    _JavaArray *header = JAVA_ARRAY_CAST(headerFromArray(array));
+    JavaArrayHeader *header = JAVA_ARRAY_CAST(headerFromArray(array));
     if (!header) return JNI_ERR;
     if (start + length > header->length) return JNI_ERR;
 
@@ -113,7 +113,7 @@ jint JavaGetArrayRegion(JavaArray array, jsize start, jsize length, void *dst) {
 jint JavaSetArrayRegion(JavaArray array, jsize start, jsize length, const void *src) {
     if (!array || !src || start < 0 || length <= 0) return JNI_EINVAL;
 
-    _JavaArray *header = JAVA_ARRAY_CAST(headerFromArray(array));
+    JavaArrayHeader *header = JAVA_ARRAY_CAST(headerFromArray(array));
     if (!header) return JNI_ERR;
     if (start + length > header->length) return JNI_ERR;
 

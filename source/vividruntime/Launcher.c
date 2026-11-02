@@ -29,13 +29,13 @@ void Launcher_launchRuntime(JavaString appid) {
     Runtime_surfaceChanged(SCREEN_W, SCREEN_H);
     so_logd("[Launcher] surfaceChanged over");
 
-    jint    sdkInt     = 19;
-    Surface surface    = AndroidSurface_new();
+    jint       sdkInt     = 19;
+    Surface    surface    = AndroidSurface_new();
     JavaString runtimeDir = JavaNewStringUTF("/runtime/");
     JavaString apkPath    = JavaNewStringUTF("/com.acrodea.vividruntime.launcher.apk");
     JavaString rootDir    = JavaNewStringUTF("/RuntimeApps");
     JavaString appID      = JavaRetainObject(appid);
-    jint    params     = 0;  // 2 reschk
+    jint       params     = 0;  // 2 reschk
 
     jint result = Runtime_launch(
         sdkInt,      // sdkInt

@@ -5,9 +5,10 @@
 #define SCREEN_H 544
 
 #define MEMORY_NEWLIB_MB            256
-#define VITAGL_RAM_THRESHOLD_MB     20
-#define VITAGL_CDRAM_THRESHOLD_MB   0
+#define VITAGL_RAM_THRESHOLD_MB     32
+#define VITAGL_CDRAM_THRESHOLD_MB   8
 #define VITAGL_PHYCONT_THRESHOLD_MB 8
+#define VITAGL_CDIALOG_THRESHOLD_MB 12
 
 #define SO_APK_PATH   DATA_PATH "base.apk"
 #define SO_LIB_DIR    DATA_PATH
@@ -15,12 +16,5 @@
 #define SO_FILES_DIR  DATA_PATH "files/"
 #define SO_CACHE_DIR  DATA_PATH "cache/"
 #define SO_TTF_PATH   "app0:font.ttf"
-
-/* 1760 DevilMayCry4
-   1761 GhostTrick
-   1277 iShantae
-   705  Mugenmakai_Disgaea_En_gstore
-*/
-#define RUNTIME_APP_ID "1760"  // "1760" "1761" "1277" "705"
 
 #endif

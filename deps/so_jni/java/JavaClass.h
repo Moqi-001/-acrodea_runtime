@@ -60,7 +60,5 @@ JavaDtor       JavaGetClassDestructor(JavaClass clazz);
     {name, sig, (uintptr_t)(offset), JAVA_SYMBOL_FLAGS_FIELD, NULL}
 #define JAVA_SYMBOL_NATIVE(name, sig, pp_func) \
     {name, sig, (uintptr_t)(pp_func), JAVA_SYMBOL_FLAGS_NATIVE | JAVA_SYMBOL_FLAGS_METHOD, NULL}
-#define JAVA_SYMBOL_STATIC_NATIVE(name, sig, pp_func) \
-    JAVA_SYMBOL_NATIVE(name, sig, pp_func)
 
 #endif

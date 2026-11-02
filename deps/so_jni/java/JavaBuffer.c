@@ -7,17 +7,17 @@
 
 #include "JavaBuffer.h"
 
-typedef struct _JavaBuffer {
+typedef struct JavaBufferImpl {
     uint32_t magic;
     jboolean adopt;
     void    *data;
     jlong    size;
-} _JavaBuffer;
+} JavaBufferImpl;
 
 #define JAVA_BUFFER_MAGIC    0x2F706522  // "JavaBuffer".hashCode()
-#define JAVA_BUFFER_CAST(_o) JAVA_BASE_CAST(_JavaBuffer *, _o, JAVA_BUFFER_MAGIC)
+#define JAVA_BUFFER_CAST(_o) JAVA_BASE_CAST(JavaBufferImpl *, _o, JAVA_BUFFER_MAGIC)
 
-static jint _buffer_ctor(_JavaBuffer *buf, jlong size) {
+static jint _buffer_ctor(JavaBufferImpl *buf, jlong size) {
     if (!buf || size <= 0) return JNI_EINVAL;
 
     buf->magic = JAVA_BUFFER_MAGIC;
@@ -31,7 +31,7 @@ static jint _buffer_ctor(_JavaBuffer *buf, jlong size) {
     return JNI_OK;
 }
 
-static jint _direct_buffer_ctor(_JavaBuffer *buf, void *address, jlong size, jboolean copy, jboolean adopt) {
+static jint _direct_buffer_ctor(JavaBufferImpl *buf, void *address, jlong size, jboolean copy, jboolean adopt) {
     if (!buf || !address || size <= 0) return JNI_EINVAL;
 
     buf->magic = JAVA_BUFFER_MAGIC;
@@ -51,7 +51,7 @@ static jint _direct_buffer_ctor(_JavaBuffer *buf, void *address, jlong size, jbo
     return JNI_OK;
 }
 
-static void _buffer_dtor(_JavaBuffer *buf) {
+static void _buffer_dtor(JavaBufferImpl *buf) {
     if (!buf) return;
 
     if (buf->adopt && buf->data) {
@@ -60,7 +60,7 @@ static void _buffer_dtor(_JavaBuffer *buf) {
 }
 
 JavaBuffer JavaNewBuffer(jlong size) {
-    _JavaBuffer *buf = (_JavaBuffer *)JavaAllocObjectNoClass(sizeof(_JavaBuffer), (JavaDtor)_buffer_dtor);
+    JavaBufferImpl *buf = (JavaBufferImpl *)JavaAllocObjectNoClass(sizeof(JavaBufferImpl), (JavaDtor)_buffer_dtor);
     if (!buf) {
         return NULL;
     }
@@ -74,7 +74,7 @@ JavaBuffer JavaNewBuffer(jlong size) {
 }
 
 JavaBuffer JavaNewDirectBuffer(void *address, jlong size, jboolean copy, jboolean adopt) {
-    _JavaBuffer *buf = (_JavaBuffer *)JavaAllocObjectNoClass(sizeof(_JavaBuffer), (JavaDtor)_buffer_dtor);
+    JavaBufferImpl *buf = (JavaBufferImpl *)JavaAllocObjectNoClass(sizeof(JavaBufferImpl), (JavaDtor)_buffer_dtor);
     if (!buf) {
         return NULL;
     }
@@ -88,14 +88,14 @@ JavaBuffer JavaNewDirectBuffer(void *address, jlong size, jboolean copy, jboolea
 }
 
 void *JavaGetBufferData(JavaBuffer buffer) {
-    _JavaBuffer *buf = JAVA_BUFFER_CAST(buffer);
+    JavaBufferImpl *buf = JAVA_BUFFER_CAST(buffer);
     if (!buf) return NULL;
 
     return buf->data;
 }
 
 jlong JavaGetBufferSize(JavaBuffer buffer) {
-    _JavaBuffer *buf = JAVA_BUFFER_CAST(buffer);
+    JavaBufferImpl *buf = JAVA_BUFFER_CAST(buffer);
     if (!buf) return 0;
 
     return buf->size;

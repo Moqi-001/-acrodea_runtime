@@ -14,9 +14,20 @@ uint32_t (*ldModuleSymHash)(const char *name);
 void *(*ldModuleLookupSymbol)(LdModule *mod, const char *sym_name, uint32_t sym_hash, int visibility,
                               const char *ver_name, uint32_t ver_hash);
 
+extern int ld_patch_preinit_mugenmakai(LdModule *mod);
+
 extern int ld_patch_libc(LdModule *mod);
 extern int ld_patch_libcpp(LdModule *mod);
 extern int ld_patch_bootstrap(LdModule *mod);
+extern int ld_patch_mugenmakai(LdModule *mod);
+
+static int ld_patch_preinit(LdModule *mod) {
+    if (strcmp(mod->so_name, "Mugenmakai_Disgaea_En_gstore.exe") == 0) {
+        ld_patch_preinit_mugenmakai(mod);
+    }
+
+    return 0;
+}
 
 static int ld_patch(LdModule *mod) {
     if (strcmp(mod->so_name, "libc.so") == 0) {
@@ -25,6 +36,8 @@ static int ld_patch(LdModule *mod) {
         ld_patch_libcpp(mod);
     } else if (strcmp(mod->so_name, "bootstrap.exe") == 0) {
         ld_patch_bootstrap(mod);
+    } else if (strcmp(mod->so_name, "Mugenmakai_Disgaea_En_gstore.exe") == 0) {
+        ld_patch_mugenmakai(mod);
     }
 
     return 0;
@@ -87,6 +100,9 @@ int ldModuleInitialize(LdModule *mod) {
         }
     }
 
+    // init_func/init_array 会调用一些函数来初始化，所以有些hook需要在这之前执行。
+    ld_patch_preinit(mod);
+
     // 执行初始化函数
     if (init_func && (intptr_t)init_func != -1) {
         // so_logd("ldModuleInitialize(%p): %s, init_func()", mod, mod->so_name);
@@ -106,6 +122,7 @@ int ldModuleInitialize(LdModule *mod) {
 
     mod->status = LD_MODULE_STATUS_INITIALIZED;
     so_logd("ldModuleInitialize(%p): %s success!", mod, mod->so_name);
+    so_loga("ldModule: %s, load_base=%p, load_size=0x%x", mod->so_name, mod->load_base, mod->load_size);
 
     // 在初始化后对 so 进行一些 patch 操作
     ld_patch(mod);
