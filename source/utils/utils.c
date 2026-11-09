@@ -12,55 +12,63 @@
 
 #include "utils/utils.h"
 
-uint64_t current_timestamp_ms() {
-    struct timeval te;
-    gettimeofday(&te, NULL);
-    return (te.tv_sec * 1000LL + te.tv_usec / 1000);
-}
-
-bool file_copy(const char *path, const char *destination) {
-    if (!file_exists(path)) {
-        so_loge(
-            "file_copy: Specified source path \"%s\" "
-            "does not exist.",
-            path);
-        return false;
-    }
-
-    if (!file_mkpath(destination, 0755)) {
-        so_loge(
-            "file_copy: Could not create parent directories for the "
-            "specified destination path \"%s\".",
-            destination);
-        return false;
-    }
-
-    uint8_t *buffer;
-    size_t   size;
-
-    if (!file_load(path, &buffer, &size)) {
-        so_loge(
-            "file_copy: Failed to read data from "
-            "the source path \"%s\".",
-            path);
-        return false;
-    }
-
-    if (!file_save(destination, buffer, size)) {
-        so_loge(
-            "file_copy: Failed to write data to the specified "
-            "destination path \"%s\".",
-            destination);
-        return false;
-    }
-
-    free(buffer);
-    return true;
-}
-
 bool file_exists(const char *path) {
     SceIoStat stat;
     return sceIoGetstat(path, &stat) >= 0;
+}
+
+size_t file_size(const char *path) {
+    size_t ret = -1;
+
+    if (!file_exists(path)) {
+        so_loge(
+            "size_t: Specified source path \"%s\" "
+            "does not exist.",
+            path);
+        return ret;
+    }
+
+    FILE *f = fopen(path, "rb");
+    if (!f) {
+        so_loge(
+            "size_t: Could not open the specified "
+            "source path \"%s\".",
+            path);
+        return ret;
+    }
+
+    fseek(f, 0, SEEK_END);
+    ret = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    fclose(f);
+
+    return ret;
+}
+
+bool file_mkpath(const char *path, mode_t mode) {
+    if (!path || !*path) {
+        so_loge("file_mkpath: Invalid argument.");
+        return false;
+    }
+
+    char *file_path = strdup(path);
+    for (char *p = strchr(file_path + 1, '/'); p; p = strchr(p + 1, '/')) {
+        *p = '\0';
+        if (mkdir(file_path, mode) == -1) {
+            if (errno != EEXIST) {
+                so_loge(
+                    "file_mkpath: Unable to create a directory \"%s\", "
+                    "mkdir error code is %s.",
+                    file_path, strerror(errno));
+                free(file_path);
+                return false;
+            }
+        }
+        *p = '/';
+    }
+
+    free(file_path);
+    return true;
 }
 
 bool file_load(const char *path, uint8_t **buffer, size_t *size) {
@@ -113,32 +121,6 @@ bool file_load(const char *path, uint8_t **buffer, size_t *size) {
     return true;
 }
 
-bool file_mkpath(const char *path, mode_t mode) {
-    if (!path || !*path) {
-        so_loge("file_mkpath: Invalid argument.");
-        return false;
-    }
-
-    char *file_path = strdup(path);
-    for (char *p = strchr(file_path + 1, '/'); p; p = strchr(p + 1, '/')) {
-        *p = '\0';
-        if (mkdir(file_path, mode) == -1) {
-            if (errno != EEXIST) {
-                so_loge(
-                    "file_mkpath: Unable to create a directory \"%s\", "
-                    "mkdir error code is %s.",
-                    file_path, strerror(errno));
-                free(file_path);
-                return false;
-            }
-        }
-        *p = '/';
-    }
-
-    free(file_path);
-    return true;
-}
-
 bool file_save(const char *path, const uint8_t *buffer, size_t size) {
     FILE *f = fopen(path, "wb");
 
@@ -156,43 +138,44 @@ bool file_save(const char *path, const uint8_t *buffer, size_t size) {
     return true;
 }
 
-size_t file_size(const char *path) {
-    size_t ret = -1;
-
+bool file_copy(const char *path, const char *destination) {
     if (!file_exists(path)) {
         so_loge(
-            "size_t: Specified source path \"%s\" "
+            "file_copy: Specified source path \"%s\" "
             "does not exist.",
             path);
-        return ret;
+        return false;
     }
 
-    FILE *f = fopen(path, "rb");
-    if (!f) {
+    if (!file_mkpath(destination, 0755)) {
         so_loge(
-            "size_t: Could not open the specified "
-            "source path \"%s\".",
+            "file_copy: Could not create parent directories for the "
+            "specified destination path \"%s\".",
+            destination);
+        return false;
+    }
+
+    uint8_t *buffer;
+    size_t   size;
+
+    if (!file_load(path, &buffer, &size)) {
+        so_loge(
+            "file_copy: Failed to read data from "
+            "the source path \"%s\".",
             path);
-        return ret;
+        return false;
     }
 
-    fseek(f, 0, SEEK_END);
-    ret = ftell(f);
-    fseek(f, 0, SEEK_SET);
-    fclose(f);
-
-    return ret;
-}
-
-bool is_dir(const char *path) {
-    DIR *d = opendir(path);
-
-    if (d != NULL) {
-        closedir(d);
-        return true;
+    if (!file_save(destination, buffer, size)) {
+        so_loge(
+            "file_copy: Failed to write data to the specified "
+            "destination path \"%s\".",
+            destination);
+        return false;
     }
 
-    return false;
+    free(buffer);
+    return true;
 }
 
 void str_replace(char **str, const char *needle, const char *replacement) {

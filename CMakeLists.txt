@@ -7,32 +7,32 @@ endif ()
 set(CMAKE_TOOLCHAIN_FILE "$ENV{VITASDK}/share/vita.toolchain.cmake" CACHE PATH "Toolchain file")
 include("$ENV{VITASDK}/share/vita.cmake" REQUIRED)
 
-if(RUNTIME_APP_ID STREQUAL "705")
+if(RUNTIME_APP_ID EQUAL 705)
   project(MugenmakaiDisgaea C CXX)
-  set(VITA_APP_NAME "Mugenmakai Disgaea")
+  set(VITA_APP_NAME "Disgaea Disgaea")
   set(VITA_TITLEID  "GGEE00705")
   set(VITA_VPKNAME  "MugenmakaiDisgaea")
 
-elseif(RUNTIME_APP_ID STREQUAL "1277")
+elseif(RUNTIME_APP_ID EQUAL 1277)
   project(AcrodeaRuntime C CXX)
   set(VITA_APP_NAME "Shantae Risky's Revenge")
   set(VITA_TITLEID  "GGEE01277")
   set(VITA_VPKNAME  "ShantaeRiskysRevenge")
 
-elseif(RUNTIME_APP_ID STREQUAL "1760")
+elseif(RUNTIME_APP_ID EQUAL 1760)
   project(DevilMayCry4refrain C CXX)
   set(VITA_APP_NAME "Devil May Cry 4 refrain")
   set(VITA_TITLEID  "GGEE01760")
   set(VITA_VPKNAME  "DevilMayCry4refrain")
 
-elseif(RUNTIME_APP_ID STREQUAL "1761")
+elseif(RUNTIME_APP_ID EQUAL 1761)
   project(GhostTrick C CXX)
   set(VITA_APP_NAME "Ghost Trick")
   set(VITA_TITLEID  "GGEE01761")
   set(VITA_VPKNAME  "GhostTrick")
 
 else()
-  set(RUNTIME_APP_ID "1760")
+  set(RUNTIME_APP_ID 1760)
   project(AcrodeaRuntime C CXX)
   set(VITA_APP_NAME "AcrodeaRuntime")
   set(VITA_TITLEID  "ACRODEA00")
@@ -54,11 +54,11 @@ set(LOG_PATH "${DATA_PATH}log.txt" CACHE STRING "Path to log.txt")
 add_definitions(
   -DDATA_PATH="${DATA_PATH}" 
   -DLOG_PATH="${LOG_PATH}"
-  -DRUNTIME_APP_ID="${RUNTIME_APP_ID}"
+  -DRUNTIME_APP_ID=${RUNTIME_APP_ID}
 )
 
 # Unique debug definition for loader's logging to not interfere with anything
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+if (CMAKE_BUILD_TYPE EQUAL "Debug")
   add_definitions(-DDEBUG_SOLOADER)
   #add_definitions(-DDEBUG_LOGFILE) # 日志写入文件
 endif()
@@ -69,7 +69,7 @@ add_definitions(-D_GNU_SOURCE -D__POSIX_VISIBLE=999999)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mfpu=neon -mfloat-abi=softfp -std=gnu11 -Wno-deprecated")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mfpu=neon -mfloat-abi=softfp -std=gnu++20 -Wno-write-strings -Wno-psabi")
 
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+if (CMAKE_BUILD_TYPE EQUAL "Debug")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O1 -g3")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O1 -g3")
 else ()
@@ -87,6 +87,7 @@ enable_language(ASM)
 
 file(GLOB_RECURSE SO_COMMON_SRC  deps/so_common/*.c)
 file(GLOB_RECURSE SO_LINKER_SRC  deps/so_linker/*.c)
+file(GLOB_RECURSE SO_JAVA_SRC    deps/so_java/*.c deps/so_java/*.cpp)
 file(GLOB_RECURSE SO_JNI_SRC     deps/so_jni/*.c deps/so_jni/*.S)
 
 file(GLOB_RECURSE SO_LIBNATIVEHELPER_SRC deps/so_libs/libnativehelper/*.c)
@@ -102,12 +103,16 @@ file(GLOB_RECURSE SO_LIBSQLITE_SRC       deps/so_libs/libsqlite/*.c)
 file(GLOB_RECURSE SO_LIBDL_SRC           deps/so_libs/libdl/*.c)
 file(GLOB_RECURSE SO_LIBBINDER_SRC       deps/so_libs/libbinder/*.c)
 file(GLOB_RECURSE SO_LIBC_SRC            deps/so_libs/libc/*.c)
-file(GLOB_RECURSE SO_LIBSTDCPP_SRC       deps/so_libs/libstdcpp/*.c)
+file(GLOB_RECURSE SO_LIBSTDCXX_SRC       deps/so_libs/libstdcxx/*.c)
 file(GLOB_RECURSE SO_LIBM_SRC            deps/so_libs/libm/*.c)
+
+file(GLOB_RECURSE JAVA_SRC    source/java/*.c)
+file(GLOB_RECURSE PATCH_SRC   source/patch/*.c)
 
 add_executable(${CMAKE_PROJECT_NAME}
   ${SO_COMMON_SRC}
   ${SO_LINKER_SRC}
+  ${SO_JAVA_SRC}
   ${SO_JNI_SRC}
 
   ${SO_LIBNATIVEHELPER_SRC}
@@ -123,54 +128,14 @@ add_executable(${CMAKE_PROJECT_NAME}
   ${SO_LIBDL_SRC}
   ${SO_LIBBINDER_SRC}
   ${SO_LIBC_SRC}
-  ${SO_LIBSTDCPP_SRC}
+  ${SO_LIBSTDCXX_SRC}
   ${SO_LIBM_SRC}
+
+  ${JAVA_SRC}
+  ${PATCH_SRC}
 
   source/utils/dialog.c
   source/utils/utils.c
-
-  source/android/os/Build.c
-  source/android/os/Build_VERSION.c
-  source/android/view/Surface.c
-  source/android/media/AudioTrack.c
-  source/java/lang/System.c
-
-  source/vividruntime/extension/ExtensionManager.c
-  source/vividruntime/extension/MyAlarm.c
-  source/vividruntime/extension/MyAvatar.c
-  source/vividruntime/extension/MyBilling.c
-  source/vividruntime/extension/MyCamera.c
-  source/vividruntime/extension/MyDevice.c
-  source/vividruntime/extension/MyDeviceUtil.c
-  source/vividruntime/extension/MyDialog.c
-  source/vividruntime/extension/MyErrorDialog.c
-  source/vividruntime/extension/MyFacebook.c
-  source/vividruntime/extension/MyFont.c
-  source/vividruntime/extension/MyGgee.c
-  source/vividruntime/extension/MyHttp.c
-  source/vividruntime/extension/MyImagePicker.c
-  source/vividruntime/extension/MyLaunch.c
-  source/vividruntime/extension/MyLocation.c
-  source/vividruntime/extension/MyMediaManager.c
-  source/vividruntime/extension/MyMediaPlayer.c
-  source/vividruntime/extension/MyMovie.c
-  source/vividruntime/extension/MyMovieBridge.c
-  source/vividruntime/extension/MyPopup.c
-  source/vividruntime/extension/MyScreen.c
-  source/vividruntime/extension/MySensor.c
-  source/vividruntime/extension/MyTextInput.c
-
-  source/vividruntime/Launcher.c
-  source/vividruntime/Runtime.c
-
-  source/patch/libGgee/ggee.c
-  source/patch/libKD/kd.c
-  source/patch/libLD/ld.c
-  source/patch/libLD/ld_bootstrap.c
-  source/patch/libLD/ld_hook.c
-  source/patch/libLD/ld_libc.c
-  source/patch/libLD/ld_libcpp.c
-  source/patch/libLD/ld_mugenmakai.c
 
   source/controls.c
   source/java.c
@@ -195,6 +160,7 @@ target_link_directories (${CMAKE_PROJECT_NAME}
 target_link_libraries(${CMAKE_PROJECT_NAME}
   -Wl,--whole-archive pthread -Wl,--no-whole-archive
   speexdsp
+  mpg123
   vitaGL
   vitashark
   SceShaccCgExt

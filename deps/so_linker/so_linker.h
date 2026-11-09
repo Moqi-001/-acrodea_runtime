@@ -8,13 +8,13 @@ extern "C" {
 #include "elf.h"
 
 // 单次 Hook 最多覆盖的原指令字节数
-#define SO_HOOK_MAX_INSTR 32
+#define SO_HOOK_INSTR_MAX_LEN 32
 
 typedef struct so_hook_ref {
-    void   *target;                        // 目标函数地址（Thumb 保留 bit0）
-    void   *trampoline;                    // 跳板地址，可直接当函数指针调用（Thumb 已置位 bit0）
-    int     instr_len;                     // 被覆盖/备份的原指令字节数
-    uint8_t ori_instr[SO_HOOK_MAX_INSTR];  // 原指令备份（so_unhook 还原用）
+    void   *target;                            // 目标函数地址（Thumb 保留 bit0）
+    void   *trampoline;                        // 跳板地址，可直接当函数指针调用（Thumb 已置位 bit0）
+    uint8_t ori_instr[SO_HOOK_INSTR_MAX_LEN];  // 原指令备份（so_unhook 还原用）
+    size_t  instr_len;                         // 原指令字节数
 } so_hook_ref;
 
 typedef struct so_symbol {
@@ -55,8 +55,10 @@ void *so_mmap(size_t length);
 void  so_munmap(void *addr);
 int   so_mprotect(void *addr, size_t length, int prot);
 
-int so_hook_function_safe(void *target, void *boundary, void *replacement, so_hook_ref *p_hook);  // Thumb 函数需传入 (实际地址 | 1)
-int so_hook_function(void *target, void *replacement, so_hook_ref *p_hook);                       // Thumb 函数需传入 (实际地址 | 1)
+int so_hook_export_function_safe(void *target, void *boundary, void *replacement, so_hook_ref *p_hook);  // Thumb 函数需传入 (实际地址 | 1)
+int so_hook_export_function(void *target, void *replacement, so_hook_ref *p_hook);                       // Thumb 函数需传入 (实际地址 | 1)
+int so_hook_import_function_safe(void *target, void *boundary, void *replacement, so_hook_ref *p_hook);  // target 为 import 的 GOT 槽地址（__ldModuleFindImportSlot），把 replacement 写入槽内重定向
+int so_hook_import_function(void *target, void *replacement, so_hook_ref *p_hook);                       // 同上
 int so_unhook(so_hook_ref *p_hook);
 
 int so_inject_data_safe(void *target, void *boundary, const void *data, size_t len);

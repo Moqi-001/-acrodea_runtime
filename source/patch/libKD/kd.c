@@ -27,7 +27,7 @@ char *__kdMapFilename(const char *filename, const char *mode) {
         } else if (strncmp(filename, "/lib/", 5) == 0) {
             snprintf(map_path, 1024, "%sassets/%s", DATA_PATH, filename + 5);
         } else if (strncmp(filename, "/data/", 6) == 0) {
-            snprintf(map_path, 1024, "%sruntime/%s/%s", DATA_PATH, RUNTIME_APP_ID, filename + 6);
+            snprintf(map_path, 1024, "%sruntime/%s/%s", DATA_PATH, RUNTIME_APP_ID_STR, filename + 6);
         } else {
             strcpy(map_path, filename);
         }

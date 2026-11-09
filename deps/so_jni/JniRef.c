@@ -15,7 +15,7 @@
 #define WEAK_REF_BIAS   0X30000000u
 
 typedef struct JniRefSlot {
-    JavaObject obj;  //  Java 对象指针
+    JObject obj;  //  Java 对象指针
 } JniRefSlot;
 
 typedef struct JniRefFrame {
@@ -61,7 +61,7 @@ jobjectRefType JniGetObjectRefType(jobject object) {
     return JNIInvalidRefType;
 }
 
-JavaObject JniObjectToJava(jobject object) {
+JObject JniObjectToJava(jobject object) {
     if (!object) return NULL;
 
     uintptr_t addr = (uintptr_t)object;
@@ -88,7 +88,7 @@ JavaObject JniObjectToJava(jobject object) {
     return NULL;
 }
 
-jobject JniNewLocalRefFromJava(JavaObject obj) {
+jobject JniNewLocalRefFromJava(JObject obj) {
     if (!obj) return NULL;
 
     JniLocalContext *ctx = &_so_local_ctx;
@@ -125,7 +125,7 @@ jobject JniNewLocalRefFromJava(JavaObject obj) {
     }
 
     jint index            = ctx->count;
-    ctx->slots[index].obj = JavaRetainObject(obj);
+    ctx->slots[index].obj = Object_retain(obj);
     ctx->count++;
 
     return (jobject)(index + LOCAL_REF_BIAS);
@@ -147,11 +147,11 @@ void JniDeleteLocalRef(jobject object) {
     if (index < 0 || index >= ctx->count || !ctx->slots[index].obj) return;
 
     // 释放引用后仍占着槽位，count 不减，LocalRef 不进行槽位复用
-    JavaReleaseObject(ctx->slots[index].obj);
+    Object_release(ctx->slots[index].obj);
     ctx->slots[index].obj = NULL;
 }
 
-jobject JniNewGlobalRefFromJava(JavaObject obj) {
+jobject JniNewGlobalRefFromJava(JObject obj) {
     if (!obj) return NULL;
 
     JniGlobalContext *ctx = &_so_global_ctx;
@@ -192,7 +192,7 @@ jobject JniNewGlobalRefFromJava(JavaObject obj) {
     }
 
     jint index            = ctx->free_head;
-    ctx->slots[index].obj = JavaRetainObject(obj);
+    ctx->slots[index].obj = Object_retain(obj);
     ctx->free_head        = ctx->next_free[ctx->free_head];
     ctx->count++;
 
@@ -221,7 +221,7 @@ void JniDeleteGlobalRef(jobject object) {
         return;
     }
 
-    JavaReleaseObject(ctx->slots[index].obj);
+    Object_release(ctx->slots[index].obj);
     ctx->slots[index].obj = NULL;
 
     ctx->next_free[index] = ctx->free_head;
@@ -231,7 +231,7 @@ void JniDeleteGlobalRef(jobject object) {
     pthread_mutex_unlock(&ctx->lock);
 }
 
-jweak JniNewWeakGlobalRefFromJava(JavaObject obj) {
+jweak JniNewWeakGlobalRefFromJava(JObject obj) {
     if (!obj) return NULL;
 
     JniGlobalContext *ctx = &_so_weak_ctx;
@@ -272,7 +272,7 @@ jweak JniNewWeakGlobalRefFromJava(JavaObject obj) {
     }
 
     jint index = ctx->free_head;
-    if (JavaRegisterWeakRef(obj, &ctx->slots[index].obj) != JNI_OK) {
+    if (Object_retainWeak(obj, &ctx->slots[index].obj) != JNI_OK) {
         pthread_mutex_unlock(&ctx->lock);
         return NULL;
     }
@@ -305,7 +305,7 @@ void JniDeleteWeakGlobalRef(jweak object) {
         return;
     }
 
-    JavaUnregisterWeakRef(ctx->slots[index].obj, &ctx->slots[index].obj);
+    Object_releaseWeak(ctx->slots[index].obj, &ctx->slots[index].obj);
     ctx->slots[index].obj = NULL;
 
     ctx->next_free[index] = ctx->free_head;
@@ -350,7 +350,7 @@ jobject JniPopLocalFrame(jobject result) {
 
     for (jint i = frame->start; i < ctx->count; i++) {
         if (slots[i].obj) {
-            JavaReleaseObject(slots[i].obj);
+            Object_release(slots[i].obj);
             slots[i].obj = NULL;
         }
     }
@@ -384,7 +384,7 @@ void JniFiniLocalRefContext(void) {
     if (ctx->slots) {
         for (jint i = 0; i < ctx->count; i++) {
             if (ctx->slots[i].obj) {
-                JavaReleaseObject(ctx->slots[i].obj);
+                Object_release(ctx->slots[i].obj);
                 ctx->slots[i].obj = NULL;
             }
         }
@@ -440,7 +440,7 @@ void JniFiniGlobalRefContext(void) {
     if (ctx->slots) {
         for (jint i = 0; i < ctx->capacity; i++) {
             if (ctx->slots[i].obj) {
-                JavaReleaseObject(ctx->slots[i].obj);
+                Object_release(ctx->slots[i].obj);
                 ctx->slots[i].obj = NULL;
             }
         }
@@ -496,7 +496,7 @@ void JniFiniWeakGlobalRefContext(void) {
     if (ctx->slots) {
         for (jint i = 0; i < ctx->capacity; i++) {
             if (ctx->slots[i].obj) {
-                JavaUnregisterWeakRef(ctx->slots[i].obj, &ctx->slots[i].obj);
+                Object_releaseWeak(ctx->slots[i].obj, &ctx->slots[i].obj);
                 ctx->slots[i].obj = NULL;
             }
         }

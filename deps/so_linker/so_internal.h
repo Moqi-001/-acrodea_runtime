@@ -74,8 +74,9 @@ struct so_module {
 };
 
 struct so_context {
-    so_module_node *modules;      // 模块链表头
-    size_t          num_modules;  // 模块数量
+    so_module_node *modules_head;  // 模块链表头
+    so_module_node *modules_tail;  // 模块链表尾
+    size_t          num_modules;   // 模块数量
 };
 
 struct so_module_node {

@@ -5,8 +5,8 @@
 #include <psp2/kernel/clib.h>
 #include <psp2/touch.h>
 
-#include "android/keycodes.h"
-#include "vividruntime/Runtime.h"
+#include <so_java/android/keycodes.h>
+#include "java/Runtime.h"
 
 #include "config.h"
 
@@ -88,7 +88,10 @@ static int joystick_screen_offset(int v) {
     return 0;
 }
 
-void controls_poll() {
+void soloader_init_controls() {
+}
+
+void soloader_poll_controls() {
     static TouchInfo touchInfo[2] = {
         {0, -1, -1, -1, -1},
         {1, -1, -1, -1, -1}

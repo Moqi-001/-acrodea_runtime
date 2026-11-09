@@ -127,6 +127,6 @@ int AThread_run(AThread *thiz, const char *name, int priority, size_t stack) {
 
     pthread_mutex_unlock(&thiz->mLock.mutex);
 
-    so_loga("[NDK][Thread] run(%p,'%s',0x%x,%u): OK!", thiz, name, priority, stack);
+    so_logd("[NDK][Thread] run(%p,'%s',0x%x,%u): OK!", thiz, name, priority, stack);
     return 0;
 }

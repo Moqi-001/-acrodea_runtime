@@ -14,16 +14,16 @@ uint32_t (*ldModuleSymHash)(const char *name);
 void *(*ldModuleLookupSymbol)(LdModule *mod, const char *sym_name, uint32_t sym_hash, int visibility,
                               const char *ver_name, uint32_t ver_hash);
 
-extern int ld_patch_preinit_mugenmakai(LdModule *mod);
+extern int ld_patch_preinit_disgaea(LdModule *mod);
 
 extern int ld_patch_libc(LdModule *mod);
 extern int ld_patch_libcpp(LdModule *mod);
 extern int ld_patch_bootstrap(LdModule *mod);
-extern int ld_patch_mugenmakai(LdModule *mod);
+extern int ld_patch_disgaea(LdModule *mod);
 
 static int ld_patch_preinit(LdModule *mod) {
     if (strcmp(mod->so_name, "Mugenmakai_Disgaea_En_gstore.exe") == 0) {
-        ld_patch_preinit_mugenmakai(mod);
+        ld_patch_preinit_disgaea(mod);
     }
 
     return 0;
@@ -37,7 +37,7 @@ static int ld_patch(LdModule *mod) {
     } else if (strcmp(mod->so_name, "bootstrap.exe") == 0) {
         ld_patch_bootstrap(mod);
     } else if (strcmp(mod->so_name, "Mugenmakai_Disgaea_En_gstore.exe") == 0) {
-        ld_patch_mugenmakai(mod);
+        ld_patch_disgaea(mod);
     }
 
     return 0;
@@ -129,10 +129,6 @@ int ldModuleInitialize(LdModule *mod) {
     return 0;
 }
 
-void *__ldModuleFindSymbol(LdModule *mod, const char *symbol, so_hook_ref *p_hook) {
-    uint32_t hash = ldModuleSymHash(symbol);
-    return ldModuleLookupSymbol(mod, symbol, hash, STV_DEFAULT, NULL, 0);
-}
 
 int soloader_patch_libLD(so_module *mod) {
     so_logd("soloader_patch_libLD(%p)", mod);

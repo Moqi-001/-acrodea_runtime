@@ -20,128 +20,17 @@ extern "C" {
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <sys/types.h>
 
-/**
- * Get Unix timestamp in milliseconds.
- *
- * @return Number of milliseconds that have elapsed since January 1, 1970.
- */
-uint64_t current_timestamp_ms();
-
-/**
- * Create a copy of a file.
- *
- * If the file specified by `destination` already exists, it will be
- * overwritten. If a parent directory or directories of the file specified by
- * `destination` do not exist, they will be created automatically.
- *
- * @warning The function will fail if the size of the source file specified by
- *          `path` exceeds the amount of free memory available.
- *
- * @param[in] path        Full path of the source file.
- * @param[in] destination Full path of the destination file.
- *
- * @return `true` on success, `false` otherwise.
- */
-bool file_copy(const char *path, const char *destination);
-
-/**
- * Check whether a file exists.
- *
- * @param path Full path of the file to look for.
- *
- * @return `true` if file exists, `false` otherwise.
- */
-bool file_exists(const char *path);
-
-/**
- * Load file contents into memory.
- *
- * @param[in]  path   Full path of the source file.
- * @param[out] buffer Output buffer address, allocated by the function. Must be
- *                    freed by the caller if the function returns `true`.
- * @param[out] size   Output buffer size.
- *
- * @return `true` on success, `false` otherwise.
- */
-bool file_load(const char *path, uint8_t **buffer, size_t *size);
-
-/**
- * Create directories leading to file.
- *
- * @param[in] path Full path of the target file.
- * @param[in] mode Permissions to set for new directories (if any).
- *
- * @return `true` on success, `false` otherwise.
- */
-bool file_mkpath(const char *path, mode_t mode);
-
-/**
- * Save buffer contents into a file.
- *
- * @param[in] path   Full path of the target file.
- * @param[in] buffer Buffer containing data to save.
- * @param[in] size   Size of the buffer (in bytes).
- *
- * @return `true` on success, `false` otherwise.
- */
-bool file_save(const char *path, const uint8_t *buffer, size_t size);
-
-/**
- * Get the size of a file in bytes
- *
- * @param[in] path Full path of the target file.
- *
- * @return File size in bytes or (size_t)-1 in case of a failure.
- */
+bool   file_copy(const char *path, const char *destination);
+bool   file_exists(const char *path);
+bool   file_load(const char *path, uint8_t **buffer, size_t *size);
+bool   file_mkpath(const char *path, mode_t mode);
+bool   file_save(const char *path, const uint8_t *buffer, size_t size);
 size_t file_size(const char *path);
 
-/**
- * Check whether specified path is a directory.
- *
- * @param[in] path Target path.
- *
- * @return `true` if path is a directory, `false` otherwise.
- */
-bool is_dir(const char *path);
-
-/**
- * Replace all occurrences of a substring in a string.
- *
- * @param[out] str         Target string. Will be extended using `realloc()` if
- *                         the resulting string is longer than the initial one.
- * @param[in]  needle      Substring to look for.
- * @param[in]  replacement Replacement.
- */
 void str_replace(char **str, const char *needle, const char *replacement);
-
-/**
- * Remove all occurrences of a substring from a string.
- *
- * @param[out] str    Target string.
- * @param[in]  needle Substring to look for.
- */
 void str_remove(char *str, const char *needle);
-
-/**
- * Check whether a string starts with a substring.
- *
- * @param[in] str    Target string.
- * @param[in] prefix Substring to look for.
- *
- * @return `true` if the string starts with the substring, `false` otherwise.
- */
 bool str_starts_with(const char *str, const char *prefix);
-
-/**
- * Check whether a string ends with a substring.
- *
- * @param[in] str    Target string.
- * @param[in] suffix Substring to look for.
- *
- * @return `true` if the string ends with the substring, `false` otherwise.
- */
 bool str_ends_with(const char *str, const char *suffix);
 
 #ifdef __cplusplus

@@ -5,7 +5,7 @@ struct AInputQueue {
     /* data */
 };
 
-AInputQueue *AInputQueue_new() {
+AInputQueue *AInputQueue_create() {
 
 }
 

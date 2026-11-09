@@ -505,7 +505,7 @@ static int _emit_trampoline(uint8_t *tramp, uintptr_t src, int is_thumb,
 /* 对外接口                                                            */
 /* ------------------------------------------------------------------ */
 
-int so_hook_function_safe(void *target, void *boundary, void *replacement, so_hook_ref *p_hook) {
+int so_hook_export_function_safe(void *target, void *boundary, void *replacement, so_hook_ref *p_hook) {
     if (!target || !replacement) return -1;
 
     uintptr_t src      = (uintptr_t)target;
@@ -646,8 +646,33 @@ int so_hook_function_safe(void *target, void *boundary, void *replacement, so_ho
     return 0;
 }
 
-int so_hook_function(void *target, void *replacement, so_hook_ref *p_hook) {
-    return so_hook_function_safe(target, NULL, replacement, p_hook);
+int so_hook_export_function(void *target, void *replacement, so_hook_ref *p_hook) {
+    return so_hook_export_function_safe(target, NULL, replacement, p_hook);
+}
+
+int so_hook_import_function_safe(void *target, void *boundary, void *replacement, so_hook_ref *p_hook) {
+    if (!target || !replacement) return -1;
+
+    if (boundary && (uintptr_t)target + 4 > (uintptr_t)boundary) {
+        return -1; /* 超出边界 */
+    }
+
+    void *real_target = (void *)((uintptr_t)target & ~1);
+
+    if (p_hook) {
+        p_hook->target     = target;
+        p_hook->trampoline = (void *)(*(uintptr_t *)target);
+        memcpy(p_hook->ori_instr, real_target, 4);
+        p_hook->instr_len = 4;
+    }
+
+    memcpy(real_target, &replacement, sizeof(void *));
+    so_cacheflush(real_target, sizeof(void *));
+    return 0;
+}
+
+int so_hook_import_function(void *target, void *replacement, so_hook_ref *p_hook) {
+    return so_hook_import_function_safe(target, NULL, replacement, p_hook);
 }
 
 int so_unhook(so_hook_ref *p_hook) {

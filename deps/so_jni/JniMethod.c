@@ -231,14 +231,14 @@ static jint compute_layout(JniMethod *method) {
     return JNI_OK;
 }
 
-JniMethod *JniCreateMethod(JavaSymbol *symbol) {
+JniMethod *JniCreateMethod(JSymbol *symbol) {
     JniMethod *method = malloc(sizeof(JniMethod));
     if (!method) return NULL;
 
     method->name      = symbol->name;
     method->signature = symbol->signature;
     method->fnPtr     = (void *)symbol->addr;
-    method->isStatic  = ((symbol->flags & JAVA_SYMBOL_FLAGS_STATIC) == JAVA_SYMBOL_FLAGS_STATIC);
+    method->isStatic  = ((symbol->flags & JSYMBOL_FLAGS_STATIC) == JSYMBOL_FLAGS_STATIC);
 
     // 解析签名
     if (parse_signature(method) != JNI_OK) {
@@ -257,29 +257,29 @@ JniMethod *JniCreateMethod(JavaSymbol *symbol) {
 }
 
 jmethodID JniGetMethodID(const jclass clazz, const char *name, const char *sig) {
-    JavaSymbol *symbol = (JavaSymbol *)JavaFindMethodSymbol(JniObjectToJava(clazz), name, sig, JNI_FALSE);
+    JSymbol *symbol = (JSymbol *)Class_findMethodSymbol(JniObjectToJava(clazz), name, sig, JNI_FALSE);
     if (!symbol) return NULL;
 
-    if (symbol->method) return symbol->method;
+    if (symbol->method) return (jmethodID)symbol->method;
 
     JniMethod *method = JniCreateMethod(symbol);
     if (!method) return NULL;
 
-    symbol->method = (jmethodID)method;
+    symbol->method = (JMethod)method;
 
-    return symbol->method;
+    return (jmethodID)symbol->method;
 }
 
 jmethodID JniGetStaticMethodID(const jclass clazz, const char *name, const char *sig) {
-    JavaSymbol *symbol = (JavaSymbol *)JavaFindMethodSymbol(JniObjectToJava(clazz), name, sig, JNI_TRUE);
+    JSymbol *symbol = (JSymbol *)Class_findMethodSymbol(JniObjectToJava(clazz), name, sig, JNI_TRUE);
     if (!symbol) return NULL;
 
-    if (symbol->method) return symbol->method;
+    if (symbol->method) return (jmethodID)symbol->method;
 
     JniMethod *method = JniCreateMethod(symbol);
     if (!method) return NULL;
 
-    symbol->method = (jmethodID)method;
+    symbol->method = (JMethod)method;
 
-    return symbol->method;
+    return (jmethodID)symbol->method;
 }

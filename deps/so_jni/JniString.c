@@ -1,21 +1,21 @@
 #include "so_jni_internal.h"
 
 jstring JniNewString(const jchar *utf16, jsize len) {
-    JavaString str = JavaNewString(utf16, len);
+    JString str = String_new(utf16, len);
     if (!str) return NULL;
 
     jstring result = JniNewLocalRefFromJava(str);
-    JavaReleaseObject(str);  // 由 LocalRef 托管
+    Object_release(str);  // 由 LocalRef 托管
 
     return result;
 }
 
 jsize JniGetStringLength(jstring string) {
-    return JavaGetStringLength(JniObjectToJava(string));
+    return String_getLength(JniObjectToJava(string));
 }
 
 const jchar *JniGetStringChars(jstring string, jboolean *isCopy) {
-    const jchar *result = JavaGetStringChars(JniObjectToJava(string));
+    const jchar *result = String_getChars(JniObjectToJava(string));
     if (isCopy) *isCopy = JNI_FALSE;
 
     return result;
@@ -26,25 +26,25 @@ void JniReleaseStringChars(jstring string, const jchar *utf16) {
 }
 
 jint JniGetStringRegion(jstring string, jsize start, jsize length, jchar *buf) {
-    return JavaGetStringRegion(JniObjectToJava(string), start, length, buf);
+    return String_getRegion(JniObjectToJava(string), start, length, buf);
 }
 
 jstring JniNewStringUTF(const char *utf8) {
-    JavaString str = JavaNewStringUTF(utf8);
+    JString str = String_newUTF(utf8);
     if (!str) return NULL;
 
     jstring result = JniNewLocalRefFromJava(str);
-    JavaReleaseObject(str);  // 由 LocalRef 托管
+    Object_release(str);  // 由 LocalRef 托管
 
     return result;
 }
 
 jsize JniGetStringUTFLength(jstring string) {
-    return JavaGetStringUTFLength(JniObjectToJava(string));
+    return String_getUTFLength(JniObjectToJava(string));
 }
 
 const char *JniGetStringUTFChars(jstring string, jboolean *isCopy) {
-    const char *result = JavaGetStringUTFChars(JniObjectToJava(string));
+    const char *result = String_getUTFChars(JniObjectToJava(string));
     if (isCopy) *isCopy = JNI_FALSE;
 
     return result;
@@ -55,5 +55,5 @@ void JniReleaseStringUTFChars(jstring string, const char *utf8) {
 }
 
 jint JniGetStringUTFRegion(jstring string, jsize start, jsize length, char *buf) {
-    return JavaGetStringUTFRegion(JniObjectToJava(string), start, length, buf);
+    return String_getUTFRegion(JniObjectToJava(string), start, length, buf);
 }

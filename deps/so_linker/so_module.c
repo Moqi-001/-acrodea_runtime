@@ -75,7 +75,7 @@ void *so_module_find_symbol_ex(so_module *mod, const char *sym_name, int flags,
             return NULL;
         }
 
-        so_module_node *node = context->modules;
+        so_module_node *node = context->modules_head;
         while (node) {
             if (node->mod != mod) {
                 sym_addr = _find_symbol_ex(node->mod, sym_name, sym_hash, out_sym);
@@ -800,7 +800,7 @@ int so_module_hook_function(so_module *mod, ptrdiff_t vaddr, void *replacement, 
 
     void *target   = (void *)(vaddr + mod->load_bias);
     void *boundary = (void *)((uintptr_t)mod->load_base + mod->load_size);
-    return so_hook_function_safe(target, boundary, replacement, p_hook);
+    return so_hook_export_function_safe(target, boundary, replacement, p_hook);
 }
 
 int so_module_hook_symbol(so_module *mod, const char *sym_name, void *replacement, so_hook_ref *p_hook) {
@@ -808,7 +808,7 @@ int so_module_hook_symbol(so_module *mod, const char *sym_name, void *replacemen
 
     void *target   = so_module_find_symbol(mod, sym_name);
     void *boundary = (void *)((uintptr_t)mod->load_base + mod->load_size);
-    return so_hook_function_safe(target, boundary, replacement, p_hook);
+    return so_hook_export_function_safe(target, boundary, replacement, p_hook);
 }
 
 int so_module_inject_data(so_module *mod, ptrdiff_t vaddr, const void *data, size_t len) {

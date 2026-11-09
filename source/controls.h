@@ -5,7 +5,8 @@
 extern "C" {
 #endif
 
-void controls_poll();
+void soloader_init_controls();
+void soloader_poll_controls();
 
 #ifdef __cplusplus
 };

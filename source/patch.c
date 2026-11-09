@@ -23,7 +23,7 @@ int __wrap_chdir_soloader(const char *dir) {
     char buf[1024];
 
     if (strncmp(dir, "/runtime", 8) == 0) {
-        snprintf(buf, sizeof(buf), "%sruntime/%s%s", DATA_PATH, RUNTIME_APP_ID, dir + 8);
+        snprintf(buf, sizeof(buf), "%sruntime/%s%s", DATA_PATH, RUNTIME_APP_ID_STR, dir + 8);
         dir = buf;
     }
 
@@ -53,7 +53,7 @@ FILE *__wrap_fopen_soloader(const char *filename, const char *mode) {
             snprintf(buf, 1024, "%sassets/%s", DATA_PATH, filename + 5);
             filename = buf;
         } else if (strncmp(filename, "/data/", 6) == 0) {
-            snprintf(buf, 1024, "%sruntime/%s/%s", DATA_PATH, RUNTIME_APP_ID, filename + 6);
+            snprintf(buf, 1024, "%sruntime/%s/%s", DATA_PATH, RUNTIME_APP_ID_STR, filename + 6);
             filename = buf;
         }
     }

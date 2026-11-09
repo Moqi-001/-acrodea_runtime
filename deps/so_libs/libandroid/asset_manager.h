@@ -43,6 +43,7 @@ enum {
     AASSET_MODE_BUFFER       = 3
 };
 
+AAssetManager* AAssetManager_create();
 
 /**
  * Open the named directory within the asset hierarchy.  The directory can then

@@ -1,7 +1,7 @@
 #include "so_jni_internal.h"
 
 const char *JniGetClassName(jclass clazz) {
-    return JavaGetClassName(JniObjectToJava(clazz));
+    return Class_getName(JniObjectToJava(clazz));
 }
 
 jclass JniFindClass(const char *name) {
@@ -9,21 +9,18 @@ jclass JniFindClass(const char *name) {
 }
 
 jclass JniGetSuperclass(jclass clazz) {
-    return JniNewLocalRefFromJava(JavaGetSuperclass(JniObjectToJava(clazz)));
+    return JniNewLocalRefFromJava(Class_getSuper(JniObjectToJava(clazz)));
 }
 
 jboolean JniIsAssignableFrom(jclass from, jclass thiz) {
-    return JavaIsAssignableFrom(JniObjectToJava(thiz), JniObjectToJava(from));
-}
-
-jboolean JniIsInstanceOf(jobject obj, jclass clazz) {
-    return JavaIsInstanceOf(JniObjectToJava(obj), JniObjectToJava(clazz));
+    return Class_isAssignableFrom(JniObjectToJava(thiz), JniObjectToJava(from));
 }
 
 jint JniRegisterNatives(jclass clazz, const JNINativeMethod *methods, jint num_methods) {
-    return JavaRegisterNatives(JniObjectToJava(clazz), methods, num_methods);
+    // JNINativeMethod 与 JNativeMethod 内存布局一致，这里做 jni → java 的显式桥接
+    return Class_registerNatives(JniObjectToJava(clazz), (const JNativeMethod *)methods, num_methods);
 }
 
 jint JniUnregisterNatives(jclass clazz) {
-    return JavaUnregisterNatives(JniObjectToJava(clazz));
+    return Class_unregisterNatives(JniObjectToJava(clazz));
 }

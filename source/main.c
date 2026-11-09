@@ -6,8 +6,8 @@
 #include <psp2/io/fcntl.h>
 #include <psp2/kernel/processmgr.h>
 #include <psp2/power.h>
-#include <psp2/sysmodule.h>
 #include <psp2/touch.h>
+#include <psp2/motion.h>
 
 #include "config.h"
 #include "loader.h"
@@ -28,13 +28,12 @@ int main(int argc, char *argv[]) {
 
     sceTouchSetSamplingState(SCE_TOUCH_PORT_FRONT, SCE_TOUCH_SAMPLING_STATE_START);
     sceCtrlSetSamplingMode(SCE_CTRL_MODE_ANALOG_WIDE);
+    sceMotionStartSampling();
 
     scePowerSetArmClockFrequency(444);
     scePowerSetBusClockFrequency(222);
     scePowerSetGpuClockFrequency(222);
     scePowerSetGpuXbarClockFrequency(166);
-
-    sceSysmoduleLoadModule(SCE_SYSMODULE_AVPLAYER);
 
 #ifdef LOG_PATH
     sceIoRemove(LOG_PATH);

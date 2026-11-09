@@ -505,8 +505,8 @@ jfieldID GetFieldID(JNIEnv *env, jclass clazz, const char *name, const char *sig
             so_loge("[JNI] Get" #_jname "Field(%p,%p,%p): invalid arguments!", env, obj, fieldID); \
             return (_jtype)0;                                                                      \
         }                                                                                          \
-        const JavaSymbol *sym      = (const JavaSymbol *)fieldID;                                  \
-        void             *instance = JniObjectToJava(obj);                                         \
+        const JSymbol *sym      = (const JSymbol *)fieldID;                                        \
+        void          *instance = JniObjectToJava(obj);                                            \
         if (!instance) {                                                                           \
             so_loge("[JNI] Get" #_jname "Field(%p,%p,%p): invalid object!", env, obj, fieldID);    \
             return (_jtype)0;                                                                      \
@@ -532,8 +532,8 @@ GET_TYPE_FIELD(jdouble, Double)
             so_loge("[JNI] Set" #_jname "Field(%p,%p,%p): invalid arguments!", env, obj, fieldID); \
             return;                                                                                \
         }                                                                                          \
-        const JavaSymbol *sym      = (const JavaSymbol *)fieldID;                                  \
-        void             *instance = JniObjectToJava(obj);                                         \
+        const JSymbol *sym      = (const JSymbol *)fieldID;                                        \
+        void          *instance = JniObjectToJava(obj);                                            \
         if (!instance) {                                                                           \
             so_loge("[JNI] Set" #_jname "Field(%p,%p,%p): invalid object!", env, obj, fieldID);    \
             return;                                                                                \
@@ -681,8 +681,8 @@ jfieldID GetStaticFieldID(JNIEnv *env, jclass clazz, const char *name, const cha
             so_loge("[JNI] GetStatic" #_jname "Field(%p,%p,%p): invalid arguments!", env, clazz, fieldID); \
             return (_jtype)0;                                                                              \
         }                                                                                                  \
-        JavaSymbol *sym    = (JavaSymbol *)fieldID;                                                        \
-        _jtype      result = *(_jtype *)sym->addr;                                                         \
+        JSymbol *sym    = (JSymbol *)fieldID;                                                              \
+        _jtype   result = *(_jtype *)sym->addr;                                                            \
         so_logd("[JNI] GetStatic" #_jname "Field(%p,%p,%p): ('%s')", env, clazz, fieldID, sym->name);      \
         return result;                                                                                     \
     }
@@ -702,7 +702,7 @@ GET_STATIC_TYPE_FIELD(jdouble, Double)
             so_loge("[JNI] SetStatic" #_jname "Field(%p,%p,%p): invalid arguments!", env, clazz, fieldID); \
             return;                                                                                        \
         }                                                                                                  \
-        JavaSymbol *sym      = (JavaSymbol *)fieldID;                                                      \
+        JSymbol *sym         = (JSymbol *)fieldID;                                                         \
         *(_jtype *)sym->addr = value;                                                                      \
         so_logd("[JNI] SetStatic" #_jname "Field(%p,%p,%p): ('%s')", env, clazz, fieldID, sym->name);      \
     }

@@ -2,9 +2,9 @@
 
 #define NEW_ARRAY(_jtype, _length, _jtype_enum)                    \
     ({                                                             \
-        JavaArray     arr    = JavaNewArray(_length, _jtype_enum); \
+        JObject     arr    = Array_new(_jtype_enum, _length); \
         _jtype##Array result = JniNewLocalRefFromJava(arr);        \
-        JavaReleaseObject(arr);                                    \
+        Object_release(arr);                                    \
         result;                                                    \
     })
 
@@ -19,13 +19,13 @@
 #define RELEASE_ARRAY_ELEMENTS(_array, _elems, _mode)
 
 #define GET_ARRAY_REGION(_array, _start, _len, _buf) \
-    JavaGetArrayRegion(JniObjectToJava(_array), _start, _len, (void *)_buf)
+    Array_getRegion(JniObjectToJava(_array), _start, _len, (void *)_buf)
 
 #define SET_ARRAY_REGION(_array, _start, _len, _buf) \
-    JavaSetArrayRegion(JniObjectToJava(_array), _start, _len, (const void *)_buf)
+    Array_setRegion(JniObjectToJava(_array), _start, _len, (const void *)_buf)
 
 jlong JniGetArrayLength(jarray array) {
-    return JavaGetArrayLength(JniObjectToJava(array));
+    return Array_getLength(JniObjectToJava(array));
 }
 
 // ============ Object Array ============
@@ -34,30 +34,30 @@ jobjectArray JniNewObjectArray(jsize length, jclass elementClass, jobject initia
         return NULL;
     }
 
-    JavaObject initElem = JniObjectToJava(initialElement);
+    JObject initElem = JniObjectToJava(initialElement);
 
-    if (initElem && !JavaIsInstanceOf(initElem, JniObjectToJava(elementClass))) {
+    if (initElem && !Object_isInstanceOf(initElem, JniObjectToJava(elementClass))) {
         return NULL;
     }
 
-    JavaObject *arr = (JavaObject *)JavaNewArray(length, JAVA_TYPE_OBJECT);
+    JObject *arr = (JObject *)Array_new(JTYPE_OBJECT, length);
     if (!arr) {
         return NULL;
     }
 
     for (jint i = 0; i < length; i++) {
-        arr[i] = JavaRetainObject(initElem);
+        arr[i] = Object_retain(initElem);
     }
 
     jobjectArray result = JniNewLocalRefFromJava(arr);
-    JavaReleaseObject(arr);  // 交由 LocalRef 托管
+    Object_release(arr);  // 交由 LocalRef 托管
 
     return result;
 }
 
 jobject JniGetObjectArrayElement(jobjectArray array, jsize index) {
-    JavaObject *arr    = JniObjectToJava(array);
-    jsize       length = JavaGetArrayLength(arr);
+    JObject *arr    = JniObjectToJava(array);
+    jsize       length = Array_getLength(arr);
     if (!arr || index < 0 || index >= length) {
         return NULL;
     }
@@ -66,52 +66,52 @@ jobject JniGetObjectArrayElement(jobjectArray array, jsize index) {
 }
 
 void JniSetObjectArrayElement(jobjectArray array, jsize index, jobject value) {
-    JavaObject *arr    = JniObjectToJava(array);
-    jsize       length = JavaGetArrayLength(arr);
+    JObject *arr    = JniObjectToJava(array);
+    jsize       length = Array_getLength(arr);
     if (!arr || index < 0 || index >= length) {
         return;
     }
 
-    JavaObject val = JniObjectToJava(value);
+    JObject val = JniObjectToJava(value);
     if (arr[index] == val) return;
 
     if (arr[index]) {
-        JavaReleaseObject(arr[index]);
+        Object_release(arr[index]);
     }
-    arr[index] = JavaRetainObject(val);
+    arr[index] = Object_retain(val);
 }
 
 // ============ New Array ============
 jbooleanArray JniNewBooleanArray(jsize length) {
-    return NEW_ARRAY(jboolean, length, JAVA_TYPE_BOOLEAN);
+    return NEW_ARRAY(jboolean, length, JTYPE_BOOLEAN);
 }
 
 jbyteArray JniNewByteArray(jsize length) {
-    return NEW_ARRAY(jbyte, length, JAVA_TYPE_BYTE);
+    return NEW_ARRAY(jbyte, length, JTYPE_BYTE);
 }
 
 jcharArray JniNewCharArray(jsize length) {
-    return NEW_ARRAY(jchar, length, JAVA_TYPE_CHAR);
+    return NEW_ARRAY(jchar, length, JTYPE_CHAR);
 }
 
 jshortArray JniNewShortArray(jsize length) {
-    return NEW_ARRAY(jshort, length, JAVA_TYPE_SHORT);
+    return NEW_ARRAY(jshort, length, JTYPE_SHORT);
 }
 
 jintArray JniNewIntArray(jsize length) {
-    return NEW_ARRAY(jint, length, JAVA_TYPE_INT);
+    return NEW_ARRAY(jint, length, JTYPE_INT);
 }
 
 jlongArray JniNewLongArray(jsize length) {
-    return NEW_ARRAY(jlong, length, JAVA_TYPE_LONG);
+    return NEW_ARRAY(jlong, length, JTYPE_LONG);
 }
 
 jfloatArray JniNewFloatArray(jsize length) {
-    return NEW_ARRAY(jfloat, length, JAVA_TYPE_FLOAT);
+    return NEW_ARRAY(jfloat, length, JTYPE_FLOAT);
 }
 
 jdoubleArray JniNewDoubleArray(jsize length) {
-    return NEW_ARRAY(jdouble, length, JAVA_TYPE_DOUBLE);
+    return NEW_ARRAY(jdouble, length, JTYPE_DOUBLE);
 }
 
 // ============ Get Array Elements ============

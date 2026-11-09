@@ -1,6 +1,9 @@
 #ifndef SOLOADER_CONFIG_H
 #define SOLOADER_CONFIG_H
 
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+
 #define SCREEN_W 960
 #define SCREEN_H 544
 
@@ -16,5 +19,7 @@
 #define SO_FILES_DIR  DATA_PATH "files/"
 #define SO_CACHE_DIR  DATA_PATH "cache/"
 #define SO_TTF_PATH   "app0:font.ttf"
+
+#define RUNTIME_APP_ID_STR TOSTRING(RUNTIME_APP_ID)
 
 #endif

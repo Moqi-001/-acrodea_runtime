@@ -262,5 +262,5 @@ void so_jni_fini(void) {
     JniFiniGlobalRefContext();
     JniFiniWeakGlobalRefContext();
 
-    JavaClearClassRegister();
+    JavaReleaseAllClasses();
 }

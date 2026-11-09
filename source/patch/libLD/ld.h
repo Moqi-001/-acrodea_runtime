@@ -59,15 +59,15 @@ struct LdModuleNode {
 
 // 动态库加载器上下文
 struct LdContext {
-    LdModuleNode    *loaded_mods;        // +0   已加载的模块链表（头部）
-    LdModuleNode   **tail_next_mod_ref;  // +4   已加载的模块链表尾部的next引用
-    LdModuleNode    *unloaded_mods;      // +8   未加载的模块链表（后进先出，实为尾部）
+    LdModuleNode     *loaded_mods;        // +0   已加载的模块链表（头部）
+    LdModuleNode    **tail_next_mod_ref;  // +4   已加载的模块链表尾部的next引用
+    LdModuleNode     *unloaded_mods;      // +8   未加载的模块链表（后进先出，实为尾部）
     pthread_rwlock_t *mutex;              // +12  线程互斥锁
-    LdModuleHooks    hooks;              // +16  (用于DRM解密？)
-    LdIoVtable       io_vtable;          // +40  5个io虚函数表
-    int32_t          exit_state;         // +60  退出状态
-    char             error_msg[256];     // +64  错误信息
-    int32_t          error_code;         // +320 错误代码
+    LdModuleHooks     hooks;              // +16  (用于DRM解密？)
+    LdIoVtable        io_vtable;          // +40  5个io虚函数表
+    int32_t           exit_state;         // +60  退出状态
+    char              error_msg[256];     // +64  错误信息
+    int32_t           error_code;         // +320 错误代码
 };  // +324
 
 // 动态库加载模块结构体
@@ -107,12 +107,13 @@ extern uint32_t (*ldModuleSymHash)(const char *name);
 extern void *(*ldModuleLookupSymbol)(LdModule *mod, const char *sym_name, uint32_t sym_hash, int visibility,
                                      const char *ver_name, uint32_t ver_hash);
 
-int soloader_patch_libLD(so_module *mod);
-
-void *__ldModuleFindSymbol(LdModule *mod, const char *name, so_hook_ref *p_hook);
-int   __ldModuleHookAddr(LdModule *mod, uintptr_t vaddr, uintptr_t dst, so_hook_ref *p_hook);
+void *__ldModuleFindImport(LdModule *mod, const char *symbol);
+void *__ldModuleFindExport(LdModule *mod, const char *symbol);
+int   __ldModuleHookImport(LdModule *mod, const char *symbol, void *replacement, so_hook_ref *p_hook);  // 需在重定位完成后调用
 int   __ldModuleHookExport(LdModule *mod, const char *symbol, uintptr_t dst, so_hook_ref *p_hook);
-int   __ldModuleHookImport(LdModule *mod, const char *symbol, void *replacement);
+int   __ldModuleHookAddr(LdModule *mod, uintptr_t vaddr, uintptr_t dst, so_hook_ref *p_hook);
+
+int soloader_patch_libLD(so_module *mod);
 
 #ifdef __cplusplus
 };

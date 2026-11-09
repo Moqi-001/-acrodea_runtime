@@ -29,6 +29,13 @@ struct AAsset {
 
 static AAssetManager g_assetManager = {0};
 
+AAssetManager *AAssetManager_create() {
+    AAssetManager *mgr = &g_assetManager;
+
+    so_logd("AAssetManager_create(): %p", mgr);
+    return mgr;
+}
+
 AAssetManager *AAssetManager_fromJava(JNIEnv *env, jobject assetManager) {
     AAssetManager *mgr = &g_assetManager;
 

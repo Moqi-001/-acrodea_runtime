@@ -1,13 +1,13 @@
 #include "so_jni_internal.h"
 
 jobject JniAllocObject(jclass clazz) {
-    JavaObject obj = JavaAllocObject(JniObjectToJava(clazz));
+    JObject obj = Object_new(JniObjectToJava(clazz));
     if (!obj) {
         return NULL;
     }
 
     jobject result = JniNewLocalRefFromJava(obj);
-    JavaReleaseObject(obj);
+    Object_release(obj);
 
     return result;
 }
@@ -40,12 +40,16 @@ jobject JniNewObjectA(jclass clazz, jmethodID methodID, const jvalue *args) {
 }
 
 jclass JniGetObjectClass(jobject object) {
-    return JniNewLocalRefFromJava(JavaGetObjectClass(JniObjectToJava(object)));
+    return JniNewLocalRefFromJava(Object_getClass(JniObjectToJava(object)));
 }
 
 jboolean JniIsSameObject(jobject ref1, jobject ref2) {
-    JavaObject *obj1 = JniObjectToJava(ref1);
-    JavaObject *obj2 = JniObjectToJava(ref2);
+    JObject *obj1 = JniObjectToJava(ref1);
+    JObject *obj2 = JniObjectToJava(ref2);
 
     return (obj1 == obj2) ? JNI_TRUE : JNI_FALSE;
+}
+
+jboolean JniIsInstanceOf(jobject obj, jclass clazz) {
+    return Object_isInstanceOf(JniObjectToJava(obj), JniObjectToJava(clazz));
 }

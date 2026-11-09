@@ -9,11 +9,12 @@ extern "C" {
 
 #include "jni.h"
 
-#include "java/JavaArray.h"
-#include "java/JavaBuffer.h"
-#include "java/JavaClass.h"
-#include "java/JavaObject.h"
-#include "java/JavaString.h"
+#include <so_java/java/lang/Array.h>
+#include <so_java/java/lang/Class.h>
+#include <so_java/java/lang/Object.h>
+#include <so_java/java/lang/String.h>
+#include <so_java/java/lang/types.h>
+#include <so_java/java/nio/Buffer.h>
 
 extern JavaVM _java_vm;
 extern JNIEnv _jni_env;
@@ -24,10 +25,10 @@ void so_jni_fini(void);
 // ============================================
 // JNI <=> JAVA
 // ============================================
-JavaObject   JniObjectToJava(jobject object);
-jobject      JniNewLocalRefFromJava(JavaObject obj);
-jobject      JniNewGlobalRefFromJava(JavaObject obj);
-jweak        JniNewWeakGlobalRefFromJava(JavaObject obj);
+JObject JniObjectToJava(jobject object);
+jobject JniNewLocalRefFromJava(JObject obj);
+jobject JniNewGlobalRefFromJava(JObject obj);
+jweak   JniNewWeakGlobalRefFromJava(JObject obj);
 
 // ============================================
 // JNI 标准函数实现
@@ -35,7 +36,6 @@ jweak        JniNewWeakGlobalRefFromJava(JavaObject obj);
 jclass   JniFindClass(const char *name);
 jclass   JniGetSuperclass(jclass clazz);
 jboolean JniIsAssignableFrom(jclass from, jclass thiz);
-jboolean JniIsInstanceOf(jobject obj, jclass clazz);
 jint     JniRegisterNatives(jclass clazz, const JNINativeMethod *methods, jint num_methods);
 jint     JniUnregisterNatives(jclass clazz);
 
@@ -54,6 +54,7 @@ jobject        JniNewObjectV(jclass clazz, jmethodID methodID, va_list args);
 jobject        JniNewObjectA(jclass clazz, jmethodID methodID, const jvalue *args);
 jclass         JniGetObjectClass(jobject object);
 jboolean       JniIsSameObject(jobject ref1, jobject ref2);
+jboolean       JniIsInstanceOf(jobject obj, jclass clazz);
 jobjectRefType JniGetObjectRefType(jobject object);
 
 jstring      JniNewString(const jchar *utf16, jsize len);
