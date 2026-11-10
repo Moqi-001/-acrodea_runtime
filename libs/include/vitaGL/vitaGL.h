@@ -30,7 +30,7 @@
 extern "C" {
 #endif
 
-#include <vitaGL/glplatform.h>
+#include <vitaGL/GLES/gl.h>
 
 #include <vitashark.h>
 

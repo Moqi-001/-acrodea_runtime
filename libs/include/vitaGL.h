@@ -19,16 +19,21 @@
 /*
  * Compatibility umbrella header: aggregates everything the former single
  * vitaGL.h provided. New code can also include the individual headers
- * directly (<vitaGL/GLES/gl.h>, <vitaGL/GLES2/gl2.h>, <vitaGL/EGL/egl.h>
+ * directly (<vitaGL/GLES/gl.h>, <vitaGL/GLES2/gl2.h>, <vitaGL/GLES/glcompat.h>, <vitaGL/EGL/egl.h>
  * or <vitaGL/vitaGL.h> for the vgl* private API).
  */
 
 #ifndef _VITAGL_H_
 #define _VITAGL_H_
 
-#include <vitaGL/EGL/egl.h>
 #include <vitaGL/GLES/gl.h>
 #include <vitaGL/GLES2/gl2.h>
+#include <vitaGL/GLES/glcompat.h>
+#include <vitaGL/EGL/egl.h>
+/* Extension entry points are exposed unconditionally, matching the rest of
+ * the vitaGL headers (no need for apps to define EGL_EGLEXT_PROTOTYPES). */
+#define EGL_EGLEXT_PROTOTYPES
+#include <vitaGL/EGL/eglext.h>
 #include <vitaGL/vitaGL.h>
 
 #endif  // _VITAGL_H_

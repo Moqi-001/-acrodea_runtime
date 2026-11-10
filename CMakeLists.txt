@@ -94,7 +94,7 @@ file(GLOB_RECURSE SO_LIBNATIVEHELPER_SRC deps/so_libs/libnativehelper/*.c)
 file(GLOB_RECURSE SO_LIBLOG_SRC          deps/so_libs/liblog/*.c)
 file(GLOB_RECURSE SO_LIBCUTILS_SRC       deps/so_libs/libcutils/*.c)
 file(GLOB_RECURSE SO_LIBUTILS_SRC        deps/so_libs/libutils/*.c)
-file(GLOB_RECURSE SO_libGLESv1_CM_SRC    deps/so_libs/libGLESv1_CM/*.c)
+file(GLOB_RECURSE SO_LIBGLESV1_CM_SRC    deps/so_libs/libGLESv1_CM/*.c)
 file(GLOB_RECURSE SO_LIBGLESV2_SRC       deps/so_libs/libGLESv2/*.c)
 file(GLOB_RECURSE SO_LIBEGL_SRC          deps/so_libs/libEGL/*.c)
 file(GLOB_RECURSE SO_LIBUI_SRC           deps/so_libs/libui/*.c)
@@ -119,7 +119,7 @@ add_executable(${CMAKE_PROJECT_NAME}
   ${SO_LIBLOG_SRC}
   ${SO_LIBCUTILS_SRC}
   ${SO_LIBUTILS_SRC}
-  ${SO_libGLESv1_CM_SRC}
+  ${SO_LIBGLESV1_CM_SRC}
   ${SO_LIBGLESV2_SRC}
   ${SO_LIBEGL_SRC}
   ${SO_LIBUI_SRC}
