@@ -92,7 +92,9 @@ int pthread_getschedparam_soloader(pthread_t_bionic thread, int *policy, struct 
 // --------------------------------------------------------------------------------------------------
 
 int pthread_key_create_soloader(pthread_key_t_bionic *key, void (*destructor_function)(void *)) {
-    if (!key) return -1;
+    if (!key) {
+        return -1;
+    }
 
     pthread_key_t real_key;
 
@@ -174,7 +176,9 @@ int pthread_sigmask_soloader(int how, const sigset_t *set, sigset_t *oset) {
 }
 
 int pthread_getcpuclockid_soloader(pthread_t_bionic thread, clockid_t *clockid) {
-    if (!clockid) return EINVAL;
+    if (!clockid) {
+        return EINVAL;
+    }
 
     int result = 0;
     *clockid   = CLOCK_REALTIME;
@@ -183,7 +187,9 @@ int pthread_getcpuclockid_soloader(pthread_t_bionic thread, clockid_t *clockid) 
 }
 
 int pthread_once_soloader(pthread_once_t_bionic *once_control, void (*init_routine)(void)) {
-    if (!once_control || !init_routine) return EINVAL;
+    if (!once_control || !init_routine) {
+        return EINVAL;
+    }
 
     if (atomic_load(once_control) == 2) {
         return 0;

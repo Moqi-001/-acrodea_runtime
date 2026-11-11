@@ -84,17 +84,17 @@ int pthread_attr_getschedpolicy_soloader(pthread_attr_t_bionic const *attr, int 
 int pthread_attr_setschedparam_soloader(pthread_attr_t_bionic *attr, struct sched_param const *param);
 int pthread_attr_getschedparam_soloader(pthread_attr_t_bionic const *attr, struct sched_param *param);
 
-int pthread_attr_setstacksize_soloader(pthread_attr_t_bionic *attr, size_t stack_size);
+int pthread_attr_setstacksize_soloader(pthread_attr_t_bionic *attr, size_t stacksize);
 int pthread_attr_getstacksize_soloader(pthread_attr_t_bionic const *attr, size_t *stack_size);
 
 int pthread_attr_setstackaddr_soloader(pthread_attr_t_bionic *attr, void *stackaddr);
 int pthread_attr_getstackaddr_soloader(pthread_attr_t_bionic const *attr, void **stackaddr);
 
-int pthread_attr_setstack_soloader(pthread_attr_t_bionic *attr, void *stackaddr, size_t stack_size);
+int pthread_attr_setstack_soloader(pthread_attr_t_bionic *attr, void *stackaddr, size_t stacksize);
 int pthread_attr_getstack_soloader(pthread_attr_t_bionic const *attr, void **stackaddr, size_t *stack_size);
 
-int pthread_attr_setguardsize_soloader(pthread_attr_t_bionic *attr, size_t guard_size);
-int pthread_attr_getguardsize_soloader(pthread_attr_t_bionic const *attr, size_t *guard_size);
+int pthread_attr_setguardsize_soloader(pthread_attr_t_bionic *attr, size_t guardsize);
+int pthread_attr_getguardsize_soloader(pthread_attr_t_bionic const *attr, size_t *guardsize);
 
 int pthread_attr_setscope_soloader(pthread_attr_t_bionic *attr, int scope);
 int pthread_attr_getscope_soloader(pthread_attr_t_bionic const *attr);

@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <sys/fcntl.h>
 #include <sys/unistd.h>
@@ -33,42 +33,42 @@ int fclose_soloader(FILE *stream) {
 
 int fseek_soloader(FILE *stream, long offset, int whence) {
     int result = fseek(stream, offset, whence);
-    so_logd("fseek(%p,%ld,%d): %d", stream, offset, whence, result);
+    // so_logd("fseek(%p,%ld,%d): %d", stream, offset, whence, result);
     return result;
 }
 
 long ftell_soloader(FILE *stream) {
     long result = ftell(stream);
-    so_logd("ftell(%p): %ld", stream, result);
+    // so_logd("ftell(%p): %ld", stream, result);
     return result;
 }
 
 size_t fread_soloader(void *ptr, size_t size, size_t nmemb, FILE *stream) {
     size_t result = fread(ptr, size, nmemb, stream);
-    so_logd("fread(%p,%u,%u,%p): %u", ptr, size, nmemb, stream, result);
+    // so_logd("fread(%p,%u,%u,%p): %u", ptr, size, nmemb, stream, result);
     return result;
 }
 
 size_t fwrite_soloader(void *ptr, size_t size, size_t nmemb, FILE *stream) {
     size_t result = fwrite(ptr, size, nmemb, stream);
-    so_logd("fwrite(%p,%u,%u,%p): %u", ptr, size, nmemb, stream, result);
+    // so_logd("fwrite(%p,%u,%u,%p): %u", ptr, size, nmemb, stream, result);
     return result;
 }
 
 int fseeko_soloader(FILE *stream, long offset, int whence) {
     int result = fseeko(stream, offset, whence);
-    so_logd("fseeko(%p,%ld,%d): %d", stream, offset, whence, result);
+    // so_logd("fseeko(%p,%ld,%d): %d", stream, offset, whence, result);
     return result;
 }
 
 off_t ftello_soloader(FILE *stream) {
     long result = ftello(stream);
-    so_logd("ftello(%p): %ld", stream, result);
+    // so_logd("ftello(%p): %ld", stream, result);
     return result;
 }
 
 int fileno_soloader(FILE *stream) {
     int result = fileno(stream);
-    so_logd("fileno(%p): %d", stream, result);
+    // so_logd("fileno(%p): %d", stream, result);
     return result;
 }

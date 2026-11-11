@@ -9,9 +9,7 @@ extern "C" {
 
 #define __ANDROID__
 
-#include "SDL_audio.h"
-#include "SDL_rect.h"
-#include "SDL_video.h"
+#include <SDL2/SDL.h>
 
 JNIEnv *Android_JNI_GetEnv(void);
 

@@ -38,7 +38,9 @@ static void bionic_mutexattr_to_mutexattr(const pthread_mutexattr_t_bionic *bion
 }
 
 static pthread_mutex_t *mutex_init(pthread_mutex_t_bionic *mutex, const pthread_mutexattr_t_bionic *attr) {
-    if (!mutex) return NULL;
+    if (!mutex) {
+        return NULL;
+    }
 
     pthread_mutex_t *real_mutex = malloc(sizeof(pthread_mutex_t));
     if (!real_mutex) {
@@ -88,7 +90,9 @@ static pthread_mutex_t *mutex_init(pthread_mutex_t_bionic *mutex, const pthread_
 }
 
 pthread_mutex_t *bionic_mutex_to_mutex(pthread_mutex_t_bionic *mutex) {
-    if (!mutex) return NULL;
+    if (!mutex) {
+        return NULL;
+    }
 
     int              id         = *(int *)mutex;
     pthread_mutex_t *real_mutex = (pthread_mutex_t *)pthr_find_cache(mutex, id);
@@ -98,12 +102,14 @@ pthread_mutex_t *bionic_mutex_to_mutex(pthread_mutex_t_bionic *mutex) {
     }
 
     real_mutex = mutex_init(mutex, NULL);
-    so_logd("bionic_mutex_to_mutex: mutex %p new cache %p", mutex, real_mutex);
+    // so_logd("bionic_mutex_to_mutex: mutex %p new cache %p", mutex, real_mutex);
     return real_mutex;
 }
 
 int pthread_mutexattr_init_soloader(pthread_mutexattr_t_bionic *attr) {
-    if (!attr) return EINVAL;
+    if (!attr) {
+        return EINVAL;
+    }
 
     *attr = BIONIC_PTHREAD_MUTEX_DEFAULT;
     // so_logd("pthread_mutexattr_init(%p): 0", attr);
@@ -111,7 +117,9 @@ int pthread_mutexattr_init_soloader(pthread_mutexattr_t_bionic *attr) {
 }
 
 int pthread_mutexattr_destroy_soloader(pthread_mutexattr_t_bionic *attr) {
-    if (!attr) return EINVAL;
+    if (!attr) {
+        return EINVAL;
+    }
 
     *attr = -1;
     // so_logd("pthread_mutexattr_destroy(%p): 0", attr);
@@ -140,7 +148,9 @@ int pthread_mutexattr_gettype_soloader(const pthread_mutexattr_t_bionic *attr, i
 }
 
 int pthread_mutexattr_setpshared_soloader(pthread_mutexattr_t_bionic *attr, int pshared) {
-    if (!attr) return EINVAL;
+    if (!attr) {
+        return EINVAL;
+    }
 
     switch (pshared) {
         case BIONIC_PTHREAD_PROCESS_PRIVATE:
@@ -158,7 +168,9 @@ int pthread_mutexattr_setpshared_soloader(pthread_mutexattr_t_bionic *attr, int 
 }
 
 int pthread_mutexattr_getpshared_soloader(pthread_mutexattr_t_bionic *attr, int *pshared) {
-    if (!attr || !pshared) return EINVAL;
+    if (!attr || !pshared) {
+        return EINVAL;
+    }
 
     *pshared = (*attr & BIONIC_MUTEXATTR_SHARED_MASK) ? BIONIC_PTHREAD_PROCESS_SHARED
                                                       : BIONIC_PTHREAD_PROCESS_PRIVATE;
@@ -176,11 +188,15 @@ int pthread_mutex_init_soloader(pthread_mutex_t_bionic *mutex, const pthread_mut
 }
 
 int pthread_mutex_destroy_soloader(pthread_mutex_t_bionic *mutex) {
-    if (!mutex) return EINVAL;
+    if (!mutex) {
+        return EINVAL;
+    }
 
     int              id         = *(int *)mutex;
     pthread_mutex_t *real_mutex = (pthread_mutex_t *)pthr_remove_cache(mutex, id);
-    if (!real_mutex) return EINVAL;
+    if (!real_mutex) {
+        return EINVAL;
+    }
 
     int result = pthread_mutex_destroy(real_mutex);
     free(real_mutex);
@@ -192,7 +208,9 @@ int pthread_mutex_destroy_soloader(pthread_mutex_t_bionic *mutex) {
 
 int pthread_mutex_lock_soloader(pthread_mutex_t_bionic *mutex) {
     pthread_mutex_t *real_mutex = bionic_mutex_to_mutex(mutex);
-    if (!real_mutex) return EINVAL;
+    if (!real_mutex) {
+        return EINVAL;
+    }
 
     int result = pthread_mutex_lock(real_mutex);
     // so_logd("pthread_mutex_lock(%p): %d", mutex, result);
@@ -201,7 +219,9 @@ int pthread_mutex_lock_soloader(pthread_mutex_t_bionic *mutex) {
 
 int pthread_mutex_unlock_soloader(pthread_mutex_t_bionic *mutex) {
     pthread_mutex_t *real_mutex = bionic_mutex_to_mutex(mutex);
-    if (!real_mutex) return EINVAL;
+    if (!real_mutex) {
+        return EINVAL;
+    }
 
     int result = pthread_mutex_unlock(real_mutex);
     // so_logd("pthread_mutex_unlock(%p): %d", mutex, result);
@@ -210,7 +230,9 @@ int pthread_mutex_unlock_soloader(pthread_mutex_t_bionic *mutex) {
 
 int pthread_mutex_trylock_soloader(pthread_mutex_t_bionic *mutex) {
     pthread_mutex_t *real_mutex = bionic_mutex_to_mutex(mutex);
-    if (!real_mutex) return EINVAL;
+    if (!real_mutex) {
+        return EINVAL;
+    }
 
     int result = pthread_mutex_trylock(real_mutex);
     // so_logd("pthread_mutex_trylock(%p): %d", mutex, result);
@@ -219,7 +241,9 @@ int pthread_mutex_trylock_soloader(pthread_mutex_t_bionic *mutex) {
 
 int pthread_mutex_timedlock_soloader(pthread_mutex_t_bionic *mutex, struct timespec *abstime) {
     pthread_mutex_t *real_mutex = bionic_mutex_to_mutex(mutex);
-    if (!real_mutex) return EINVAL;
+    if (!real_mutex) {
+        return EINVAL;
+    }
 
     int result = pthread_mutex_timedlock(real_mutex, abstime);
     // so_logd("pthread_mutex_timedlock(%p): %d", mutex, result);
@@ -228,7 +252,9 @@ int pthread_mutex_timedlock_soloader(pthread_mutex_t_bionic *mutex, struct times
 
 int pthread_mutex_lock_timeout_np_soloader(pthread_mutex_t_bionic *mutex, unsigned msecs) {
     pthread_mutex_t *real_mutex = bionic_mutex_to_mutex(mutex);
-    if (!real_mutex) return EINVAL;
+    if (!real_mutex) {
+        return EINVAL;
+    }
 
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);

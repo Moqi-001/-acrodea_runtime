@@ -2,18 +2,10 @@
 #define __ANDROID__
 
 #include <so_common/so_logger.h>
-
-#include "SDL_atomic.h"
-#include "SDL_hints.h"
-#include "SDL_main.h"
-#include "SDL_stdinc.h"
-#include "SDL_timer.h"
-
-#include "SDL_android.h"
-#include "SDL_system.h"
-
 #include <so_jni/so_jni.h>
 #include <so_libs/libandroid/asset_manager.h>
+
+#include <SDL2/SDL.h>
 
 static AAssetManager *asset_manager = NULL;
 

@@ -7,7 +7,7 @@ static so_symbol libdl_symbols[] = {
     SO_SYMBOL_FUNC("dlopen", &dlopen_soloader),
     SO_SYMBOL_FUNC("dlsym", &dlsym_soloader),
     SO_SYMBOL_FUNC("dlclose", &dlclose_soloader),
-    SO_SYMBOL_FUNC("dlerror", &dlclose_soloader),
+    SO_SYMBOL_FUNC("dlerror", &dlerror_soloader),
 };
 
 so_library libdl_so = {

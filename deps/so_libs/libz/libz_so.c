@@ -7,6 +7,7 @@ static so_symbol libz_symbols[] = {
     SO_SYMBOL_FUNC("inflateInit_", &inflateInit_),
     SO_SYMBOL_FUNC("inflateInit2_", &inflateInit2_),
     SO_SYMBOL_FUNC("inflateEnd", &inflateEnd),
+    SO_SYMBOL_FUNC("crc32", &crc32),
 };
 
 so_library libz_so = {

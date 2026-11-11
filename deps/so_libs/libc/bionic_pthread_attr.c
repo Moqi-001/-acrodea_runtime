@@ -35,7 +35,11 @@ void bionic_attr_to_attr(const pthread_attr_t_bionic *bionic_attr, pthread_attr_
     pthread_attr_setdetachstate(attr, detachstate);
     pthread_attr_setschedpolicy(attr, schedpolicy);
     pthread_attr_setschedparam(attr, &schedparam);
-    pthread_attr_setstacksize(attr, stacksize);
+    if (bionic_attr->stack_base) {
+        pthread_attr_setstack(attr, bionic_attr->stack_base, stacksize);
+    } else {
+        pthread_attr_setstacksize(attr, stacksize);
+    }
 }
 
 int pthread_attr_init_soloader(pthread_attr_t_bionic *attr) {
@@ -62,7 +66,7 @@ int pthread_attr_setdetachstate_soloader(pthread_attr_t_bionic *attr, int state)
     } else if (state == BIONIC_PTHREAD_CREATE_JOINABLE) {
         attr->flags &= ~BIONIC_PTHREAD_ATTR_FLAG_DETACHED;
     } else {
-        so_loge("pthread_attr_setdetachstate(%p,0x%x): error=0x%x", attr, state, EINVAL);
+        so_loge("pthread_attr_setdetachstate(%p,0x%x): EINVAL!", attr, state);
         return EINVAL;
     }
 
@@ -100,57 +104,96 @@ int pthread_attr_getschedparam_soloader(pthread_attr_t_bionic const *attr, struc
     return 0;
 }
 
-int pthread_attr_setstacksize_soloader(pthread_attr_t_bionic *attr, size_t stack_size) {
-    if (stack_size < PTHREAD_STACK_MIN) {
-        so_loge("pthread_attr_setstacksize(%p,%u): error=0x%x", attr, stack_size, EINVAL);
+int pthread_attr_setstacksize_soloader(pthread_attr_t_bionic *attr, size_t stacksize) {
+    if (!attr || stacksize < PTHREAD_STACK_MIN) {
+        so_loge("pthread_attr_setstacksize(%p,%u): EINVAL!", attr, stacksize);
         return EINVAL;
     }
-    attr->stack_size = stack_size;
-    // so_logd("pthread_attr_setstacksize(%p,%u): 0", attr, stack_size);
+
+    attr->stack_size = stacksize;
+    so_logd("pthread_attr_setstacksize(%p,%u): 0", attr, stacksize);
     return 0;
 }
 
-int pthread_attr_getstacksize_soloader(pthread_attr_t_bionic const *attr, size_t *stack_size) {
-    *stack_size = attr->stack_size;
-    // so_logd("pthread_attr_getstacksize(%p,%p): stack_size=%u, result=0", attr, stack_size, *stack_size);
+int pthread_attr_getstacksize_soloader(pthread_attr_t_bionic const *attr, size_t *stacksize) {
+    if (!attr || !stacksize) {
+        so_loge("pthread_attr_getstacksize(%p,%p): EINVAL!", attr, stacksize);
+        return EINVAL;
+    }
+
+    *stacksize = attr->stack_size;
+    so_logd("pthread_attr_getstacksize(%p,%p): stacksize=%u", attr, stacksize, *stacksize);
     return 0;
 }
 
 int pthread_attr_setstackaddr_soloader(pthread_attr_t_bionic *attr, void *stackaddr) {
-    // so_loge("pthread_attr_setstackaddr(%p,%p): unimplemented!", attr, stackaddr);
-    return ENOSYS;
-}
-
-int pthread_attr_getstackaddr_soloader(pthread_attr_t_bionic const *attr, void **stackaddr) {
-    // so_loge("pthread_attr_getstackaddr(%p,%p): unimplemented!", attr, stackaddr);
-    return ENOSYS;
-}
-
-int pthread_attr_setstack_soloader(pthread_attr_t_bionic *attr, void *stackaddr, size_t stack_size) {
-    // so_loge("pthread_attr_setstack(%p,%p,%u): unimplemented!", attr, stackaddr, stack_size);
-    return ENOSYS;
-}
-
-int pthread_attr_getstack_soloader(pthread_attr_t_bionic const *attr, void **stackaddr, size_t *stack_size) {
-    if (stackaddr) *stackaddr = NULL;
-    if (stack_size) *stack_size = 0;
-    so_loge("pthread_attr_getstack(%p,%p,%p): unimplemented!", attr, stackaddr, stack_size);
-    return ENOSYS;
-}
-
-int pthread_attr_setguardsize_soloader(pthread_attr_t_bionic *attr, size_t guard_size) {
-    if (guard_size != 0) {
-        so_loge("pthread_attr_getstack(%p,%u): unimplemented!", attr, guard_size);
+    if (!attr) {
+        so_loge("pthread_attr_setstackaddr(%p,%p): EINVAL!", attr, stackaddr);
         return EINVAL;
     }
 
-    // so_logd("pthread_attr_getstack(%p,%u): 0", attr, guard_size);
+    attr->stack_base = stackaddr;
+    so_logd("pthread_attr_setstackaddr(%p,%p): 0", attr, stackaddr);
     return 0;
 }
 
-int pthread_attr_getguardsize_soloader(pthread_attr_t_bionic const *attr, size_t *guard_size) {
-    *guard_size = 0;
-    // so_logd("pthread_attr_getguardsize(%p,%p): %d", attr, guard_size, *guard_size);
+int pthread_attr_getstackaddr_soloader(pthread_attr_t_bionic const *attr, void **stackaddr) {
+    if (!attr || !stackaddr) {
+        so_loge("pthread_attr_getstackaddr(%p,%p): EINVAL!", attr, stackaddr);
+        return EINVAL;
+    }
+
+    *stackaddr = attr->stack_base;
+    so_logd("pthread_attr_getstackaddr(%p,%p): stackaddr=%p", attr, stackaddr, *stackaddr);
+    return 0;
+}
+
+int pthread_attr_setstack_soloader(pthread_attr_t_bionic *attr, void *stackaddr, size_t stacksize) {
+    if (!attr) {
+        return EINVAL;
+    }
+
+    attr->stack_base = stackaddr;
+    attr->stack_size = stacksize;
+    so_logd("pthread_attr_setstack(%p,%p,%u): 0", attr, stackaddr, stacksize);
+    return 0;
+}
+
+int pthread_attr_getstack_soloader(pthread_attr_t_bionic const *attr, void **stackaddr, size_t *stacksize) {
+    if (!attr) {
+        so_loge("pthread_attr_getstack(%p,%p,%p): EINVAL!", attr, stackaddr, stacksize);
+        return EINVAL;
+    }
+
+    if (stackaddr) {
+        *stackaddr = attr->stack_base;
+    }
+    if (stacksize) {
+        *stacksize = attr->stack_size;
+    }
+    so_logd("pthread_attr_getstack(%p,%p,%p): stackaddr=%p, stacksize=%u", attr, stackaddr, stacksize, attr->stack_base, attr->stack_size);
+    return 0;
+}
+
+int pthread_attr_setguardsize_soloader(pthread_attr_t_bionic *attr, size_t guardsize) {
+    if (!attr) {
+        so_loge("pthread_attr_setguardsize(%p,%u): EINVAL!", attr, guardsize);
+        return EINVAL;
+    }
+
+    attr->guard_size = guardsize;
+    so_logd("pthread_attr_getstack(%p,%u): 0", attr, guardsize);
+    return 0;
+}
+
+int pthread_attr_getguardsize_soloader(pthread_attr_t_bionic const *attr, size_t *guardsize) {
+    if (!attr || !guardsize) {
+        so_loge("pthread_attr_getstack(%p,%u): EINVAL!", attr, guardsize);
+        return EINVAL;
+    }
+
+    *guardsize = attr->guard_size;
+    so_logd("pthread_attr_getguardsize(%p,%p): %d", attr, guardsize, *guardsize);
     return 0;
 }
 
@@ -164,17 +207,17 @@ int pthread_attr_setscope_soloader(pthread_attr_t_bionic *attr, int scope) {
         return ENOTSUP;
     }
 
-    so_loge("pthread_attr_setscope(%p,%d): error=%d", attr, scope, ENOTSUP);
-    return EINVAL;
+    so_loge("pthread_attr_setscope(%p,%d): ENOSYS", attr, scope);
+    return ENOSYS;
 }
 
 int pthread_attr_getscope_soloader(pthread_attr_t_bionic const *attr) {
     int scope = PTHREAD_SCOPE_SYSTEM;
-    // so_logd("pthread_attr_getscope(%p): %d", attr, scope);
+    so_logd("pthread_attr_getscope(%p): %d", attr, scope);
     return scope;
 }
 
 int pthread_getattr_np_soloader(pthread_t_bionic thid, pthread_attr_t_bionic *attr) {
-    so_loge("pthread_getattr_np(%p,%p): unimplemented!", thid, attr);
+    so_loge("pthread_getattr_np(%p,%p): ENOSYS!", thid, attr);
     return ENOSYS;
 }

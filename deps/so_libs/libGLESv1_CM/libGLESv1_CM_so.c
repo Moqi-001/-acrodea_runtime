@@ -1,5 +1,5 @@
 #include <so_linker/so_linker.h>
-#include <vitaGL/GLES/gl.h>
+#include <vitaGL.h>
 
 // ==================== libGLESv1_CM.so (OpenGL ES 1.x Common Profile) ====================
 static so_symbol libGLESv1_CM_symbols[] = {
@@ -153,6 +153,23 @@ static so_symbol libGLESv1_CM_symbols[] = {
     // ===== OpenGL ES 1.x OES Extensions =====
 
     SO_SYMBOL_FUNC("glPointSizePointerOES", &glPointSizePointerOES),
+
+    // OES_framebuffer_object：Acrodea 运行时按扩展名 dlsym，这里别名到核心实现
+    SO_SYMBOL_FUNC("glBindFramebufferOES", &glBindFramebuffer),
+    SO_SYMBOL_FUNC("glBindRenderbufferOES", &glBindRenderbuffer),
+    SO_SYMBOL_FUNC("glCheckFramebufferStatusOES", &glCheckFramebufferStatus),
+    SO_SYMBOL_FUNC("glDeleteFramebuffersOES", &glDeleteFramebuffers),
+    SO_SYMBOL_FUNC("glDeleteRenderbuffersOES", &glDeleteRenderbuffers),
+    SO_SYMBOL_FUNC("glFramebufferRenderbufferOES", &glFramebufferRenderbuffer),
+    SO_SYMBOL_FUNC("glFramebufferTexture2DOES", &glFramebufferTexture2D),
+    SO_SYMBOL_FUNC("glGenFramebuffersOES", &glGenFramebuffers),
+    SO_SYMBOL_FUNC("glGenRenderbuffersOES", &glGenRenderbuffers),
+    SO_SYMBOL_FUNC("glGenerateMipmapOES", &glGenerateMipmap),
+    SO_SYMBOL_FUNC("glGetFramebufferAttachmentParameterivOES", &glGetFramebufferAttachmentParameteriv),
+    SO_SYMBOL_FUNC("glGetRenderbufferParameterivOES", &glGetRenderbufferParameteriv),
+    SO_SYMBOL_FUNC("glIsFramebufferOES", &glIsFramebuffer),
+    SO_SYMBOL_FUNC("glIsRenderbufferOES", &glIsRenderbuffer),
+    SO_SYMBOL_FUNC("glRenderbufferStorageOES", &glRenderbufferStorage),
 };
 
 so_library libGLESv1_CM_so = {

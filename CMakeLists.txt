@@ -58,7 +58,7 @@ add_definitions(
 )
 
 # Unique debug definition for loader's logging to not interfere with anything
-if (CMAKE_BUILD_TYPE EQUAL "Debug")
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   add_definitions(-DDEBUG_SOLOADER)
   #add_definitions(-DDEBUG_LOGFILE) # 日志写入文件
 endif()
@@ -69,7 +69,7 @@ add_definitions(-D_GNU_SOURCE -D__POSIX_VISIBLE=999999)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mfpu=neon -mfloat-abi=softfp -std=gnu11 -Wno-deprecated")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mfpu=neon -mfloat-abi=softfp -std=gnu++20 -Wno-write-strings -Wno-psabi")
 
-if (CMAKE_BUILD_TYPE EQUAL "Debug")
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O1 -g3")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O1 -g3")
 else ()

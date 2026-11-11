@@ -8,7 +8,7 @@ extern "C" {
 void *dlopen_soloader(const char *filename, int flag);
 void *dlsym_soloader(void *handle, const char *symbol);
 void  dlclose_soloader(void *handle);
-char *dlerror(void);
+char *dlerror_soloader(void);
 
 #ifdef __cplusplus
 }

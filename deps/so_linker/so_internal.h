@@ -32,6 +32,10 @@ struct so_module {
 
     char *soname;  // 共享对象名称
 
+    // 依赖模块（DT_NEEDED 声明顺序，用于符号解析优先级）
+    char **needed;      // 依赖的共享对象名称数组（字符串指向 dynstr）
+    size_t num_needed;  // 依赖数量
+
     void    *load_base;  // 内存块基址
     size_t   load_size;  // 内存块大小
     intptr_t load_bias;  // ELF 虚址相对实址的偏移量: 实址 = 虚址 + load_bias
@@ -49,12 +53,15 @@ struct so_module {
     char      *dynstr;       // .dynstr 动态字符串表
     size_t     dynstr_size;  // .dynsym 动态符号表条大小
     uint32_t  *hash;         // .hash   符号哈希表（SysV 哈希，用于加速查找）
+    uint32_t  *gnu_hash;     // .gnu.hash 符号哈希表（GNU 哈希，部分模块只有这一种）
 
     // 动态重定位（用于变量/数据）
     Elf32_Rel  *rel_dyn;       // .rel.dyn 重定位表（REL 格式）
     size_t      num_rel_dyn;   // .rel.dyn 重定位条目数
     Elf32_Rela *rela_dyn;      // .rela.dyn 重定位表（RELA 格式）
     size_t      num_rela_dyn;  // .rela.dyn 重定位条目数
+    Elf32_Addr *relr;          // .relr.dyn 紧凑重定位表（RELR 格式）
+    size_t      num_relr;      // .relr.dyn 条目数
 
     // PLT 重定位（用于函数调用）
     Elf32_Rel  *rel_plt;       // .rel.plt 重定位表（REL 格式）
@@ -91,18 +98,8 @@ so_context *so_linker_get_context();
 int         so_linker_register_module(so_module *mod);
 int         so_linker_unregister_module(so_module *mod);
 
-static inline uint32_t so_hash(const char *name) {
-    if (!name) return 0;
-    uint32_t       h = 0, g;
-    const uint8_t *p = (const uint8_t *)name;
-    while (*p) {
-        h = (h << 4) + *p++;
-        if ((g = (h & 0xf0000000)) != 0)
-            h ^= g >> 24;
-        h &= 0x0fffffff;
-    }
-    return h;
-}
+uint32_t so_sysv_hash(const char *name);
+uint32_t so_gnu_hash(const char *name);
 
 #ifdef __cplusplus
 }

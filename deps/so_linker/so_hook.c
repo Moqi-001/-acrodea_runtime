@@ -636,11 +636,6 @@ int so_hook_export_function_safe(void *target, void *boundary, void *replacement
 
     so_cacheflush((void *)src, code_len);
 
-    /* 回读校验：确认补丁真的落到了目标代码页（某些环境会静默写失败） */
-    so_logd("[SOLINKER] hook: verify 0x%08x: %08x -> %08x (expect %08x)", (unsigned)src, before,
-            _get32((const void *)src), _get32((const void *)patch));
-    (void)before; /* so_logd 在 Release 下是空宏 */
-
     so_logd("[SOLINKER] hook: 0x%08x -> %p, trampoline=%p, %u bytes", (unsigned)src, replacement,
             (void *)((uintptr_t)tramp | (uintptr_t)(tramp ? is_thumb : 0)), (unsigned)code_len);
     return 0;

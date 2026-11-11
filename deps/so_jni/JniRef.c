@@ -92,7 +92,7 @@ jobject JniNewLocalRefFromJava(JObject obj) {
     if (!obj) return NULL;
 
     JniLocalContext *ctx = &_so_local_ctx;
-    if (!ctx->slots) {
+    if (!ctx->slots && JniInitLocalRefContext() != 0) {
         so_loge("[JNI] JniNewLocalRefFromJava(%p): slots is NULL!", obj);
         return NULL;
     }

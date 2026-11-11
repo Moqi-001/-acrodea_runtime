@@ -49,7 +49,7 @@ so_module *so_linker_find_module(const char *soname) {
         return NULL;
     }
 
-    uint32_t        hash = so_hash(soname);
+    uint32_t        hash = so_sysv_hash(soname);
     so_module_node *node = _linker_context->modules_head;
     while (node) {
         so_module *mod = node->mod;
@@ -80,7 +80,7 @@ int so_linker_register_module(so_module *mod) {
     so_module_retain(mod);
     node->mod     = mod;
     node->context = _linker_context;
-    node->hash    = so_hash(mod->soname);
+    node->hash    = so_sysv_hash(mod->soname);
 
     if (_linker_context->modules_tail) {
         _linker_context->modules_tail->next = node;
