@@ -105,6 +105,7 @@ int so_linker_unregister_module(so_module *mod) {
     if (!node || node->context != _linker_context) {
         return -1;  // 未注册，或不属于当前上下文
     }
+    mod->cookie = NULL;  // 清理 cookie，防止二次注销
 
     if (node->prev) {
         node->prev->next = node->next;
@@ -119,7 +120,6 @@ int so_linker_unregister_module(so_module *mod) {
 
     _linker_context->num_modules--;
 
-    mod->cookie = NULL;  // 清理 cookie，防止二次注销
     so_module_release(mod);
     free(node);
     return 0;

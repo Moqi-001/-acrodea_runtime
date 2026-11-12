@@ -36,7 +36,7 @@ void ggeeLibEncodePath(char *out_encode, int out_len, const char *path) {
 int soloader_patch_libGgee(so_module *mod) {
     so_logd("soloader_patch_libGgee(%p)", mod);
 
-    so_module_hook_symbol(mod, "ggeeLibEncodePath", &ggeeLibEncodePath, NULL);
+    so_module_hook_export(mod, "ggeeLibEncodePath", &ggeeLibEncodePath, NULL);
 
     return 0;
 }

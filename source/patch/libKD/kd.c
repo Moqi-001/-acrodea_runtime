@@ -48,8 +48,8 @@ int __kdFlushICache(const void *ptr, size_t len) {
 int soloader_patch_libKD(so_module *mod) {
     so_logd("soloader_patch_libKD(%p)", mod);
 
-    so_module_hook_symbol(mod, "__kdMapFilename", &__kdMapFilename, NULL);
-    so_module_hook_symbol(mod, "__kdFlushICache", &__kdFlushICache, NULL);
+    so_module_hook_export(mod, "__kdMapFilename", &__kdMapFilename, NULL);
+    so_module_hook_export(mod, "__kdFlushICache", &__kdFlushICache, NULL);
 
     return 0;
 }

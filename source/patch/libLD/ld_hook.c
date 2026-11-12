@@ -5,8 +5,10 @@
 
 #include "ld.h"
 
-void *_find_import_slot(LdModule *mod, const char *symbol) {
-    if (!mod || !mod->dynamic_phdr || !mod->dynsym || !mod->dynstr) return NULL;
+static void *_find_import_slot(LdModule *mod, const char *symbol) {
+    if (!mod || !mod->dynamic_phdr || !mod->dynsym || !mod->dynstr) {
+        return NULL;
+    }
 
     uintptr_t  load_bias = (uintptr_t)mod->load_base + mod->load_offset;
     Elf32_Dyn *dynamic   = (Elf32_Dyn *)(load_bias + mod->dynamic_phdr->p_vaddr);
@@ -28,12 +30,16 @@ void *_find_import_slot(LdModule *mod, const char *symbol) {
             break;
         }
     }
-    if (!rel_plt || num_rel_plt == 0) return NULL;
+    if (!rel_plt || num_rel_plt == 0) {
+        return NULL;
+    }
 
     for (uint32_t i = 0; i < num_rel_plt; i++) {
         Elf32_Rel *rel     = &rel_plt[i];
         uint32_t   sym_idx = ELF32_R_SYM(rel->r_info);
-        if (sym_idx == 0) continue;
+        if (sym_idx == 0) {
+            continue;
+        }
 
         Elf32_Sym *sym = &mod->dynsym[sym_idx];
         if (sym->st_shndx == SHN_UNDEF && strcmp(mod->dynstr + sym->st_name, symbol) == 0) {
@@ -44,8 +50,6 @@ void *_find_import_slot(LdModule *mod, const char *symbol) {
     return NULL;
 }
 
-// 找到 symbol 链接器已绑定的真实地址（保留 Thumb 位），用于直接调用。
-// 例如模块 import 的 fopen（游戏自带 libc.so，带资源路径转换）。
 void *__ldModuleFindImport(LdModule *mod, const char *symbol) {
     void *slot = _find_import_slot(mod, symbol);
     return slot ? *(void **)slot : NULL;
@@ -57,31 +61,41 @@ void *__ldModuleFindExport(LdModule *mod, const char *symbol) {
 }
 
 int __ldModuleHookImport(LdModule *mod, const char *symbol, void *replacement, so_hook_ref *p_hook) {
-    // 必须传槽地址：so_hook_import_function 把 replacement 写进槽里完成重定向，
-    // 传函数地址会把 replacement 当指令写进原函数代码，直接损坏 libc
     void *slot = _find_import_slot(mod, symbol);
     if (!slot) {
         so_loge("__ldModuleHookImport('%s'): import slot not found!", symbol);
         return -1;
     }
 
-    // 重定位前槽值为 0（ELF 文件里的初始值），此时写入的 hook 会被链接器随后的
-    // R_ARM_JUMP_SLOT 重定位覆盖，只会白做一次，所以必须等绑定完成后（ld_patch 阶段）再写。
-    // 这里做运行时校验，避免将来误在 preinit 阶段调用。
-    if (*(void **)slot == NULL) {
+    if (p_hook && !*(void **)slot) {
         so_loge("__ldModuleHookImport('%s'): slot %p not relocated yet, hook skipped!", symbol, slot);
         return -1;
     }
 
-    return so_hook_import_function(slot, (void *)replacement, p_hook);
+    size_t instr_len = sizeof(void *);
+    void  *boundary  = (void *)((uintptr_t)mod->load_base + mod->load_size);
+    if ((uintptr_t)slot + instr_len > (uintptr_t)boundary) {
+        return -1; /* 超出边界 */
+    }
+
+    if (p_hook) {
+        p_hook->target   = slot;
+        p_hook->orig_func = *(void **)slot;
+        memcpy(p_hook->orig_instr, slot, instr_len);
+        p_hook->instr_len = instr_len;
+    }
+
+    memcpy(slot, &replacement, instr_len);
+    so_cacheflush(slot, instr_len);
+    return 0;
 }
 
 int __ldModuleHookExport(LdModule *mod, const char *symbol, uintptr_t dst, so_hook_ref *p_hook) {
     void *target = __ldModuleFindExport(mod, symbol);
-    return so_hook_export_function(target, (void *)dst, p_hook);
+    return so_hook_function(target, (void *)dst, p_hook);
 }
 
 int __ldModuleHookAddr(LdModule *mod, uintptr_t vaddr, uintptr_t dst, so_hook_ref *p_hook) {
     void *target = (char *)mod->load_base + mod->load_offset + vaddr;
-    return so_hook_export_function(target, (void *)dst, p_hook);
+    return so_hook_function(target, (void *)dst, p_hook);
 }

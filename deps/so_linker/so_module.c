@@ -8,6 +8,10 @@
 #include "so_internal.h"
 #include "so_linker.h"
 
+#define SO_SYM_LOOKUP_SELF  0x1
+#define SO_SYM_LOOKUP_OTHER 0x2
+#define SO_SYM_LOOKUP_ALL   (SO_SYM_LOOKUP_SELF | SO_SYM_LOOKUP_OTHER)
+
 uint32_t so_sysv_hash(const char *name) {
     if (!name) {
         return 0;
@@ -37,7 +41,7 @@ uint32_t so_gnu_hash(const char *name) {
     return h;
 }
 
-static void *_find_symbol_sysv(so_module *mod, const char *sym_name, const Elf32_Sym **out_sym) {
+static void *_find_export_symbol_sysv(so_module *mod, const char *sym_name, const Elf32_Sym **out_sym) {
     if (!mod || !mod->hash || !mod->dynsym || !mod->dynstr || !sym_name) {
         return NULL;
     }
@@ -64,7 +68,7 @@ static void *_find_symbol_sysv(so_module *mod, const char *sym_name, const Elf32
     return NULL;
 }
 
-static void *_find_symbol_gnu(so_module *mod, const char *sym_name, const Elf32_Sym **out_sym) {
+static void *_find_export_symbol_gnu(so_module *mod, const char *sym_name, const Elf32_Sym **out_sym) {
     if (!mod || !mod->gnu_hash || !mod->dynsym || !mod->dynstr || !sym_name) {
         return NULL;
     }
@@ -112,7 +116,7 @@ static void *_find_symbol_gnu(so_module *mod, const char *sym_name, const Elf32_
     return NULL;
 }
 
-static void *_find_symbol_linear(so_module *mod, const char *sym_name, const Elf32_Sym **out_sym) {
+static void *_find_export_symbol_linear(so_module *mod, const char *sym_name, const Elf32_Sym **out_sym) {
     if (!mod || !mod->dynsym || !mod->dynstr || !mod->num_dynsym || !sym_name) {
         return NULL;
     }
@@ -135,23 +139,23 @@ static void *_find_symbol_linear(so_module *mod, const char *sym_name, const Elf
 }
 
 // 按目标模块自己的哈希表选择查找方式：导入方与依赖方的哈希风格可能不同
-static void *_find_symbol(so_module *mod, const char *sym_name, const Elf32_Sym **out_sym) {
+static void *_find_export_symbol(so_module *mod, const char *sym_name, const Elf32_Sym **out_sym) {
     if (!mod) {
         return NULL;
     }
     if (mod->hash) {
-        return _find_symbol_sysv(mod, sym_name, out_sym);
+        return _find_export_symbol_sysv(mod, sym_name, out_sym);
     }
     if (mod->gnu_hash) {
-        return _find_symbol_gnu(mod, sym_name, out_sym);
+        return _find_export_symbol_gnu(mod, sym_name, out_sym);
     }
 
     // 两种哈希都没有：退回线性遍历（模块加载时已告警）
-    return _find_symbol_linear(mod, sym_name, out_sym);
+    return _find_export_symbol_linear(mod, sym_name, out_sym);
 }
 
-void *so_module_find_symbol_ex(so_module *mod, const char *sym_name, int flags,
-                               so_module **out_mod, const Elf32_Sym **out_sym) {
+static void *_find_export_symbol_ex(so_module *mod, const char *sym_name, int flags,
+                                    so_module **out_mod, const Elf32_Sym **out_sym) {
     if (!mod || !sym_name) {
         return NULL;
     }
@@ -160,7 +164,7 @@ void *so_module_find_symbol_ex(so_module *mod, const char *sym_name, int flags,
 
     // 查找自身
     if (flags & SO_SYM_LOOKUP_SELF) {
-        sym_addr = _find_symbol(mod, sym_name, out_sym);
+        sym_addr = _find_export_symbol(mod, sym_name, out_sym);
         if (sym_addr) {
             if (out_mod) {
                 *out_mod = mod;
@@ -183,7 +187,7 @@ void *so_module_find_symbol_ex(so_module *mod, const char *sym_name, int flags,
                 continue;
             }
 
-            sym_addr = _find_symbol(dep, sym_name, out_sym);
+            sym_addr = _find_export_symbol(dep, sym_name, out_sym);
             if (sym_addr) {
                 if (out_mod) {
                     *out_mod = dep;
@@ -196,7 +200,7 @@ void *so_module_find_symbol_ex(so_module *mod, const char *sym_name, int flags,
         so_module_node *node = context->modules_head;
         while (node) {
             if (node->mod != mod) {
-                sym_addr = _find_symbol(node->mod, sym_name, out_sym);
+                sym_addr = _find_export_symbol(node->mod, sym_name, out_sym);
                 if (sym_addr) {
                     if (out_mod) {
                         *out_mod = node->mod;
@@ -211,8 +215,40 @@ void *so_module_find_symbol_ex(so_module *mod, const char *sym_name, int flags,
     return NULL;
 }
 
-void *so_module_find_symbol(so_module *mod, const char *sym_name) {
-    return so_module_find_symbol_ex(mod, sym_name, SO_SYM_LOOKUP_SELF, NULL, NULL);
+static void *_find_import_slot(so_module *mod, const char *sym_name) {
+    if (!mod || !sym_name) {
+        return NULL;
+    }
+
+    if (mod->rel_plt) {
+        for (uint32_t i = 0; i < mod->num_rel_plt; i++) {
+            Elf32_Rel *rel     = &mod->rel_plt[i];
+            uint32_t   sym_idx = ELF32_R_SYM(rel->r_info);
+            if (sym_idx == 0) {
+                continue;
+            }
+
+            Elf32_Sym *sym = &mod->dynsym[sym_idx];
+            if (sym->st_shndx == SHN_UNDEF && strcmp(mod->dynstr + sym->st_name, sym_name) == 0) {
+                return (void *)(mod->load_bias + rel->r_offset);
+            }
+        }
+    } else if (mod->rela_plt) {
+        for (uint32_t i = 0; i < mod->num_rela_plt; i++) {
+            Elf32_Rela *rela    = &mod->rela_plt[i];
+            uint32_t    sym_idx = ELF32_R_SYM(rela->r_info);
+            if (sym_idx == 0) {
+                continue;
+            }
+
+            Elf32_Sym *sym = &mod->dynsym[sym_idx];
+            if (sym->st_shndx == SHN_UNDEF && strcmp(mod->dynstr + sym->st_name, sym_name) == 0) {
+                return (void *)(mod->load_bias + rela->r_offset);
+            }
+        }
+    }
+
+    return NULL;
 }
 
 static int _create_symtab_strtab(so_symbol *symbols, size_t num_symbols,
@@ -487,7 +523,7 @@ so_module *so_module_load_mem(void *buffer, size_t size) {
                 mod->rela_dyn = (Elf32_Rela *)(dyn->d_un.d_ptr + mod->load_bias);
                 break;
             case DT_RELR:
-                mod->relr = (Elf32_Addr *)(dyn->d_un.d_ptr + mod->load_bias);
+                mod->relr_dyn = (Elf32_Addr *)(dyn->d_un.d_ptr + mod->load_bias);
                 break;
             case DT_RELRSZ:
                 mod->num_relr = dyn->d_un.d_val / sizeof(Elf32_Addr);
@@ -508,27 +544,24 @@ so_module *so_module_load_mem(void *buffer, size_t size) {
     }
 
     // 检查必需的动态段条目
-    if (!mod->dynsym || !mod->dynstr || (!mod->rel_dyn && !mod->rela_dyn && !mod->relr)) {
+    if (!mod->dynsym || !mod->dynstr || (!mod->rel_dyn && !mod->rela_dyn && !mod->relr_dyn)) {
         so_loge("[SOLINKER] so_module_load_mem(%p,%u): error dynamic!", buffer, size);
         so_munmap(mod->load_base);
         free(mod);
         return NULL;
     }
 
-    // GNU 哈希不携带符号数量，用 symtab 到 strtab 的距离推导
-    if (!mod->num_dynsym) {
-        mod->num_dynsym = (size_t)(mod->dynstr - (char *)mod->dynsym) / sizeof(Elf32_Sym);
-    }
-
     // 保存共享对象名称
-    if (soname_offset) {
-        mod->soname = strdup(mod->dynstr + soname_offset);
-    }
+    mod->soname = strdup(mod->dynstr + soname_offset);
 
     // 既无 SysV 也无 GNU 哈希：符号查找将退回线性遍历
     if (!mod->hash && !mod->gnu_hash) {
-        so_logw("[SOLINKER] so_module_load_mem: '%s' has no hash table, falling back to linear symbol lookup!",
-                mod->soname ? mod->soname : "(unknown)");
+        so_logw("[SOLINKER] so_module_load_mem: '%s' has no hash table, falling back to linear symbol lookup!", mod->soname);
+    }
+
+    // GNU 哈希不携带符号数量，用 symtab 到 strtab 的距离推导
+    if (!mod->num_dynsym) {
+        mod->num_dynsym = (size_t)(mod->dynstr - (char *)mod->dynsym) / sizeof(Elf32_Sym);
     }
 
     // 收集依赖模块，保留 DT_NEEDED 的声明顺序
@@ -558,8 +591,6 @@ so_module *so_module_load_mem(void *buffer, size_t size) {
         mod->rela_plt     = plt_tab;
         mod->num_rela_plt = plt_size / sizeof(Elf32_Rela);
     }
-
-    so_linker_register_module(mod);
 
     so_logd("[SOLINKER] so_module_load_mem(%p,%u): success! ('%s')", buffer, size, mod->soname);
     return mod;
@@ -609,7 +640,6 @@ so_module *so_module_load(const char *filename) {
 void so_module_unload(so_module *mod) {
     if (mod) {
         so_logd("[SOLINKER] so_module_unload(%p): ('%s')", mod, mod->soname);
-        so_linker_unregister_module(mod);
 
         if (mod->soname) {
             free(mod->soname);
@@ -647,7 +677,7 @@ static int _process_relocation(so_module *mod, uint8_t rel_type, uint32_t rel_sy
     if (rel_symidx) {
         rel_sym  = &mod->dynsym[rel_symidx];
         sym_name = mod->dynstr + rel_sym->st_name;
-        sym_addr = (uintptr_t)so_module_find_symbol_ex(mod, sym_name, SO_SYM_LOOKUP_ALL, &sym_mod, &sym);
+        sym_addr = (uintptr_t)_find_export_symbol_ex(mod, sym_name, SO_SYM_LOOKUP_ALL, &sym_mod, &sym);
 
         if (!sym_addr) {
             if (ELF32_ST_BIND(rel_sym->st_info) != STB_WEAK || rel_type == R_ARM_COPY) {
@@ -684,7 +714,7 @@ static int _process_relocation(so_module *mod, uint8_t rel_type, uint32_t rel_sy
                 so_loge("  R_ARM_COPY: %s relocation target cannot be resolved!", sym_name);
                 return -1;
             }
-            sym_addr = (uintptr_t)so_module_find_symbol_ex(mod, sym_name, SO_SYM_LOOKUP_OTHER, &sym_mod, &sym);
+            sym_addr = (uintptr_t)_find_export_symbol_ex(mod, sym_name, SO_SYM_LOOKUP_OTHER, &sym_mod, &sym);
             if (!sym_addr || rel_sym->st_size < sym->st_size) {
                 so_loge("  R_ARM_COPY: %s relocation target cannot be resolved!", sym_name);
                 return -1;
@@ -801,9 +831,8 @@ int so_module_relocate(so_module *mod) {
             return -1;
         }
     }
-
-    if (mod->relr && mod->num_relr > 0) {
-        if (_relocate_relr_table(mod, mod->relr, mod->num_relr) < 0) {
+    if (mod->relr_dyn && mod->num_relr > 0) {
+        if (_relocate_relr_table(mod, mod->relr_dyn, mod->num_relr) < 0) {
             so_loge("[SOLINKER] so_module_relocate(%p): failed to process relr table! ('%s')", mod, mod->soname);
             return -1;
         }
@@ -924,19 +953,19 @@ so_module *so_module_open_mem(void *buffer, size_t size) {
 
     if (so_module_relocate(mod) < 0) {
         so_loge("[SOLINKER] so_module_open_mem(%p,%u): failed to relocate!", buffer, size);
-        so_module_close(mod);
+        so_module_unload(mod);
         return NULL;
     }
 
     if (so_module_flush_caches(mod) < 0) {
         so_loge("[SOLINKER] so_module_open_mem(%p,%u): failed to flush caches!", buffer, size);
-        so_module_close(mod);
+        so_module_unload(mod);
         return NULL;
     }
 
     if (so_module_init(mod) < 0) {
         so_loge("[SOLINKER] so_module_open_mem(%p,%u): failed to initialize!", buffer, size);
-        so_module_close(mod);
+        so_module_unload(mod);
         return NULL;
     }
 
@@ -954,30 +983,33 @@ so_module *so_module_open(const char *filename) {
 
     if (so_module_relocate(mod) < 0) {
         so_loge("[SOLINKER] so_module_open(%s): failed to relocate!", filename);
-        so_module_close(mod);
+        so_module_unload(mod);
         return NULL;
     }
 
     if (so_module_flush_caches(mod) < 0) {
         so_loge("[SOLINKER] so_module_open(%s): failed to flush caches!", filename);
-        so_module_close(mod);
+        so_module_unload(mod);
         return NULL;
     }
 
     if (so_module_init(mod) < 0) {
         so_loge("[SOLINKER] so_module_open(%s): failed to initialize!", filename);
-        so_module_close(mod);
+        so_module_unload(mod);
         return NULL;
     }
 
+    so_linker_register_module(mod);
+
     so_logd("[SOLINKER] so_module_open('%s'): success! load_base=%p, load_size=%u, load_bias=0x%x, soname='%s'",
-            filename, mod->load_base, mod->load_size, mod->load_bias, mod->soname);
+            filename, mod->load_base, mod->load_size, mod->load_bias, mod->soname ? mod->soname : "(null)");
     return mod;
 }
 
 void so_module_close(so_module *mod) {
     if (mod) {
         so_logd("[SOLINKER] so_module_close(%p): ('%s')", mod, mod->soname);
+        so_linker_unregister_module(mod);
         mod->ref_count = 0;
         so_module_fini(mod);
         so_module_unload(mod);
@@ -1003,6 +1035,15 @@ void so_module_release(so_module *mod) {
     }
 }
 
+void *so_module_find_export(so_module *mod, const char *sym_name) {
+    return _find_export_symbol_ex(mod, sym_name, SO_SYM_LOOKUP_SELF, NULL, NULL);
+}
+
+void *so_module_find_import(so_module *mod, const char *sym_name) {
+    void *slot = _find_import_slot(mod, sym_name);
+    return slot ? *(void **)slot : NULL;
+}
+
 int so_module_hook_function(so_module *mod, ptrdiff_t vaddr, void *replacement, so_hook_ref *p_hook) {
     if (!mod || vaddr < 0 || !replacement) {
         return -1;
@@ -1010,17 +1051,49 @@ int so_module_hook_function(so_module *mod, ptrdiff_t vaddr, void *replacement, 
 
     void *target   = (void *)(vaddr + mod->load_bias);
     void *boundary = (void *)((uintptr_t)mod->load_base + mod->load_size);
-    return so_hook_export_function_safe(target, boundary, replacement, p_hook);
+    return so_hook_function_safe(target, boundary, replacement, p_hook);
 }
 
-int so_module_hook_symbol(so_module *mod, const char *sym_name, void *replacement, so_hook_ref *p_hook) {
+int so_module_hook_export(so_module *mod, const char *sym_name, void *replacement, so_hook_ref *p_hook) {
     if (!mod || !sym_name || !replacement) {
         return -1;
     }
 
-    void *target   = so_module_find_symbol(mod, sym_name);
+    void *target   = so_module_find_export(mod, sym_name);
     void *boundary = (void *)((uintptr_t)mod->load_base + mod->load_size);
-    return so_hook_export_function_safe(target, boundary, replacement, p_hook);
+    return so_hook_function_safe(target, boundary, replacement, p_hook);
+}
+
+int so_module_hook_import(so_module *mod, const char *sym_name, void *replacement, so_hook_ref *p_hook) {
+    if (!mod || !sym_name || !replacement) {
+        return -1;
+    }
+
+    void *slot = _find_import_slot(mod, sym_name);
+    if (!slot) {
+        return -1;
+    }
+
+    if (p_hook && !*(void **)slot) {  // slot未绑定，若回调原函数会崩溃，返回失败
+        return -1;
+    }
+
+    size_t instr_len = sizeof(void *);
+    void  *boundary  = (void *)((uintptr_t)mod->load_base + mod->load_size);
+    if ((uintptr_t)slot + instr_len > (uintptr_t)boundary) {
+        return -1; /* 超出边界 */
+    }
+
+    if (p_hook) {
+        p_hook->target   = slot;
+        p_hook->orig_func = *(void **)slot;
+        memcpy(p_hook->orig_instr, slot, instr_len);
+        p_hook->instr_len = instr_len;
+    }
+
+    memcpy(slot, &replacement, instr_len);
+    so_cacheflush(slot, instr_len);
+    return 0;
 }
 
 int so_module_inject_data(so_module *mod, ptrdiff_t vaddr, const void *data, size_t len) {

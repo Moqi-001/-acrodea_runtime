@@ -39,10 +39,12 @@ so_module *runtime_mod = NULL;
 /* 为了兼容vita3k。vita3k不需要插件，但它有kuKernelMemProtect函数实现。
  * 当判断插件加载失败时再判断这个函数是否有绑定，这样的判断可实现对实机和vita3k都通用。*/
 static int is_unbound_stub(const void *fn) {
-    if (!fn) return 1;
+    if (!fn) {
+        return 1;
+    }
 
     const uint32_t *stub = (const uint32_t *)((uintptr_t)fn & ~(uintptr_t)1);
-    return (stub[0] == 0xE24FC008u && stub[1] == 0xE3A0F000u); // 未绑定时的指令
+    return (stub[0] == 0xE24FC008u && stub[1] == 0xE3A0F000u);  // 未绑定时的指令
 }
 
 static int check_kubridge() {
@@ -67,7 +69,7 @@ static int check_opengl() {
 static int init_opengl() {
     static int opengl_inited = 0;
     if (!opengl_inited) {
-        vglInitParams params = {0};
+        vglInitParams params     = {0};
         params.width             = SCREEN_W;
         params.height            = SCREEN_H;
         params.ram_threshold     = VITAGL_RAM_THRESHOLD_MB * 1024 * 1024;
@@ -76,9 +78,9 @@ static int init_opengl() {
         params.cdlg_threshold    = VITAGL_CDIALOG_THRESHOLD_MB * 1024 * 1024;
 #if RUNTIME_APP_ID == 1277
         // 4X MSAA produces 1px seams between adjacent background quads on hardware.
-        params.msaa              = VGL_MSAA_NONE;
+        params.msaa = VGL_MSAA_NONE;
 #else
-        params.msaa              = VGL_MSAA_4X;
+        params.msaa = VGL_MSAA_4X;
 #endif
         vglInit(&params);
         opengl_inited = 1;
@@ -124,7 +126,7 @@ int soloader_jni_onload(so_module *mod) {
     jint result = 0;
 
     ENTER_JNI_CALL(0)
-    jint (*JNI_OnLoad)(JavaVM *, void *) = so_module_find_symbol(mod, "JNI_OnLoad");
+    jint (*JNI_OnLoad)(JavaVM *, void *) = so_module_find_export(mod, "JNI_OnLoad");
     if (JNI_OnLoad) {
         result = JNI_OnLoad(&_java_vm, NULL);
     }

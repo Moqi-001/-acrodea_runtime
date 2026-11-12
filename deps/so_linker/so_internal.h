@@ -60,7 +60,7 @@ struct so_module {
     size_t      num_rel_dyn;   // .rel.dyn 重定位条目数
     Elf32_Rela *rela_dyn;      // .rela.dyn 重定位表（RELA 格式）
     size_t      num_rela_dyn;  // .rela.dyn 重定位条目数
-    Elf32_Addr *relr;          // .relr.dyn 紧凑重定位表（RELR 格式）
+    Elf32_Addr *relr_dyn;      // .relr.dyn 紧凑重定位表（RELR 格式）
     size_t      num_relr;      // .relr.dyn 条目数
 
     // PLT 重定位（用于函数调用）

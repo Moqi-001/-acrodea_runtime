@@ -55,8 +55,9 @@ int ldModuleAllocAndLoadImage(LdModule *mod, const char *path, const char *err_m
 }
 
 int ldModuleInitialize(LdModule *mod) {
-    if (!mod)
+    if (!mod) {
         return -1;
+    }
 
     if (!mod->load_base) {
         so_logd("ldModuleInitialize(%p): %s, no need to initialize", mod, mod->so_name);
@@ -69,8 +70,9 @@ int ldModuleInitialize(LdModule *mod) {
     }
 
     Elf32_Phdr *dynamic_phdr = mod->dynamic_phdr;
-    if (!dynamic_phdr)
+    if (!dynamic_phdr) {
         return 0;
+    }
 
     // 初始化所有依赖库
     for (int i = 0; i < mod->needed_num; i++) {
@@ -129,14 +131,13 @@ int ldModuleInitialize(LdModule *mod) {
     return 0;
 }
 
-
 int soloader_patch_libLD(so_module *mod) {
     so_logd("soloader_patch_libLD(%p)", mod);
-    ldModuleSymHash      = (void *)so_module_find_symbol(mod, "ldModuleSymHash");
-    ldModuleLookupSymbol = (void *)so_module_find_symbol(mod, "ldModuleLookupSymbol");
+    ldModuleSymHash      = (void *)so_module_find_export(mod, "ldModuleSymHash");
+    ldModuleLookupSymbol = (void *)so_module_find_export(mod, "ldModuleLookupSymbol");
 
-    so_module_hook_symbol(mod, "ldModuleInitialize", &ldModuleInitialize, NULL);
-    // so_module_hook_symbol(mod, "ldModuleAllocAndLoadImage", &ldModuleAllocAndLoadImage, &ldModuleAllocAndLoadImage_hook_ref);
+    so_module_hook_export(mod, "ldModuleInitialize", &ldModuleInitialize, NULL);
+    // so_module_hook_export(mod, "ldModuleAllocAndLoadImage", &ldModuleAllocAndLoadImage, &ldModuleAllocAndLoadImage_hook_ref);
 
     return 0;
 }

@@ -11,10 +11,10 @@ extern "C" {
 #define SO_HOOK_INSTR_MAX_LEN 32
 
 typedef struct so_hook_ref {
-    void   *target;                            // 目标函数地址（Thumb 保留 bit0）
-    void   *trampoline;                        // 跳板地址，可直接当函数指针调用（Thumb 已置位 bit0）
-    uint8_t ori_instr[SO_HOOK_INSTR_MAX_LEN];  // 原指令备份（so_unhook 还原用）
-    size_t  instr_len;                         // 原指令字节数
+    void   *target;                             // 目标函数地址（Thumb 保留 bit0）
+    void   *orig_func;                          // 调用原函数（Thumb 已置位 bit0）
+    uint8_t orig_instr[SO_HOOK_INSTR_MAX_LEN];  // 原指令备份（so_unhook 还原用）
+    size_t  instr_len;                          // 原指令字节数
 } so_hook_ref;
 
 typedef struct so_symbol {
@@ -55,18 +55,16 @@ void *so_mmap(size_t length);
 void  so_munmap(void *addr);
 int   so_mprotect(void *addr, size_t length, int prot);
 
-int so_hook_export_function_safe(void *target, void *boundary, void *replacement, so_hook_ref *p_hook);  // Thumb 函数需传入 (实际地址 | 1)
-int so_hook_export_function(void *target, void *replacement, so_hook_ref *p_hook);                       // Thumb 函数需传入 (实际地址 | 1)
-int so_hook_import_function_safe(void *target, void *boundary, void *replacement, so_hook_ref *p_hook);  // target 为 import 的 GOT 槽地址（__ldModuleFindImportSlot），把 replacement 写入槽内重定向
-int so_hook_import_function(void *target, void *replacement, so_hook_ref *p_hook);                       // 同上
+int so_hook_function_safe(void *target, void *boundary, void *replacement, so_hook_ref *p_hook);  // Thumb 函数需传入 (实际地址 | 1)
+int so_hook_function(void *target, void *replacement, so_hook_ref *p_hook);                       // Thumb 函数需传入 (实际地址 | 1)
 int so_unhook(so_hook_ref *p_hook);
 
 int so_inject_data_safe(void *target, void *boundary, const void *data, size_t len);
 int so_inject_data(void *target, const void *data, size_t len);
 
-// 在 Hook 函数里调用原函数：直接跳进跳板执行被搬走的原指令，不做任何代码改写
+// hook 调用原函数
 #define SO_CONTINUE(type, p_hook, ...) \
-    (((type (*)())((p_hook)->trampoline))(__VA_ARGS__))
+    (((type (*)())((p_hook)->orig_func))(__VA_ARGS__))
 
 so_module *so_module_create(const so_library *library);    // 从 so_library 创建模块
 so_module *so_module_load(const char *filename);           // 从文件加载模块
@@ -81,18 +79,15 @@ so_module *so_module_open(const char *filename);           // 从文件打开模
 so_module *so_module_open_mem(void *buffer, size_t size);  // 从内存打开模块 (load + relocate + init)
 void       so_module_close(so_module *mod);                // 关闭模块 (unload + fini)
 
-void *so_module_find_symbol(so_module *mod, const char *sym_name);
-#define SO_SYM_LOOKUP_SELF  0x1
-#define SO_SYM_LOOKUP_OTHER 0x2
-#define SO_SYM_LOOKUP_ALL   (SO_SYM_LOOKUP_SELF | SO_SYM_LOOKUP_OTHER)
-void *so_module_find_symbol_ex(so_module *mod, const char *sym_name, int flags,
-                               so_module **out_mod, const Elf32_Sym **out_sym);
-
 int  so_module_retain(so_module *mod);
 void so_module_release(so_module *mod);
 
+void *so_module_find_export(so_module *mod, const char *sym_name);
+void *so_module_find_import(so_module *mod, const char *sym_name);
+
 int so_module_hook_function(so_module *mod, ptrdiff_t vaddr, void *replacement, so_hook_ref *p_hook);  // Thumb 函数需传入"地址 | 1"
-int so_module_hook_symbol(so_module *mod, const char *sym_name, void *replacement, so_hook_ref *p_hook);
+int so_module_hook_export(so_module *mod, const char *sym_name, void *replacement, so_hook_ref *p_hook);
+int so_module_hook_import(so_module *mod, const char *sym_name, void *replacement, so_hook_ref *p_hook);
 
 int so_module_inject_data(so_module *mod, ptrdiff_t vaddr, const void *data, size_t len);
 

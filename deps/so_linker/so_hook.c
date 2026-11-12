@@ -143,7 +143,9 @@ static int _thumb_it_count(uint16_t hw) {
     uint32_t mask = hw & 0x000F;
     int      tz   = 0;
 
-    if (!mask) return 0;
+    if (!mask) {
+        return 0;
+    }
     while (!(mask & 1)) {
         mask >>= 1;
         tz++;
@@ -168,16 +170,26 @@ static int _analyze_arm(uint32_t w, uintptr_t addr, instr_rec *rec) {
     switch (cls) {
         case 0: /* 数据处理 / 乘法 / 杂项 */
         case 1:
-            if (((w >> 12) & 0xF) == 15) return -1; /* Rd = PC（含 MOV PC / BX） */
-            if (((w >> 16) & 0xF) == 15) return -1; /* Rn = PC（ADR） */
-            if ((w & 0xF) == 15) return -1;         /* Rm = PC（MOV Rd, PC） */
+            if (((w >> 12) & 0xF) == 15) {
+                return -1; /* Rd = PC（含 MOV PC / BX） */
+            }
+            if (((w >> 16) & 0xF) == 15) {
+                return -1; /* Rn = PC（ADR） */
+            }
+            if ((w & 0xF) == 15) {
+                return -1; /* Rm = PC（MOV Rd, PC） */
+            }
             return 0;
 
         case 2: /* 单寄存器加载 / 存储 */
         case 3:
-            if (((w >> 16) & 0xF) != 15) return 0;
+            if (((w >> 16) & 0xF) != 15) {
+                return 0;
+            }
             /* 只支持 LDR Rt, [PC, #+/-imm12]，其它 PC 相对访存一律拒绝 */
-            if ((w & 0x0F7F0000) != 0x051F0000) return -1;
+            if ((w & 0x0F7F0000) != 0x051F0000) {
+                return -1;
+            }
             {
                 uintptr_t pc  = _arm_pc(addr);
                 uint32_t  off = w & 0xFFF;
@@ -186,26 +198,42 @@ static int _analyze_arm(uint32_t w, uintptr_t addr, instr_rec *rec) {
             }
             return 1;
 
-        case 4:                                     /* LDM / STM */
-            if (((w >> 16) & 0xF) == 15) return -1; /* 以 PC 为基址 */
-            if (w & 0x8000) return -1;              /* 寄存器列表含 PC */
+        case 4: /* LDM / STM */
+            if (((w >> 16) & 0xF) == 15) {
+                return -1; /* 以 PC 为基址 */
+            }
+            if (w & 0x8000) {
+                return -1; /* 寄存器列表含 PC */
+            }
             return 0;
 
         case 5: /* B / BL */
             return -1;
 
-        default:                                    /* 协处理器 / SVC */
-            if (((w >> 16) & 0xF) == 15) return -1; /* 含 VLDR 字面量形式 */
+        default: /* 协处理器 / SVC */
+            if (((w >> 16) & 0xF) == 15) {
+                return -1; /* 含 VLDR 字面量形式 */
+            }
             return 0;
     }
 }
 
 static int _analyze_thumb16(uint16_t hw, uintptr_t addr, instr_rec *rec) {
-    if ((hw & 0xF000) == 0xD000) return -1; /* B<c>     */
-    if ((hw & 0xF800) == 0xE000) return -1; /* B        */
-    if ((hw & 0xF500) == 0xB100) return -1; /* CBZ/CBNZ */
-    if ((hw & 0xF800) == 0xA000) return -1; /* ADR      */
-    if ((hw & 0xFFF8) == 0x4778) return -1; /* BX PC（ARM/Thumb 切换桩） */
+    if ((hw & 0xF000) == 0xD000) {
+        return -1; /* B<c>     */
+    }
+    if ((hw & 0xF800) == 0xE000) {
+        return -1; /* B        */
+    }
+    if ((hw & 0xF500) == 0xB100) {
+        return -1; /* CBZ/CBNZ */
+    }
+    if ((hw & 0xF800) == 0xA000) {
+        return -1; /* ADR      */
+    }
+    if ((hw & 0xFFF8) == 0x4778) {
+        return -1; /* BX PC（ARM/Thumb 切换桩） */
+    }
 
     /* ADD Rd, PC（01000100 D 1111 Rd）：
      * 这是 "ldr rX,[pc,#n] + add rX,pc" 的 PIC 取址惯用法。搬到跳板后 PC 变了，
@@ -238,15 +266,23 @@ static int _analyze_thumb32(uint16_t hw1, uint16_t hw2, uintptr_t addr, instr_re
     }
 
     /* ADR.W（ADD/SUB 形式） */
-    if ((hw1 & 0xFBFF) == 0xF20F || (hw1 & 0xFBFF) == 0xF2AF) return -1;
+    if ((hw1 & 0xFBFF) == 0xF20F || (hw1 & 0xFBFF) == 0xF2AF) {
+        return -1;
+    }
 
     /* B<c>.W / B.W / BL / BLX(imm)：都是 11110 前缀且 hw2 最高位为 1 */
-    if ((hw1 & 0xF800) == 0xF000 && (hw2 & 0x8000)) return -1;
+    if ((hw1 & 0xF800) == 0xF000 && (hw2 & 0x8000)) {
+        return -1;
+    }
 
     /* LDM/STM/表分支/LDRD 类：基址为 PC 或寄存器列表含 PC 时无法搬运 */
     if ((hw1 & 0xFE00) == 0xE800) {
-        if ((hw1 & 0x000F) == 0x000F) return -1; /* Rn = PC（含 LDRD/STRD 字面量形式） */
-        if (hw2 & 0x8000) return -1;             /* 寄存器列表含 PC（含 POP.W {..., PC}） */
+        if ((hw1 & 0x000F) == 0x000F) {
+            return -1; /* Rn = PC（含 LDRD/STRD 字面量形式） */
+        }
+        if (hw2 & 0x8000) {
+            return -1; /* 寄存器列表含 PC（含 POP.W {..., PC}） */
+        }
     }
 
     return 0;
@@ -357,7 +393,9 @@ static int _plan_prologue(uintptr_t src, int is_thumb, void *boundary, int need_
              * 这类指令确定不会写 rd，语义上安全；其余情况一律放弃。
              */
             for (size_t j = num; j-- > 0;) {
-                if (recs[j].kind == _IR_PC_ADD_T16 || recs[j].fold) break;
+                if (recs[j].kind == _IR_PC_ADD_T16 || recs[j].fold) {
+                    break;
+                }
                 if (recs[j].kind != _IR_NONE) { /* 字面量加载 */
                     if (_lit_rt(&recs[j], src) == rd) {
                         fold_into = &recs[j];
@@ -387,7 +425,9 @@ static int _plan_prologue(uintptr_t src, int is_thumb, void *boundary, int need_
         cur += size;
         copied += size;
 
-        if (it_left > 0 && !is_it) it_left--;
+        if (it_left > 0 && !is_it) {
+            it_left--;
+        }
     }
 
     *out_num      = num;
@@ -466,7 +506,9 @@ static int _emit_trampoline(uint8_t *tramp, uintptr_t src, int is_thumb,
     }
 
     /* 2. NOP 补齐，让跳回指令落在 4 字节边界上 */
-    if (is_thumb && (code_len & 2)) _put16(tramp + code_len, 0xBF00);
+    if (is_thumb && (code_len & 2)) {
+        _put16(tramp + code_len, 0xBF00);
+    }
 
     /* 3. 跳回 src + code_len */
     {
@@ -486,7 +528,9 @@ static int _emit_trampoline(uint8_t *tramp, uintptr_t src, int is_thumb,
         const instr_rec *rec = &recs[i];
         uint32_t         v;
 
-        if (rec->kind == _IR_NONE || rec->kind == _IR_PC_ADD_T16) continue;
+        if (rec->kind == _IR_NONE || rec->kind == _IR_PC_ADD_T16) {
+            continue;
+        }
 
         v = _get32((const void *)rec->lit);
 
@@ -505,8 +549,10 @@ static int _emit_trampoline(uint8_t *tramp, uintptr_t src, int is_thumb,
 /* 对外接口                                                            */
 /* ------------------------------------------------------------------ */
 
-int so_hook_export_function_safe(void *target, void *boundary, void *replacement, so_hook_ref *p_hook) {
-    if (!target || !replacement) return -1;
+int so_hook_function_safe(void *target, void *boundary, void *replacement, so_hook_ref *p_hook) {
+    if (!target || !replacement) {
+        return -1;
+    }
 
     uintptr_t src      = (uintptr_t)target;
     int       is_thumb = (int)(src & 1);
@@ -524,9 +570,9 @@ int so_hook_export_function_safe(void *target, void *boundary, void *replacement
     src &= ~(uintptr_t)1;
 
     if (p_hook) {
-        p_hook->target     = NULL;
-        p_hook->trampoline = NULL;
-        p_hook->instr_len  = 0;
+        p_hook->target    = NULL;
+        p_hook->orig_func  = NULL;
+        p_hook->instr_len = 0;
     }
 
     if (!is_thumb && (src & 3)) {
@@ -562,7 +608,9 @@ int so_hook_export_function_safe(void *target, void *boundary, void *replacement
         }
 
         tramp = (uint8_t *)_tramp_alloc(SO_TRAMP_SIZE);
-        if (!tramp) return -1;
+        if (!tramp) {
+            return -1;
+        }
         memset(tramp, 0, SO_TRAMP_SIZE);
 
         if (_emit_trampoline(tramp, src, is_thumb, recs, num, code_len, slot_base) < 0) {
@@ -571,6 +619,13 @@ int so_hook_export_function_safe(void *target, void *boundary, void *replacement
         so_cacheflush(tramp, SO_TRAMP_SIZE);
     } else {
         tramp = NULL; /* 永久替换：不生成跳板 */
+    }
+
+    if (p_hook) {
+        memcpy(p_hook->orig_instr, (void *)src, code_len);
+        p_hook->target    = (void *)(src | (uintptr_t)is_thumb);
+        p_hook->orig_func  = (void *)((uintptr_t)tramp | (uintptr_t)is_thumb);
+        p_hook->instr_len = (int)code_len;
     }
 
     /* 构造目标函数上的跳转补丁（先放到栈上，再按安全顺序落地） */
@@ -589,7 +644,9 @@ int so_hook_export_function_safe(void *target, void *boundary, void *replacement
             plen = 8;
         }
 
-        for (size_t i = plen; i + 1 < code_len; i += 2) _put16(patch + i, 0xBF00);
+        for (size_t i = plen; i + 1 < code_len; i += 2) {
+            _put16(patch + i, 0xBF00);
+        }
     } else {
         _put32(patch + 0, 0xE51FF004); /* LDR PC, [PC, #-4] */
         _put32(patch + 4, (uint32_t)(uintptr_t)replacement);
@@ -600,20 +657,11 @@ int so_hook_export_function_safe(void *target, void *boundary, void *replacement
         }
     }
 
-    if (p_hook) {
-        memcpy(p_hook->ori_instr, (void *)src, code_len);
-        p_hook->target     = (void *)(src | (uintptr_t)is_thumb);
-        p_hook->trampoline = (void *)((uintptr_t)tramp | (uintptr_t)is_thumb);
-        p_hook->instr_len  = (int)code_len;
-    }
-
     /*
      * 落地写入：先字面量、再指令本体，把「并发线程取到跳转指令却没取到字面量」
      * 的窗口降到最小。注意这只降低概率，安装 hook 本身仍应在相关代码静止时进行；
      * 安装完成后 SO_CONTINUE 与正常调用都不会再改写这段代码。
      */
-    uint32_t before = _get32((const void *)src);
-
     if (is_thumb) {
         if (src & 2) {
             memcpy((void *)(src + 6), patch + 6, 4); /* 字面量 */
@@ -641,51 +689,30 @@ int so_hook_export_function_safe(void *target, void *boundary, void *replacement
     return 0;
 }
 
-int so_hook_export_function(void *target, void *replacement, so_hook_ref *p_hook) {
-    return so_hook_export_function_safe(target, NULL, replacement, p_hook);
-}
-
-int so_hook_import_function_safe(void *target, void *boundary, void *replacement, so_hook_ref *p_hook) {
-    if (!target || !replacement) return -1;
-
-    if (boundary && (uintptr_t)target + 4 > (uintptr_t)boundary) {
-        return -1; /* 超出边界 */
-    }
-
-    void *real_target = (void *)((uintptr_t)target & ~1);
-
-    if (p_hook) {
-        p_hook->target     = target;
-        p_hook->trampoline = (void *)(*(uintptr_t *)target);
-        memcpy(p_hook->ori_instr, real_target, 4);
-        p_hook->instr_len = 4;
-    }
-
-    memcpy(real_target, &replacement, sizeof(void *));
-    so_cacheflush(real_target, sizeof(void *));
-    return 0;
-}
-
-int so_hook_import_function(void *target, void *replacement, so_hook_ref *p_hook) {
-    return so_hook_import_function_safe(target, NULL, replacement, p_hook);
+int so_hook_function(void *target, void *replacement, so_hook_ref *p_hook) {
+    return so_hook_function_safe(target, NULL, replacement, p_hook);
 }
 
 int so_unhook(so_hook_ref *p_hook) {
-    if (!p_hook || !p_hook->target) return -1;
+    if (!p_hook || !p_hook->target) {
+        return -1;
+    }
 
     uintptr_t src = (uintptr_t)p_hook->target & ~(uintptr_t)1;
 
-    memcpy((void *)src, p_hook->ori_instr, (size_t)p_hook->instr_len);
+    memcpy((void *)src, p_hook->orig_instr, (size_t)p_hook->instr_len);
     so_cacheflush((void *)src, (size_t)p_hook->instr_len);
 
-    p_hook->target     = NULL;
-    p_hook->trampoline = NULL;
+    p_hook->target   = NULL;
+    p_hook->orig_func = NULL;
 
     return 0;
 }
 
 int so_inject_data_safe(void *target, void *boundary, const void *data, size_t len) {
-    if (!target || !data || len == 0) return -1;
+    if (!target || !data || len == 0) {
+        return -1;
+    }
 
     if (boundary && (uintptr_t)target + len > (uintptr_t)boundary) {
         return -1; /* 超出边界 */
