@@ -22,8 +22,8 @@ void MyErrorDialog_setCode(MyErrorDialog thiz, jint code) {
 
 static JSymbol class_symbols[] = {
     // JAVA
-    JSYMBOL_METHOD("setMessage", "(Ljava/lang/String;)V", &MyErrorDialog_setMessage),
-    JSYMBOL_METHOD("setCode", "(I)V", &MyErrorDialog_setCode),
+    JAVA_SYMBOL_METHOD("setMessage", "(Ljava/lang/String;)V", &MyErrorDialog_setMessage),
+    JAVA_SYMBOL_METHOD("setCode", "(I)V", &MyErrorDialog_setCode),
 };
 
 static JClassMeta class_meta = {

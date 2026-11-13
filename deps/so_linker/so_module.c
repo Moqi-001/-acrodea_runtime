@@ -1044,66 +1044,40 @@ void *so_module_find_import(so_module *mod, const char *sym_name) {
     return slot ? *(void **)slot : NULL;
 }
 
-int so_module_hook_function(so_module *mod, ptrdiff_t vaddr, void *replacement, so_hook_ref *p_hook) {
-    if (!mod || vaddr < 0 || !replacement) {
+int so_module_hook_address(so_module *mod, ptrdiff_t vaddr, void *repl, so_hook_ref *p_hook) {
+    if (!mod || vaddr < 0 || !repl) {
         return -1;
     }
 
-    void *target   = (void *)(vaddr + mod->load_bias);
-    void *boundary = (void *)((uintptr_t)mod->load_base + mod->load_size);
-    return so_hook_function_safe(target, boundary, replacement, p_hook);
+    void *target = (void *)(vaddr + mod->load_bias);
+    return so_hook(target, repl, p_hook);
 }
 
-int so_module_hook_export(so_module *mod, const char *sym_name, void *replacement, so_hook_ref *p_hook) {
-    if (!mod || !sym_name || !replacement) {
+int so_module_hook_export(so_module *mod, const char *sym_name, void *repl, so_hook_ref *p_hook) {
+    if (!mod || !sym_name || !repl) {
         return -1;
     }
 
-    void *target   = so_module_find_export(mod, sym_name);
-    void *boundary = (void *)((uintptr_t)mod->load_base + mod->load_size);
-    return so_hook_function_safe(target, boundary, replacement, p_hook);
+    void *target = so_module_find_export(mod, sym_name);
+    return so_hook(target, repl, p_hook);
 }
 
-int so_module_hook_import(so_module *mod, const char *sym_name, void *replacement, so_hook_ref *p_hook) {
-    if (!mod || !sym_name || !replacement) {
+int so_module_hook_import(so_module *mod, const char *sym_name, void *repl, so_hook_ref *p_hook) {
+    if (!mod || !sym_name || !repl) {
         return -1;
     }
 
     void *slot = _find_import_slot(mod, sym_name);
-    if (!slot) {
-        return -1;
-    }
-
-    if (p_hook && !*(void **)slot) {  // slot未绑定，若回调原函数会崩溃，返回失败
-        return -1;
-    }
-
-    size_t instr_len = sizeof(void *);
-    void  *boundary  = (void *)((uintptr_t)mod->load_base + mod->load_size);
-    if ((uintptr_t)slot + instr_len > (uintptr_t)boundary) {
-        return -1; /* 超出边界 */
-    }
-
-    if (p_hook) {
-        p_hook->target   = slot;
-        p_hook->orig_func = *(void **)slot;
-        memcpy(p_hook->orig_instr, slot, instr_len);
-        p_hook->instr_len = instr_len;
-    }
-
-    memcpy(slot, &replacement, instr_len);
-    so_cacheflush(slot, instr_len);
-    return 0;
+    return so_hook_got(slot, repl, p_hook);
 }
 
-int so_module_inject_data(so_module *mod, ptrdiff_t vaddr, const void *data, size_t len) {
-    if (!mod || vaddr < 0 || !data || len == 0) {
+int so_module_inject_data(so_module *mod, ptrdiff_t vaddr, const void *repl, size_t len) {
+    if (!mod || vaddr < 0 || !repl || len == 0) {
         return -1;
     }
 
-    void *target   = (void *)(vaddr + mod->load_bias);
-    void *boundary = (void *)((uintptr_t)mod->load_base + mod->load_size);
-    return so_inject_data_safe(target, boundary, data, len);
+    void *target = (void *)(vaddr + mod->load_bias);
+    return so_inject_data(target, repl, len);
 }
 
 const char *so_module_get_name(so_module *mod) {

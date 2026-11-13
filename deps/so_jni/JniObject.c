@@ -25,7 +25,9 @@ jobject JniNewObject(jclass clazz, jmethodID methodID, ...) {
 
 jobject JniNewObjectV(jclass clazz, jmethodID methodID, va_list args) {
     jobject object = JniAllocObject(clazz);
-    if (!object) return NULL;
+    if (!object) {
+        return NULL;
+    }
 
     JniCallCommonMethodV(NULL, object, methodID, args);
     return object;
@@ -33,7 +35,9 @@ jobject JniNewObjectV(jclass clazz, jmethodID methodID, va_list args) {
 
 jobject JniNewObjectA(jclass clazz, jmethodID methodID, const jvalue *args) {
     jobject object = JniAllocObject(clazz);
-    if (!object) return NULL;
+    if (!object) {
+        return NULL;
+    }
 
     JniCallCommonMethodA(NULL, object, methodID, args);
     return object;

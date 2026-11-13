@@ -12,7 +12,7 @@ JLong currentTimeMillis() {
 }
 
 static JSymbol class_symbols[] = {
-    JSYMBOL_STATIC_METHOD("currentTimeMillis", "()J", &currentTimeMillis),
+    JAVA_SYMBOL_STATIC_METHOD("currentTimeMillis", "()J", &currentTimeMillis),
 };
 
 static JClassMeta class_meta = {

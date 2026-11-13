@@ -250,9 +250,15 @@ JavaVM _java_vm = (JavaVM)&_jni_invoke_interface;
 JNIEnv _jni_env = (JNIEnv)&_jni_native_interface;
 
 jint so_jni_init(void) {
-    if (JniInitLocalRefContext() != JNI_OK) return JNI_ERR;
-    if (JniInitGlobalRefContext() != JNI_OK) return JNI_ERR;
-    if (JniInitWeakGlobalRefContext() != JNI_OK) return JNI_ERR;
+    if (JniInitLocalRefContext() != JNI_OK) {
+        return JNI_ERR;
+    }
+    if (JniInitGlobalRefContext() != JNI_OK) {
+        return JNI_ERR;
+    }
+    if (JniInitWeakGlobalRefContext() != JNI_OK) {
+        return JNI_ERR;
+    }
 
     return JNI_OK;
 }

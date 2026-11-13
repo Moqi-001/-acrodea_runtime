@@ -4,11 +4,11 @@
 #include "types.h"
 
 enum {
-    JSYMBOL_FLAGS_UNDEF  = 0,       // 未定义
-    JSYMBOL_FLAGS_STATIC = 1 << 0,  // static
-    JSYMBOL_FLAGS_NATIVE = 1 << 1,  // native（仅方法）
-    JSYMBOL_FLAGS_METHOD = 1 << 2,  // 方法
-    JSYMBOL_FLAGS_FIELD  = 1 << 3,  // 字段
+    JAVA_SYMBOL_FLAGS_UNDEF  = 0,       // 未定义
+    JAVA_SYMBOL_FLAGS_STATIC = 1 << 0,  // static
+    JAVA_SYMBOL_FLAGS_NATIVE = 1 << 1,  // native（仅方法）
+    JAVA_SYMBOL_FLAGS_METHOD = 1 << 2,  // 方法
+    JAVA_SYMBOL_FLAGS_FIELD  = 1 << 3,  // 字段
 };
 
 typedef struct JSymbol {
@@ -55,15 +55,17 @@ JDtor       Class_getDestructor(JClass clazz);
 // ============================================
 // JAVA 符号表定义宏 (简化 JSymbol 结构体初始化，免去手动填写标志位等)
 // ============================================
-#define JSYMBOL_STATIC_METHOD(name, sig, p_func) \
-    {name, sig, (uintptr_t)(p_func), (JSYMBOL_FLAGS_STATIC | JSYMBOL_FLAGS_METHOD), NULL}
-#define JSYMBOL_STATIC_FIELD(name, sig, offset) \
-    {name, sig, (uintptr_t)(offset), (JSYMBOL_FLAGS_STATIC | JSYMBOL_FLAGS_FIELD), NULL}
-#define JSYMBOL_METHOD(name, sig, p_func) \
-    {name, sig, (uintptr_t)(p_func), JSYMBOL_FLAGS_METHOD, NULL}
-#define JSYMBOL_FIELD(name, sig, offset) \
-    {name, sig, (uintptr_t)(offset), JSYMBOL_FLAGS_FIELD, NULL}
-#define JSYMBOL_NATIVE(name, sig, pp_func) \
-    {name, sig, (uintptr_t)(pp_func), JSYMBOL_FLAGS_NATIVE | JSYMBOL_FLAGS_METHOD, NULL}
+#define JAVA_SYMBOL_STATIC_METHOD(name, sig, p_func) \
+    {name, sig, (uintptr_t)(p_func), (JAVA_SYMBOL_FLAGS_STATIC | JAVA_SYMBOL_FLAGS_METHOD), NULL}
+#define JAVA_SYMBOL_STATIC_FIELD(name, sig, offset) \
+    {name, sig, (uintptr_t)(offset), (JAVA_SYMBOL_FLAGS_STATIC | JAVA_SYMBOL_FLAGS_FIELD), NULL}
+#define JAVA_SYMBOL_METHOD(name, sig, p_func) \
+    {name, sig, (uintptr_t)(p_func), JAVA_SYMBOL_FLAGS_METHOD, NULL}
+#define JAVA_SYMBOL_FIELD(name, sig, offset) \
+    {name, sig, (uintptr_t)(offset), JAVA_SYMBOL_FLAGS_FIELD, NULL}
+#define JAVA_SYMBOL_NATIVE(name, sig, pp_func) \
+    {name, sig, (uintptr_t)(pp_func), JAVA_SYMBOL_FLAGS_NATIVE | JAVA_SYMBOL_FLAGS_METHOD, NULL}
+#define JAVA_SYMBOL_STATIC_NATIVE(name, sig, pp_func) \
+    {name, sig, (uintptr_t)(pp_func), JAVA_SYMBOL_FLAGS_STATIC | JAVA_SYMBOL_FLAGS_NATIVE | JAVA_SYMBOL_FLAGS_METHOD, NULL}
 
 #endif

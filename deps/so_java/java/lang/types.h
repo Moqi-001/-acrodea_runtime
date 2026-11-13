@@ -40,10 +40,10 @@ typedef void (*JDtor)(JObject obj);
 #define JAVA_BASE_CAST(_type, _obj, _magic) ((_type)(_obj))
 #endif
 
-#define J_TRUE  1
-#define J_FALSE 0
+#define JAVA_TRUE  1
+#define JAVA_FALSE 0
 
-#define J_OK  (0)  /* no error */
-#define J_ERR (-1) /* generic error */
+#define JAVA_OK  (0)  /* no error */
+#define JAVA_ERR (-1) /* generic error */
 
 #endif

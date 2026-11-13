@@ -45,7 +45,9 @@ static JniGlobalContext         _so_global_ctx = {0};
 static JniGlobalContext         _so_weak_ctx   = {0};
 
 jobjectRefType JniGetObjectRefType(jobject object) {
-    if (!object) return JNIInvalidRefType;
+    if (!object) {
+        return JNIInvalidRefType;
+    }
 
     uintptr_t addr = (uintptr_t)object;
     if (addr >= LOCAL_REF_BIAS && addr < LOCAL_REF_BIAS + MAX_REF_CAPACITY) {
@@ -62,26 +64,34 @@ jobjectRefType JniGetObjectRefType(jobject object) {
 }
 
 JObject JniObjectToJava(jobject object) {
-    if (!object) return NULL;
+    if (!object) {
+        return NULL;
+    }
 
     uintptr_t addr = (uintptr_t)object;
 
     if (addr >= LOCAL_REF_BIAS && addr < LOCAL_REF_BIAS + MAX_REF_CAPACITY) {
         JniLocalContext *ctx   = &_so_local_ctx;
         jint             index = addr - LOCAL_REF_BIAS;
-        if (index >= ctx->count) return NULL;
+        if (index >= ctx->count) {
+            return NULL;
+        }
         return ctx->slots[index].obj;
     }
     if (addr >= GLOBAL_REF_BIAS && addr < GLOBAL_REF_BIAS + MAX_REF_CAPACITY) {
         JniGlobalContext *ctx   = &_so_global_ctx;
         jint              index = addr - GLOBAL_REF_BIAS;
-        if (index >= ctx->capacity) return NULL;
+        if (index >= ctx->capacity) {
+            return NULL;
+        }
         return ctx->slots[index].obj;
     }
     if (addr >= WEAK_REF_BIAS && addr < WEAK_REF_BIAS + MAX_REF_CAPACITY) {
         JniGlobalContext *ctx   = &_so_weak_ctx;
         jint              index = addr - WEAK_REF_BIAS;
-        if (index >= ctx->capacity) return NULL;
+        if (index >= ctx->capacity) {
+            return NULL;
+        }
         return ctx->slots[index].obj;
     }
 
@@ -89,7 +99,9 @@ JObject JniObjectToJava(jobject object) {
 }
 
 jobject JniNewLocalRefFromJava(JObject obj) {
-    if (!obj) return NULL;
+    if (!obj) {
+        return NULL;
+    }
 
     JniLocalContext *ctx = &_so_local_ctx;
     if (!ctx->slots && JniInitLocalRefContext() != 0) {
@@ -137,14 +149,18 @@ jobject JniNewLocalRef(jobject object) {
 
 void JniDeleteLocalRef(jobject object) {
     JniLocalContext *ctx = &_so_local_ctx;
-    if (!ctx->slots) return;
+    if (!ctx->slots) {
+        return;
+    }
 
     jint      index = -1;
     uintptr_t addr  = (uintptr_t)object;
     if (addr >= LOCAL_REF_BIAS && addr < LOCAL_REF_BIAS + MAX_REF_CAPACITY) {
         index = addr - LOCAL_REF_BIAS;
     }
-    if (index < 0 || index >= ctx->count || !ctx->slots[index].obj) return;
+    if (index < 0 || index >= ctx->count || !ctx->slots[index].obj) {
+        return;
+    }
 
     // 释放引用后仍占着槽位，count 不减，LocalRef 不进行槽位复用
     Object_release(ctx->slots[index].obj);
@@ -152,10 +168,14 @@ void JniDeleteLocalRef(jobject object) {
 }
 
 jobject JniNewGlobalRefFromJava(JObject obj) {
-    if (!obj) return NULL;
+    if (!obj) {
+        return NULL;
+    }
 
     JniGlobalContext *ctx = &_so_global_ctx;
-    if (!ctx->slots) return NULL;
+    if (!ctx->slots) {
+        return NULL;
+    }
 
     pthread_mutex_lock(&ctx->lock);
 
@@ -207,7 +227,9 @@ jobject JniNewGlobalRef(jobject object) {
 
 void JniDeleteGlobalRef(jobject object) {
     JniGlobalContext *ctx = &_so_global_ctx;
-    if (!object || !ctx->slots) return;
+    if (!object || !ctx->slots) {
+        return;
+    }
 
     pthread_mutex_lock(&ctx->lock);
 
@@ -232,10 +254,14 @@ void JniDeleteGlobalRef(jobject object) {
 }
 
 jweak JniNewWeakGlobalRefFromJava(JObject obj) {
-    if (!obj) return NULL;
+    if (!obj) {
+        return NULL;
+    }
 
     JniGlobalContext *ctx = &_so_weak_ctx;
-    if (!ctx->slots) return NULL;
+    if (!ctx->slots) {
+        return NULL;
+    }
 
     pthread_mutex_lock(&ctx->lock);
 
@@ -291,7 +317,9 @@ jobject JniNewWeakGlobalRef(jobject object) {
 
 void JniDeleteWeakGlobalRef(jweak object) {
     JniGlobalContext *ctx = &_so_weak_ctx;
-    if (!object || !ctx->slots) return;
+    if (!object || !ctx->slots) {
+        return;
+    }
 
     pthread_mutex_lock(&ctx->lock);
 
@@ -317,7 +345,9 @@ void JniDeleteWeakGlobalRef(jweak object) {
 
 jint JniPushLocalFrame(jint capacity) {
     JniLocalContext *ctx = &_so_local_ctx;
-    if (!ctx->slots) return JNI_ERR;
+    if (!ctx->slots) {
+        return JNI_ERR;
+    }
 
     if (capacity <= 0) {
         capacity = MAX_REF_CAPACITY - ctx->count;
@@ -340,13 +370,17 @@ jint JniPushLocalFrame(jint capacity) {
 
 jobject JniPopLocalFrame(jobject result) {
     JniLocalContext *ctx = &_so_local_ctx;
-    if (!ctx->slots || !ctx->frame) return NULL;
+    if (!ctx->slots || !ctx->frame) {
+        return NULL;
+    }
 
     JniRefSlot  *slots = ctx->slots;
     JniRefFrame *frame = ctx->frame;
     ctx->frame         = frame->prev;
 
-    if (result) result = JniNewLocalRef(result);
+    if (result) {
+        result = JniNewLocalRef(result);
+    }
 
     for (jint i = frame->start; i < ctx->count; i++) {
         if (slots[i].obj) {
@@ -363,11 +397,15 @@ jobject JniPopLocalFrame(jobject result) {
 
 jint JniInitLocalRefContext(void) {
     JniLocalContext *ctx = &_so_local_ctx;
-    if (ctx->slots) return JNI_OK;
+    if (ctx->slots) {
+        return JNI_OK;
+    }
 
     jint        capacity = INIT_REF_CAPACITY;
     JniRefSlot *slots    = calloc(capacity, sizeof(JniRefSlot));
-    if (!slots) return JNI_ERR;
+    if (!slots) {
+        return JNI_ERR;
+    }
 
     ctx->slots    = slots;
     ctx->capacity = capacity;
@@ -408,11 +446,15 @@ void JniFiniLocalRefContext(void) {
 
 jint JniInitGlobalRefContext(void) {
     JniGlobalContext *ctx = &_so_global_ctx;
-    if (ctx->slots) return JNI_OK;
+    if (ctx->slots) {
+        return JNI_OK;
+    }
 
     jint        capacity = INIT_REF_CAPACITY;
     JniRefSlot *slots    = calloc(capacity, sizeof(JniRefSlot));
-    if (!slots) return JNI_ERR;
+    if (!slots) {
+        return JNI_ERR;
+    }
 
     jint *next_free = malloc(capacity * sizeof(jint));
     if (!next_free) {
@@ -464,11 +506,15 @@ void JniFiniGlobalRefContext(void) {
 
 jint JniInitWeakGlobalRefContext(void) {
     JniGlobalContext *ctx = &_so_weak_ctx;
-    if (ctx->slots) return JNI_OK;
+    if (ctx->slots) {
+        return JNI_OK;
+    }
 
     jint        capacity = INIT_REF_CAPACITY;
     JniRefSlot *slots    = calloc(capacity, sizeof(JniRefSlot));
-    if (!slots) return JNI_ERR;
+    if (!slots) {
+        return JNI_ERR;
+    }
 
     jint *next_free = malloc(capacity * sizeof(jint));
     if (!next_free) {

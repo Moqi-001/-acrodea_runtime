@@ -8,7 +8,9 @@
 #include "so_linker.h"
 
 int so_cacheflush(void *addr, size_t length) {
-    if (!addr || length == 0) return -1;
+    if (!addr || length == 0) {
+        return -1;
+    }
 
     so_logd("[SOLINKER] so_cacheflush(%p,%u)", addr, length);
     kuKernelFlushCaches(addr, length);
@@ -55,12 +57,15 @@ void so_munmap(void *addr) {
 
 int so_mprotect(void *addr, size_t length, int prot) {
     SceUInt32 ku_prot = KU_KERNEL_PROT_NONE;
-    if ((prot & PROT_READ) == PROT_READ)
+    if ((prot & PROT_READ) == PROT_READ) {
         ku_prot |= KU_KERNEL_PROT_READ;
-    if ((prot & PROT_WRITE) == PROT_WRITE)
+    }
+    if ((prot & PROT_WRITE) == PROT_WRITE) {
         ku_prot |= KU_KERNEL_PROT_WRITE;
-    if ((prot & PROT_EXEC) == PROT_EXEC)
+    }
+    if ((prot & PROT_EXEC) == PROT_EXEC) {
         ku_prot |= KU_KERNEL_PROT_EXEC;
+    }
 
     int result = kuKernelMemProtect(addr, length, ku_prot);
     so_logd("[SOLINKER] so_mprotect(%p,%u,0x%x): %d", addr, length, prot, result);

@@ -34,8 +34,8 @@ jint MyBilling_start(MyBilling thiz, jint type, JString access_token, JString pa
 
 static JSymbol class_symbols[] = {
     // instance methods（对应安卓原版 Java 实现）
-    JSYMBOL_METHOD("getUserId", "()Ljava/lang/String;", &MyBilling_getUserId),
-    JSYMBOL_METHOD("start", "(ILjava/lang/String;Ljava/lang/String;)I", &MyBilling_start),
+    JAVA_SYMBOL_METHOD("getUserId", "()Ljava/lang/String;", &MyBilling_getUserId),
+    JAVA_SYMBOL_METHOD("start", "(ILjava/lang/String;Ljava/lang/String;)I", &MyBilling_start),
 };
 
 static JClassMeta class_meta = {

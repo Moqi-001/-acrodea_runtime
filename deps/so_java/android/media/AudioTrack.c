@@ -84,8 +84,8 @@ static JClass sClass = NULL;
 static volatile JInt        audio_inited               = 0;
 static SceUID               audio_thid                 = -1;
 static SceUID               audio_port                 = -1;
-static JBoolean             audio_pause                = J_FALSE;
-static JBoolean             audio_stop                 = J_FALSE;
+static JBoolean             audio_pause                = JAVA_FALSE;
+static JBoolean             audio_stop                 = JAVA_FALSE;
 static AudioTrackImpl      *audio_tracks[TRACKS_NUM]   = {0};
 static int16_t             *audio_outputs[OUTPUTS_NUM] = {0};
 static size_t               audio_output_len           = 0;
@@ -229,14 +229,14 @@ static int audio_init() {
             audio_outputs[i] = malloc(audio_output_size);
             if (!audio_outputs[i]) {
                 so_loge("[AudioTrack] audio_init: malloc output buffers failed!");
-                return J_ERR;
+                return JAVA_ERR;
             }
         }
 
         audio_port = sceAudioOutOpenPort(SCE_AUDIO_OUT_PORT_TYPE_BGM, OUTPUT_FRAMES, OUTPUT_SAMPLE_RATE_HZ, SCE_AUDIO_OUT_MODE_STEREO);
         if (audio_port < 0) {
             so_loge("[AudioTrack] audio_init: sceAudioOutOpenPort failed! 0x%x", audio_port);
-            return J_ERR;
+            return JAVA_ERR;
         }
 
         audio_thid = sceKernelCreateThread("audio_thread", audio_thread, 0x10000100, 0x40000, 0, 0, NULL);
@@ -244,7 +244,7 @@ static int audio_init() {
             sceAudioOutReleasePort(audio_port);
             audio_port = -1;
             so_loge("[AudioTrack] audio_init: failed to create thread!");
-            return J_ERR;
+            return JAVA_ERR;
         }
 
         sceKernelCreateLwMutex(&audio_main_mutex, "audio_main_mutex", 0, 0, NULL);
@@ -259,20 +259,20 @@ static int audio_init() {
             audio_thid = -1;
 
             so_loge("[AudioTrack] audio_init: failed to start thread!");
-            return J_ERR;
+            return JAVA_ERR;
         }
 
         audio_inited = 1;
         so_logd("[AudioTrack] audio_init: initialize OK!");
         atomic_store(&audio_inited, 2);
-        return J_OK;
+        return JAVA_OK;
     }
 
     while (atomic_load(&audio_inited) != 2) {
         sceKernelDelayThread(1000);
     }
 
-    return J_OK;
+    return JAVA_OK;
 }
 
 void AudioTrack_ctor(AudioTrack thiz, JInt streamType, JInt sampleRateInHz, JInt channelConfig,
@@ -316,7 +316,7 @@ void AudioTrack_ctor(AudioTrack thiz, JInt streamType, JInt sampleRateInHz, JInt
             return;
     }
 
-    if (!audio_inited && audio_init() != J_OK) {
+    if (!audio_inited && audio_init() != JAVA_OK) {
         free(impl);
         return;
     }
@@ -632,16 +632,16 @@ JInt AudioTrack_getMinBufferSize(JInt sampleRateInHz, JInt channelConfig, JInt a
 
 static JSymbol class_symbols[] = {
     // method
-    JSYMBOL_METHOD("<init>", "(IIIIII)V", &AudioTrack_ctor),
-    JSYMBOL_METHOD("write", "([BII)I", &AudioTrack_write),
-    JSYMBOL_METHOD("setStereoVolume", "(FF)I", &AudioTrack_setStereoVolume),
-    JSYMBOL_METHOD("play", "()V", &AudioTrack_play),
-    JSYMBOL_METHOD("pause", "()V", &AudioTrack_pause),
-    JSYMBOL_METHOD("stop", "()V", &AudioTrack_stop),
-    JSYMBOL_METHOD("flush", "()V", &AudioTrack_flush),
-    JSYMBOL_METHOD("release", "()V", &AudioTrack_release),
+    JAVA_SYMBOL_METHOD("<init>", "(IIIIII)V", &AudioTrack_ctor),
+    JAVA_SYMBOL_METHOD("write", "([BII)I", &AudioTrack_write),
+    JAVA_SYMBOL_METHOD("setStereoVolume", "(FF)I", &AudioTrack_setStereoVolume),
+    JAVA_SYMBOL_METHOD("play", "()V", &AudioTrack_play),
+    JAVA_SYMBOL_METHOD("pause", "()V", &AudioTrack_pause),
+    JAVA_SYMBOL_METHOD("stop", "()V", &AudioTrack_stop),
+    JAVA_SYMBOL_METHOD("flush", "()V", &AudioTrack_flush),
+    JAVA_SYMBOL_METHOD("release", "()V", &AudioTrack_release),
     // static method
-    JSYMBOL_STATIC_METHOD("getMinBufferSize", "(III)I", &AudioTrack_getMinBufferSize),
+    JAVA_SYMBOL_STATIC_METHOD("getMinBufferSize", "(III)I", &AudioTrack_getMinBufferSize),
 };
 
 static JClassMeta class_meta = {

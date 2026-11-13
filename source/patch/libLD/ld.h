@@ -109,7 +109,7 @@ extern void *(*ldModuleLookupSymbol)(LdModule *mod, const char *sym_name, uint32
 
 void *__ldModuleFindImport(LdModule *mod, const char *symbol);
 void *__ldModuleFindExport(LdModule *mod, const char *symbol);
-int   __ldModuleHookImport(LdModule *mod, const char *symbol, void *replacement, so_hook_ref *p_hook);  // 需在重定位完成后调用
+int   __ldModuleHookImport(LdModule *mod, const char *symbol, void *repl, so_hook_ref *p_hook);  // 需在重定位完成后调用
 int   __ldModuleHookExport(LdModule *mod, const char *symbol, uintptr_t dst, so_hook_ref *p_hook);
 int   __ldModuleHookAddr(LdModule *mod, uintptr_t vaddr, uintptr_t dst, so_hook_ref *p_hook);
 

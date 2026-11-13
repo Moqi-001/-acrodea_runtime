@@ -16,30 +16,32 @@ typedef struct JavaBufferImpl {
 #define JAVA_BUFFER_CAST(_o) JAVA_BASE_CAST(JavaBufferImpl *, _o, JAVA_BUFFER_MAGIC)
 
 static JInt _buffer_ctor(JavaBufferImpl *buf, JLong size) {
-    if (!buf || size <= 0)
-        return J_ERR;
+    if (!buf || size <= 0) {
+        return JAVA_ERR;
+    }
 
     buf->magic = JAVA_BUFFER_MAGIC;
-    buf->adopt = J_TRUE;
+    buf->adopt = JAVA_TRUE;
     buf->data  = malloc(size);
     if (!buf->data) {
-        return J_ERR;
+        return JAVA_ERR;
     }
     buf->size = size;
 
-    return J_OK;
+    return JAVA_OK;
 }
 
 static JInt _direct_buffer_ctor(JavaBufferImpl *buf, void *address, JLong size, JBoolean copy, JBoolean adopt) {
-    if (!buf || !address || size <= 0)
-        return J_ERR;
+    if (!buf || !address || size <= 0) {
+        return JAVA_ERR;
+    }
 
     buf->magic = JAVA_BUFFER_MAGIC;
     if (copy) {
-        buf->adopt = J_TRUE;
+        buf->adopt = JAVA_TRUE;
         buf->data  = malloc(size);
         if (!buf->data) {
-            return J_ERR;
+            return JAVA_ERR;
         }
         memcpy(buf->data, address, size);
     } else {
@@ -48,12 +50,13 @@ static JInt _direct_buffer_ctor(JavaBufferImpl *buf, void *address, JLong size, 
     }
     buf->size = size;
 
-    return J_OK;
+    return JAVA_OK;
 }
 
 static void _buffer_dtor(JavaBufferImpl *buf) {
-    if (!buf)
+    if (!buf) {
         return;
+    }
 
     if (buf->adopt && buf->data) {
         free(buf->data);
@@ -66,7 +69,7 @@ JBuffer Buffer_new(JLong size) {
         return NULL;
     }
 
-    if (_buffer_ctor(buf, size) != J_OK) {
+    if (_buffer_ctor(buf, size) != JAVA_OK) {
         Object_release(buf);
         return NULL;
     }
@@ -80,7 +83,7 @@ JBuffer Buffer_newDirect(void *address, JLong size, JBoolean copy, JBoolean adop
         return NULL;
     }
 
-    if (_direct_buffer_ctor(buf, address, size, copy, adopt) != J_OK) {
+    if (_direct_buffer_ctor(buf, address, size, copy, adopt) != JAVA_OK) {
         Object_release(buf);
         return NULL;
     }
@@ -90,16 +93,18 @@ JBuffer Buffer_newDirect(void *address, JLong size, JBoolean copy, JBoolean adop
 
 void *Buffer_getData(JBuffer buffer) {
     JavaBufferImpl *buf = JAVA_BUFFER_CAST(buffer);
-    if (!buf)
+    if (!buf) {
         return NULL;
+    }
 
     return buf->data;
 }
 
 JLong Buffer_getSize(JBuffer buffer) {
     JavaBufferImpl *buf = JAVA_BUFFER_CAST(buffer);
-    if (!buf)
+    if (!buf) {
         return 0;
+    }
 
     return buf->size;
 }

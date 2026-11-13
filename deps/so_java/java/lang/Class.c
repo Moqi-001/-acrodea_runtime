@@ -117,12 +117,12 @@ static JSymbol *_class_find_symbol(const JavaClassImpl *cls, uint32_t hash, cons
 
 static JInt _class_register(JavaClassImpl *cls, JBoolean adopt) {
     if (cls->reg) {  // 已注册过
-        return J_OK;
+        return JAVA_OK;
     }
 
     JavaClassReg *reg = (JavaClassReg *)calloc(1, sizeof(JavaClassReg));
     if (!reg) {
-        return J_ERR;
+        return JAVA_ERR;
     }
 
     reg->clazz = adopt ? cls : Object_retain(cls);
@@ -137,7 +137,7 @@ static JInt _class_register(JavaClassImpl *cls, JBoolean adopt) {
 
     cls->reg = reg;
 
-    return J_OK;
+    return JAVA_OK;
 }
 
 static void _class_unregister(JavaClassImpl *cls) {
@@ -178,7 +178,7 @@ static JavaClassImpl *_find_class(const char *name) {
 
 static JInt _class_ctor(JavaClassImpl *cls, JClassMeta *meta) {
     if (!cls || !meta) {
-        return J_ERR;
+        return JAVA_ERR;
     }
 
     cls->magic   = JAVA_CLASS_MAGIC;
@@ -187,12 +187,12 @@ static JInt _class_ctor(JavaClassImpl *cls, JClassMeta *meta) {
     cls->super   = _find_class(meta->super_name);
     cls->hashtab = _class_create_hashtab(meta->symbols, meta->num_symbols);
     if (!cls->hashtab) {
-        return J_ERR;
+        return JAVA_ERR;
     }
 
-    _class_register(cls, J_TRUE);
+    _class_register(cls, JAVA_TRUE);
 
-    return J_OK;
+    return JAVA_OK;
 }
 
 static void _class_dtor(JavaClassImpl *cls) {
@@ -215,7 +215,7 @@ JClass JavaCreateClass(JClassMeta *meta) {
         return NULL;
     }
 
-    if (_class_ctor(cls, meta) != J_OK) {
+    if (_class_ctor(cls, meta) != JAVA_OK) {
         Object_release(cls);
         return NULL;
     }
@@ -254,9 +254,9 @@ const JSymbol *Class_findMethodSymbol(const JClass clazz, const char *name, cons
     }
 
     uint32_t hash  = _java_hash(name, sig);
-    uint32_t flags = JSYMBOL_FLAGS_METHOD;
+    uint32_t flags = JAVA_SYMBOL_FLAGS_METHOD;
     if (is_static) {
-        flags |= JSYMBOL_FLAGS_STATIC;
+        flags |= JAVA_SYMBOL_FLAGS_STATIC;
     }
 
     return _class_find_symbol(cls, hash, name, sig, flags);
@@ -269,9 +269,9 @@ const JSymbol *Class_findFieldSymbol(const JClass clazz, const char *name, const
     }
 
     uint32_t hash  = _java_hash(name, sig);
-    uint32_t flags = JSYMBOL_FLAGS_FIELD;
+    uint32_t flags = JAVA_SYMBOL_FLAGS_FIELD;
     if (is_static) {
-        flags |= JSYMBOL_FLAGS_STATIC;
+        flags |= JAVA_SYMBOL_FLAGS_STATIC;
     }
 
     return _class_find_symbol(cls, hash, name, sig, flags);
@@ -284,7 +284,7 @@ const JSymbol *Class_findNativeSymbol(const JClass clazz, const char *name, cons
     }
 
     uint32_t hash  = _java_hash(name, sig);
-    uint32_t flags = JSYMBOL_FLAGS_NATIVE | JSYMBOL_FLAGS_METHOD;
+    uint32_t flags = JAVA_SYMBOL_FLAGS_NATIVE | JAVA_SYMBOL_FLAGS_METHOD;
 
     return _class_find_symbol(cls, hash, name, sig, flags);
 }
@@ -302,34 +302,34 @@ JBoolean Class_isAssignableFrom(JClass _this, JClass _from) {
     JavaClassImpl *thiz = JAVA_CLASS_CAST(_this);
     JavaClassImpl *from = JAVA_CLASS_CAST(_from);
     if (!thiz || !from) {
-        return J_FALSE;
+        return JAVA_FALSE;
     }
 
     if (thiz == from) {
-        return J_TRUE;
+        return JAVA_TRUE;
     }
 
     // 判断 from 是否是 thiz 的子类 (子类包含了父类的所有数据，可以赋值给父类)
     JavaClassImpl *from_super = from->super;
     while (from_super) {
         if (thiz == from_super) {
-            return J_TRUE;
+            return JAVA_TRUE;
         }
         from_super = from_super->super;
     }
 
-    return J_FALSE;
+    return JAVA_FALSE;
 }
 
 JInt Class_registerNatives(JClass clazz, const JNativeMethod *methods, JInt num_methods) {
     JavaClassImpl *cls = JAVA_CLASS_CAST(clazz);
     if (!cls || !methods || num_methods <= 0) {
-        return J_ERR;
+        return JAVA_ERR;
     }
 
     JClassMeta *meta = cls->meta;
     if (!meta || !meta->symbols || meta->num_symbols <= 0) {
-        return J_ERR;
+        return JAVA_ERR;
     }
 
     so_logd("[JAVA][Class] registerNatives(%p,%p,%d): ('%s')", clazz, methods, num_methods, meta->name);
@@ -345,29 +345,29 @@ JInt Class_registerNatives(JClass clazz, const JNativeMethod *methods, JInt num_
         so_logd("   registered: name='%s', signature='%s', fnPtr=%p", methods[i].name, methods[i].signature, methods[i].fnPtr);
     }
 
-    return J_OK;
+    return JAVA_OK;
 }
 
 JInt Class_unregisterNatives(JClass clazz) {
     JavaClassImpl *cls = JAVA_CLASS_CAST(clazz);
     if (!cls) {
-        return J_ERR;
+        return JAVA_ERR;
     }
 
     JClassMeta *meta = cls->meta;
     if (!meta || !meta->symbols || meta->num_symbols <= 0) {
-        return J_ERR;
+        return JAVA_ERR;
     }
 
     so_logd("[JAVA][Class] UnregisterNatives(%p): ('%s')", clazz, meta->name);
     for (JInt i = 0; i < meta->num_symbols; i++) {
-        if (meta->symbols[i].flags == JSYMBOL_FLAGS_NATIVE && meta->symbols[i].addr) {
+        if (meta->symbols[i].flags == JAVA_SYMBOL_FLAGS_NATIVE && meta->symbols[i].addr) {
             *(void **)meta->symbols[i].addr = NULL;  // 置空 native 地址
             so_logd("   unregistered: name='%s', signature='%s'", meta->symbols[i].name, meta->symbols[i].signature);
         }
     }
 
-    return J_OK;
+    return JAVA_OK;
 }
 
 JClassMeta *Class_getMeta(JClass clazz) {

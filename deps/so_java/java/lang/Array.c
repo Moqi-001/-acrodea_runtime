@@ -57,12 +57,16 @@ static void _array_dtor(JObject arr) {
 
 JObject Array_new(JType type, JInt length) {
     JInt elem_size = _type_size(type);
-    if (length <= 0 || elem_size <= 0) return NULL;
+    if (length <= 0 || elem_size <= 0) {
+        return NULL;
+    }
 
     JInt elems_size = elem_size * length;
     elems_size      = ALIGN_UP(elems_size, sizeof(uintptr_t));
     JObject array   = Object_newWithoutClass(elems_size + sizeof(JavaArrayHeader), (JDtor)_array_dtor);
-    if (!array) return NULL;
+    if (!array) {
+        return NULL;
+    }
 
     if (type == JTYPE_OBJECT) {
         memset(array, 0, elems_size);
@@ -79,44 +83,66 @@ JObject Array_new(JType type, JInt length) {
 }
 
 JType Array_getType(JObject array) {
-    if (!array) return JTYPE_UNKNOWN;
+    if (!array) {
+        return JTYPE_UNKNOWN;
+    }
 
     JavaArrayHeader *header = JAVA_ARRAY_CAST(headerFromArray(array));
-    if (!header) return JTYPE_UNKNOWN;
+    if (!header) {
+        return JTYPE_UNKNOWN;
+    }
     return header->type;
 }
 
 JInt Array_getLength(JObject array) {
-    if (!array) return 0;
+    if (!array) {
+        return 0;
+    }
 
     JavaArrayHeader *header = JAVA_ARRAY_CAST(headerFromArray(array));
-    if (!header) return 0;
+    if (!header) {
+        return 0;
+    }
     return header->length;
 }
 
 JInt Array_getRegion(JObject array, JInt start, JInt length, void *dst) {
-    if (!array || !dst || start < 0 || length <= 0) return J_ERR;
+    if (!array || !dst || start < 0 || length <= 0) {
+        return JAVA_ERR;
+    }
 
     JavaArrayHeader *header = JAVA_ARRAY_CAST(headerFromArray(array));
-    if (!header) return J_ERR;
-    if (start + length > header->length) return J_ERR;
+    if (!header) {
+        return JAVA_ERR;
+    }
+    if (start + length > header->length) {
+        return JAVA_ERR;
+    }
 
     void *src = (char *)array + start * header->elem_size;
     memcpy(dst, src, length * header->elem_size);
 
-    return J_OK;
+    return JAVA_OK;
 }
 
 JInt Array_setRegion(JObject array, JInt start, JInt length, const void *src) {
-    if (!array || !src || start < 0 || length <= 0) return J_ERR;
+    if (!array || !src || start < 0 || length <= 0) {
+        return JAVA_ERR;
+    }
 
     JavaArrayHeader *header = JAVA_ARRAY_CAST(headerFromArray(array));
-    if (!header) return J_ERR;
-    if (start + length > header->length) return J_ERR;
+    if (!header) {
+        return JAVA_ERR;
+    }
+    if (start + length > header->length) {
+        return JAVA_ERR;
+    }
 
     void *dst = (char *)array + start * header->elem_size;
-    if (src == dst) return J_OK;  // 无需自拷贝
+    if (src == dst) {
+        return JAVA_OK;  // 无需自拷贝
+    }
     memcpy(dst, src, length * header->elem_size);
 
-    return J_OK;
+    return JAVA_OK;
 }

@@ -17,12 +17,12 @@
  *   目标函数 (src)                               跳板 (T, RWX)
  *   +------------------+                        +---------------------------+
  *   | LDR PC, [PC,#-4] | --+                    | 搬过来的原指令（已重定位）| <- 入口
- *   | .word replacement|   |                    +---------------------------+
+ *   | .word repl|   |                    +---------------------------+
  *   +------------------+   |                    | NOP 补齐（Thumb 2 字节）  |
  *   | 原指令 #3        |   |                    +---------------------------+
  *   | 原指令 #4        |   |                    | 跳回 src + code_len       |
  *   +------------------+   |                    +---------------------------+
- *                          +--> replacement()   | 字面量槽（PC 相对指令用） |
+ *                          +--> repl()   | 字面量槽（PC 相对指令用） |
  *                                   |           +---------------------------+
  *                                   +-- SO_CONTINUE 直接调用 T（一次普通调用）
  *
@@ -153,15 +153,14 @@ static int _thumb_it_count(uint16_t hw) {
     return 4 - tz;
 }
 
-static void _log_reject(const char *why, uintptr_t addr, uint32_t op) {
-    so_loge("[SOLINKER] hook: refuse to hook 0x%08x (%s, opcode=0x%08x)",
-            (unsigned)addr, why, (unsigned)op);
+static inline void _log_reject(const char *why, uintptr_t addr, uint32_t op) {
+    so_loge("[SOLINKER] hook: refuse to hook 0x%08x (%s, opcode=0x%08x)", addr, why, op);
 }
 
 /* ------------------------------------------------------------------ */
 /* 指令分析                                                            */
 /* 返回 1 = 需要字面量重定位（已填 rec），0 = 可原样搬运，              */
-/*      -1 = 用到 PC 或改变控制流，无法安全搬运                         */
+/*     -1 = 用到 PC 或改变控制流，无法安全搬运                         */
 /* ------------------------------------------------------------------ */
 
 static int _analyze_arm(uint32_t w, uintptr_t addr, instr_rec *rec) {
@@ -306,11 +305,11 @@ static int _lit_rt(const instr_rec *rec, uintptr_t src) {
 
 /* ------------------------------------------------------------------ */
 /* 规划：第一遍只解码、只算长度，确定搬运范围                          */
-/* need_trampoline = 0 时（永久替换，不需要 SO_CONTINUE）只求指令边界， */
+/* need_tramp = 0 时（永久替换，不需要 SO_CONTINUE）只求指令边界， */
 /* 分支与 PC 相对指令都可以直接覆盖，不需要重定位。                     */
 /* ------------------------------------------------------------------ */
 
-static int _plan_prologue(uintptr_t src, int is_thumb, void *boundary, int need_trampoline,
+static int _plan_prologue(uintptr_t src, int is_thumb, int need_tramp,
                           instr_rec *recs, size_t *out_num, size_t *out_code_len) {
     size_t    num        = 0;
     size_t    copied     = 0;
@@ -334,29 +333,20 @@ static int _plan_prologue(uintptr_t src, int is_thumb, void *boundary, int need_
         rec->off = (uint8_t)copied;
 
         if (is_thumb) {
-            if (boundary && cur + 2 > (uintptr_t)boundary) {
-                so_loge("[SOLINKER] hook: prologue of 0x%08x crosses boundary", (unsigned)src);
-                return -1;
-            }
-
             uint16_t hw1 = _get16((const void *)cur);
 
             if (_thumb_is_32(hw1)) {
                 size = 4;
-                if (boundary && cur + 4 > (uintptr_t)boundary) {
-                    so_loge("[SOLINKER] hook: prologue of 0x%08x crosses boundary", (unsigned)src);
-                    return -1;
-                }
 
                 uint16_t hw2 = _get16((const void *)(cur + 2));
-                kind         = need_trampoline ? _analyze_thumb32(hw1, hw2, cur, rec) : 0;
+                kind         = need_tramp ? _analyze_thumb32(hw1, hw2, cur, rec) : 0;
                 if (kind < 0) {
                     _log_reject("thumb32 uses PC/branch", cur, ((uint32_t)hw2 << 16) | hw1);
                     return -1;
                 }
             } else {
                 size = 2;
-                kind = need_trampoline ? _analyze_thumb16(hw1, cur, rec) : 0;
+                kind = need_tramp ? _analyze_thumb16(hw1, cur, rec) : 0;
                 if (kind < 0) {
                     _log_reject("thumb16 branch/adr", cur, hw1);
                     return -1;
@@ -368,13 +358,9 @@ static int _plan_prologue(uintptr_t src, int is_thumb, void *boundary, int need_
             }
         } else {
             size = 4;
-            if (boundary && cur + 4 > (uintptr_t)boundary) {
-                so_loge("[SOLINKER] hook: prologue of 0x%08x crosses boundary", (unsigned)src);
-                return -1;
-            }
 
             uint32_t w = _get32((const void *)cur);
-            kind       = need_trampoline ? _analyze_arm(w, cur, rec) : 0;
+            kind       = need_tramp ? _analyze_arm(w, cur, rec) : 0;
             if (kind < 0) {
                 _log_reject("arm uses PC/branch", cur, w);
                 return -1;
@@ -549,13 +535,13 @@ static int _emit_trampoline(uint8_t *tramp, uintptr_t src, int is_thumb,
 /* 对外接口                                                            */
 /* ------------------------------------------------------------------ */
 
-int so_hook_function_safe(void *target, void *boundary, void *replacement, so_hook_ref *p_hook) {
-    if (!target || !replacement) {
+int so_hook(void *target, void *repl, so_hook_ref *p_hook) {
+    if (!target || !repl) {
         return -1;
     }
 
-    uintptr_t src      = (uintptr_t)target;
-    int       is_thumb = (int)(src & 1);
+    uintptr_t tgt_addr = (uintptr_t)target & ~(uintptr_t)1;
+    int       is_thumb = (uintptr_t)target & 1;
     instr_rec recs[SO_TRAMP_MAX_INSTR];
     size_t    num      = 0;
     size_t    code_len = 0;
@@ -564,29 +550,21 @@ int so_hook_function_safe(void *target, void *boundary, void *replacement, so_ho
     size_t    slot_base;
     size_t    total;
     uint8_t  *tramp;
-    uint8_t   patch[SO_TRAMP_MAX_COPY];
-    size_t    plen;
-
-    src &= ~(uintptr_t)1;
 
     if (p_hook) {
         p_hook->target    = NULL;
-        p_hook->orig_func  = NULL;
+        p_hook->orig_func = NULL;
         p_hook->instr_len = 0;
     }
 
-    if (!is_thumb && (src & 3)) {
-        so_loge("[SOLINKER] hook: 0x%08x is not 4-byte aligned", (unsigned)src);
+    if (!is_thumb && (tgt_addr & 3)) {
+        so_loge("[SOLINKER] hook: target %p is not 4-byte aligned", (void *)tgt_addr);
         return -1;
     }
 
-    /*
-     * 没有 so_hook_ref 说明调用方不需要 SO_CONTINUE，即「永久替换」：
-     * 此时不需要跳板，也就不必关心序言里的分支/PC 相对指令，只求覆盖到指令边界。
-     */
-    int need_trampoline = (p_hook != NULL);
+    int need_tramp = (p_hook != NULL);
 
-    if (_plan_prologue(src, is_thumb, boundary, need_trampoline, recs, &num, &code_len) < 0) {
+    if (_plan_prologue(tgt_addr, is_thumb, need_tramp, recs, &num, &code_len) < 0) {
         return -1;
     }
 
@@ -596,14 +574,13 @@ int so_hook_function_safe(void *target, void *boundary, void *replacement, so_ho
         }
     }
 
-    if (need_trampoline) {
+    if (need_tramp) {
         jump_off  = ALIGN_UP(code_len, 4);
         slot_base = jump_off + 8;
         total     = slot_base + num_lit * 4;
 
         if (num_lit > SO_TRAMP_MAX_LIT || total > SO_TRAMP_SIZE) {
-            so_loge("[SOLINKER] hook: trampoline of 0x%08x needs %u bytes (max %u)",
-                    (unsigned)src, (unsigned)total, (unsigned)SO_TRAMP_SIZE);
+            so_loge("[SOLINKER] hook: trampoline of 0x%08x needs %u bytes (max %u)", tgt_addr, total, SO_TRAMP_SIZE);
             return -1;
         }
 
@@ -613,7 +590,7 @@ int so_hook_function_safe(void *target, void *boundary, void *replacement, so_ho
         }
         memset(tramp, 0, SO_TRAMP_SIZE);
 
-        if (_emit_trampoline(tramp, src, is_thumb, recs, num, code_len, slot_base) < 0) {
+        if (_emit_trampoline(tramp, tgt_addr, is_thumb, recs, num, code_len, slot_base) < 0) {
             return -1;
         }
         so_cacheflush(tramp, SO_TRAMP_SIZE);
@@ -622,75 +599,63 @@ int so_hook_function_safe(void *target, void *boundary, void *replacement, so_ho
     }
 
     if (p_hook) {
-        memcpy(p_hook->orig_instr, (void *)src, code_len);
-        p_hook->target    = (void *)(src | (uintptr_t)is_thumb);
-        p_hook->orig_func  = (void *)((uintptr_t)tramp | (uintptr_t)is_thumb);
-        p_hook->instr_len = (int)code_len;
+        p_hook->target    = (void *)(tgt_addr | is_thumb);
+        p_hook->orig_func = (void *)((uintptr_t)tramp | is_thumb);
+        memcpy(p_hook->orig_instr, (void *)tgt_addr, code_len);
+        p_hook->instr_len = code_len;
     }
 
-    /* 构造目标函数上的跳转补丁（先放到栈上，再按安全顺序落地） */
-    memset(patch, 0, sizeof(patch));
+    size_t put_len;
     if (is_thumb) {
-        uint32_t repl = (uint32_t)(uintptr_t)replacement;
-
-        if (src & 2) {
-            _put16(patch + 0, 0xBF00);     /* NOP：把 LDR.W 顶到 4 字节对齐处 */
-            _put32(patch + 2, 0xF000F8DF); /* LDR.W PC, [PC] */
-            _put32(patch + 6, repl);
-            plen = 10;
+        if (tgt_addr & 2) {
+            _put16((void *)(tgt_addr + 0), 0xBF00);     /* NOP：把 LDR.W 顶到 4 字节对齐处 */
+            _put32((void *)(tgt_addr + 2), 0xF000F8DF); /* LDR.W PC, [PC] */
+            _put32((void *)(tgt_addr + 6), (uint32_t)repl);
+            put_len = 10;
         } else {
-            _put32(patch + 0, 0xF000F8DF); /* LDR.W PC, [PC] */
-            _put32(patch + 4, repl);
-            plen = 8;
+            _put32((void *)(tgt_addr + 0), 0xF000F8DF); /* LDR.W PC, [PC] */
+            _put32((void *)(tgt_addr + 4), (uint32_t)repl);
+            put_len = 8;
         }
 
-        for (size_t i = plen; i + 1 < code_len; i += 2) {
-            _put16(patch + i, 0xBF00);
+        /* 剩余置 NOP */
+        for (size_t i = put_len; i + 2 <= code_len; i += 2) {
+            _put16((void *)(tgt_addr + i), 0xBF00); /* NOP */
         }
     } else {
-        _put32(patch + 0, 0xE51FF004); /* LDR PC, [PC, #-4] */
-        _put32(patch + 4, (uint32_t)(uintptr_t)replacement);
-        plen = 8;
+        _put32((void *)(tgt_addr + 0), 0xE51FF004); /* LDR PC, [PC, #-4] */
+        _put32((void *)(tgt_addr + 4), (uint32_t)repl);
+        put_len = 8;
 
-        for (size_t i = plen; i + 3 < code_len; i += 4) {
-            _put32(patch + i, 0xE1A00000); /* MOV r0,r0 */
+        /* 剩余置 NOP */
+        for (size_t i = put_len; i + 4 <= code_len; i += 4) {
+            _put32((void *)(tgt_addr + i), 0xE1A00000); /* MOV r0,r0 */
         }
     }
 
-    /*
-     * 落地写入：先字面量、再指令本体，把「并发线程取到跳转指令却没取到字面量」
-     * 的窗口降到最小。注意这只降低概率，安装 hook 本身仍应在相关代码静止时进行；
-     * 安装完成后 SO_CONTINUE 与正常调用都不会再改写这段代码。
-     */
-    if (is_thumb) {
-        if (src & 2) {
-            memcpy((void *)(src + 6), patch + 6, 4); /* 字面量 */
-            memcpy((void *)(src + 2), patch + 2, 4); /* LDR.W */
-            memcpy((void *)(src + 0), patch + 0, 2); /* NOP */
-        } else {
-            memcpy((void *)(src + 4), patch + 4, 4); /* 字面量 */
-            memcpy((void *)(src + 2), patch + 2, 2); /* LDR.W 后半 */
-            memcpy((void *)(src + 0), patch + 0, 2); /* LDR.W 前半 */
-        }
-    } else {
-        memcpy((void *)(src + 4), patch + 4, 4); /* 字面量 */
-        memcpy((void *)(src + 0), patch + 0, 4); /* LDR PC */
-    }
+    so_cacheflush((void *)tgt_addr, code_len);
 
-    /* 被覆盖区域内剩下的字节统一填 NOP，避免残留半条指令 */
-    if (code_len > plen) {
-        memcpy((void *)(src + plen), patch + plen, code_len - plen);
-    }
-
-    so_cacheflush((void *)src, code_len);
-
-    so_logd("[SOLINKER] hook: 0x%08x -> %p, trampoline=%p, %u bytes", (unsigned)src, replacement,
-            (void *)((uintptr_t)tramp | (uintptr_t)(tramp ? is_thumb : 0)), (unsigned)code_len);
+    so_logd("[SOLINKER] hook: %p->%p, trampoline=%p, %u bytes", target, repl, tramp, code_len);
     return 0;
 }
 
-int so_hook_function(void *target, void *replacement, so_hook_ref *p_hook) {
-    return so_hook_function_safe(target, NULL, replacement, p_hook);
+int so_hook_got(void *slot, void *repl, so_hook_ref *p_hook) {
+    if (!slot || !repl) {
+        return -1;
+    }
+
+    size_t instr_len = sizeof(void *);
+
+    if (p_hook) {
+        p_hook->target    = slot;
+        p_hook->orig_func = *(void **)slot;
+        memcpy(p_hook->orig_instr, slot, instr_len);
+        p_hook->instr_len = instr_len;
+    }
+
+    memcpy(slot, &repl, instr_len);
+    so_cacheflush(slot, instr_len);
+    return 0;
 }
 
 int so_unhook(so_hook_ref *p_hook) {
@@ -698,31 +663,23 @@ int so_unhook(so_hook_ref *p_hook) {
         return -1;
     }
 
-    uintptr_t src = (uintptr_t)p_hook->target & ~(uintptr_t)1;
+    uintptr_t dst = (uintptr_t)p_hook->target & ~(uintptr_t)1;
 
-    memcpy((void *)src, p_hook->orig_instr, (size_t)p_hook->instr_len);
-    so_cacheflush((void *)src, (size_t)p_hook->instr_len);
+    memcpy((void *)dst, p_hook->orig_instr, p_hook->instr_len);
+    so_cacheflush((void *)dst, p_hook->instr_len);
 
-    p_hook->target   = NULL;
+    p_hook->target    = NULL;
     p_hook->orig_func = NULL;
 
     return 0;
 }
 
-int so_inject_data_safe(void *target, void *boundary, const void *data, size_t len) {
-    if (!target || !data || len == 0) {
+int so_inject_data(void *target, const void *repl, size_t len) {
+    if (!target || !repl || len == 0) {
         return -1;
     }
 
-    if (boundary && (uintptr_t)target + len > (uintptr_t)boundary) {
-        return -1; /* 超出边界 */
-    }
-
-    memcpy(target, data, len);
+    memcpy(target, repl, len);
     so_cacheflush(target, len);
     return 0;
-}
-
-int so_inject_data(void *target, const void *data, size_t len) {
-    return so_inject_data_safe(target, NULL, data, len);
 }

@@ -33,8 +33,8 @@ jint MyMovieBridge_play(MyMovieBridge thiz, JString path, jlong offset, jlong si
 
 static JSymbol class_symbols[] = {
     // static native
-    JSYMBOL_METHOD("setType", "(I)I", &MyMovieBridge_setType),
-    JSYMBOL_METHOD("play", "(Ljava/lang/String;JJ)I", &MyMovieBridge_play),
+    JAVA_SYMBOL_METHOD("setType", "(I)I", &MyMovieBridge_setType),
+    JAVA_SYMBOL_METHOD("play", "(Ljava/lang/String;JJ)I", &MyMovieBridge_play),
 };
 
 static JClassMeta class_meta = {

@@ -213,11 +213,11 @@ static so_symbol libc_symbols[] = {
     SO_SYMBOL_FUNC("__cxa_finalize", &__cxa_finalize),
 
     // ===== C++ Runtime Support =====
-    SO_SYMBOL_OBJ("__dso_handle", &__dso_handle, sizeof(__dso_handle)),
+    SO_SYMBOL_OBJECT("__dso_handle", &__dso_handle, sizeof(__dso_handle)),
 
     // ===== Stack Protection =====
     SO_SYMBOL_FUNC("__stack_chk_fail", &__stack_chk_fail),
-    SO_SYMBOL_OBJ("__stack_chk_guard", &__stack_chk_guard, sizeof(__stack_chk_guard)),
+    SO_SYMBOL_OBJECT("__stack_chk_guard", &__stack_chk_guard, sizeof(__stack_chk_guard)),
 
     // ===== Assertion / Debug =====
     SO_SYMBOL_FUNC("__assert", &__assert),
@@ -274,7 +274,7 @@ static so_symbol libc_symbols[] = {
     SO_SYMBOL_FUNC("strxfrm", &strxfrm),
 
     // ===== stdio - Internal =====
-    SO_SYMBOL_OBJ("__sF", &__sF_fake, sizeof(__sF_fake)),
+    SO_SYMBOL_OBJECT("__sF", &__sF_fake, sizeof(__sF_fake)),
     SO_SYMBOL_FUNC("__srget", &__srget),
     SO_SYMBOL_FUNC("__swbuf", &__swbuf),
 
@@ -357,9 +357,9 @@ static so_symbol libc_symbols[] = {
     SO_SYMBOL_FUNC("ungetwc", &ungetwc),
 
     // ===== ctype (Character Classification) =====
-    SO_SYMBOL_OBJ("_ctype_", &BIONIC_C_ctype_, sizeof(BIONIC_C_ctype_)),
-    SO_SYMBOL_OBJ("_tolower_tab_", &BIONIC_C_tolower_, sizeof(BIONIC_C_tolower_)),
-    SO_SYMBOL_OBJ("_toupper_tab_", &BIONIC_C_toupper_, sizeof(BIONIC_C_toupper_)),
+    SO_SYMBOL_OBJECT("_ctype_", &BIONIC_C_ctype_, sizeof(BIONIC_C_ctype_)),
+    SO_SYMBOL_OBJECT("_tolower_tab_", &BIONIC_C_tolower_, sizeof(BIONIC_C_tolower_)),
+    SO_SYMBOL_OBJECT("_toupper_tab_", &BIONIC_C_toupper_, sizeof(BIONIC_C_toupper_)),
     SO_SYMBOL_FUNC("isalnum", &isalnum),
     SO_SYMBOL_FUNC("isalpha", &isalpha),
     SO_SYMBOL_FUNC("isblank", &isblank),
@@ -693,7 +693,7 @@ static so_symbol libc_symbols[] = {
     SO_SYMBOL_FUNC("setlocale", &setlocale),
 
     // ===== Bionic (Android libc) Extensions =====
-    SO_SYMBOL_OBJ("__page_size", &__page_size, sizeof(__page_size)),
+    SO_SYMBOL_OBJECT("__page_size", &__page_size, sizeof(__page_size)),
     SO_SYMBOL_FUNC("__system_property_get", &__system_property_get_soloader),
 
     // ===== Google Extensions =====

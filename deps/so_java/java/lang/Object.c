@@ -30,7 +30,9 @@ typedef struct JavaObjectHeader {
 #define headerFromObject(_obj)    JAVA_OBJECT_CAST(((JavaObjectHeader *)(_obj) - 1))
 
 JObject _object_new(JClass clazz, JInt size, JDtor dtor) {
-    if (size <= 0) return NULL;
+    if (size <= 0) {
+        return NULL;
+    }
 
     JavaObjectHeader *header = (JavaObjectHeader *)so_shared_buffer_alloc(sizeof(JavaObjectHeader) + size);
     if (!header) {
@@ -58,17 +60,23 @@ JObject Object_newWithoutClass(JInt size, JDtor dtor) {
 }
 
 JObject Object_retain(JObject object) {
-    if (!object) return NULL;
+    if (!object) {
+        return NULL;
+    }
 
     JavaObjectHeader *header = headerFromObject(object);
-    if (!header) return NULL;
+    if (!header) {
+        return NULL;
+    }
     so_shared_buffer_retain(header);
 
     return object;
 }
 
 JInt Object_release(JObject object) {
-    if (!object) return -1;
+    if (!object) {
+        return -1;
+    }
 
     JavaObjectHeader *header = headerFromObject(object);
     JInt              prev   = so_shared_buffer_release_keep(header);
@@ -95,7 +103,9 @@ JInt Object_release(JObject object) {
 }
 
 JInt Object_releaseKeep(JObject object) {
-    if (!object) return -1;
+    if (!object) {
+        return -1;
+    }
 
     JavaObjectHeader *header = headerFromObject(object);
     JInt              prev   = so_shared_buffer_release_keep(header);
@@ -104,7 +114,9 @@ JInt Object_releaseKeep(JObject object) {
 }
 
 void Object_releaseForce(JObject object) {
-    if (!object) return;
+    if (!object) {
+        return;
+    }
 
     JavaObjectHeader *header = headerFromObject(object);
     if (header->dtor) {
@@ -125,21 +137,27 @@ void Object_releaseForce(JObject object) {
 }
 
 JInt Object_retainWeak(JObject object, JObject *ref_ptr) {
-    if (!object || !ref_ptr) return J_ERR;
+    if (!object || !ref_ptr) {
+        return JAVA_ERR;
+    }
 
     JavaObjectHeader *header = headerFromObject(object);
     JavaWeakRef      *node   = (JavaWeakRef *)malloc(sizeof(JavaWeakRef));
-    if (!node) return J_ERR;
+    if (!node) {
+        return JAVA_ERR;
+    }
 
     node->ref_ptr     = ref_ptr;
     node->next        = header->weak_refs;
     header->weak_refs = node;
 
-    return J_OK;
+    return JAVA_OK;
 }
 
 void Object_releaseWeak(JObject object, JObject *ref_ptr) {
-    if (!object || !ref_ptr) return;
+    if (!object || !ref_ptr) {
+        return;
+    }
 
     JavaObjectHeader *header = headerFromObject(object);
     JavaWeakRef      *prev   = NULL;
@@ -160,7 +178,9 @@ void Object_releaseWeak(JObject object, JObject *ref_ptr) {
 }
 
 JClass Object_getClass(JObject object) {
-    if (!object) return 0;
+    if (!object) {
+        return 0;
+    }
 
     JavaObjectHeader *header = headerFromObject(object);
 
@@ -168,7 +188,9 @@ JClass Object_getClass(JObject object) {
 }
 
 JInt Object_getSize(JObject object) {
-    if (!object) return 0;
+    if (!object) {
+        return 0;
+    }
 
     JavaObjectHeader *header = headerFromObject(object);
 

@@ -60,42 +60,17 @@ void *__ldModuleFindExport(LdModule *mod, const char *symbol) {
     return ldModuleLookupSymbol(mod, symbol, hash, STV_DEFAULT, NULL, 0);
 }
 
-int __ldModuleHookImport(LdModule *mod, const char *symbol, void *replacement, so_hook_ref *p_hook) {
+int __ldModuleHookImport(LdModule *mod, const char *symbol, void *repl, so_hook_ref *p_hook) {
     void *slot = _find_import_slot(mod, symbol);
-    if (!slot) {
-        so_loge("__ldModuleHookImport('%s'): import slot not found!", symbol);
-        return -1;
-    }
-
-    if (p_hook && !*(void **)slot) {
-        so_loge("__ldModuleHookImport('%s'): slot %p not relocated yet, hook skipped!", symbol, slot);
-        return -1;
-    }
-
-    size_t instr_len = sizeof(void *);
-    void  *boundary  = (void *)((uintptr_t)mod->load_base + mod->load_size);
-    if ((uintptr_t)slot + instr_len > (uintptr_t)boundary) {
-        return -1; /* 超出边界 */
-    }
-
-    if (p_hook) {
-        p_hook->target   = slot;
-        p_hook->orig_func = *(void **)slot;
-        memcpy(p_hook->orig_instr, slot, instr_len);
-        p_hook->instr_len = instr_len;
-    }
-
-    memcpy(slot, &replacement, instr_len);
-    so_cacheflush(slot, instr_len);
-    return 0;
+    return so_hook_got(slot, repl, p_hook);
 }
 
 int __ldModuleHookExport(LdModule *mod, const char *symbol, uintptr_t dst, so_hook_ref *p_hook) {
     void *target = __ldModuleFindExport(mod, symbol);
-    return so_hook_function(target, (void *)dst, p_hook);
+    return so_hook(target, (void *)dst, p_hook);
 }
 
 int __ldModuleHookAddr(LdModule *mod, uintptr_t vaddr, uintptr_t dst, so_hook_ref *p_hook) {
     void *target = (char *)mod->load_base + mod->load_offset + vaddr;
-    return so_hook_function(target, (void *)dst, p_hook);
+    return so_hook(target, (void *)dst, p_hook);
 }

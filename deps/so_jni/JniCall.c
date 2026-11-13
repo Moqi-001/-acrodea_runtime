@@ -82,6 +82,7 @@ jint JniMarshalCallArguments(JniCallFrame *frame) {
                         jdouble d;
                         jfloat  f[2];
                     } u;
+
                     u.d                     = val;
                     float_regs[float_idx++] = u.f[0];  // 低32位
                     float_regs[float_idx++] = u.f[1];  // 高32位
@@ -90,6 +91,7 @@ jint JniMarshalCallArguments(JniCallFrame *frame) {
                         jdouble d;
                         jint    i[2];
                     } u;
+
                     u.d                 = val;
                     int_regs[int_idx++] = u.i[0];  // 低32位
                     int_regs[int_idx++] = u.i[1];  // 高32位
@@ -108,6 +110,7 @@ jint JniMarshalCallArguments(JniCallFrame *frame) {
                         jfloat f;
                         jint   i;
                     } u;
+
                     u.f                 = val;
                     int_regs[int_idx++] = u.i;
 #endif
@@ -124,6 +127,7 @@ jint JniMarshalCallArguments(JniCallFrame *frame) {
                         jlong l;
                         jint  i[2];
                     } u;
+
                     u.l                 = val;
                     int_regs[int_idx++] = u.i[0];  // 低32位
                     int_regs[int_idx++] = u.i[1];  // 高32位
@@ -161,7 +165,9 @@ jint JniCallCommonMethod(void *result, jobject object, jmethodID methodID, ...) 
 
 jint JniCallCommonMethodV(void *result, jobject object, jmethodID methodID, va_list args) {
     JniMethod *method = (JniMethod *)methodID;
-    if (!method) return JNI_ERR;
+    if (!method) {
+        return JNI_ERR;
+    }
 
     JniCallFrame frame = {
         .method = method,
@@ -178,7 +184,7 @@ jint JniCallCommonMethodV(void *result, jobject object, jmethodID methodID, va_l
     JniForwardMethod(&frame, result);
 
     if (result && JNI_TYPE_IS_OBJECT(method->retType)) {
-        JObject obj     = *(JObject *)result;
+        JObject obj        = *(JObject *)result;
         *(jobject *)result = JniNewLocalRefFromJava(obj);
         Object_release(obj);
     }
@@ -188,7 +194,9 @@ jint JniCallCommonMethodV(void *result, jobject object, jmethodID methodID, va_l
 
 jint JniCallCommonMethodA(void *result, jobject object, jmethodID methodID, const jvalue *args) {
     JniMethod *method = (JniMethod *)methodID;
-    if (!method) return JNI_ERR;
+    if (!method) {
+        return JNI_ERR;
+    }
 
     JniCallFrame frame = {
         .method = method,
@@ -205,7 +213,7 @@ jint JniCallCommonMethodA(void *result, jobject object, jmethodID methodID, cons
     JniForwardMethod(&frame, result);
 
     if (result && JNI_TYPE_IS_OBJECT(method->retType)) {
-        JObject obj     = *(JObject *)result;
+        JObject obj        = *(JObject *)result;
         *(jobject *)result = JniNewLocalRefFromJava(obj);
         Object_release(obj);
     }
@@ -226,20 +234,28 @@ jint JniCallNonvirtualCommonMethod(void *result, jobject object, jclass clazz, j
 
 jint JniCallNonvirtualCommonMethodV(void *result, jobject object, jclass clazz, jmethodID methodID, va_list args) {
     JniMethod *method = (JniMethod *)methodID;
-    if (!method || method->isStatic) return JNI_ERR;
+    if (!method || method->isStatic) {
+        return JNI_ERR;
+    }
 
     jmethodID cls_methodID = JniGetMethodID(clazz, method->name, method->signature);
-    if (!cls_methodID) return JNI_ERR;
+    if (!cls_methodID) {
+        return JNI_ERR;
+    }
 
     return JniCallCommonMethodV(result, object, cls_methodID, args);
 }
 
 jint JniCallNonvirtualCommonMethodA(void *result, jobject object, jclass clazz, jmethodID methodID, const jvalue *args) {
     JniMethod *method = (JniMethod *)methodID;
-    if (!method || method->isStatic) return JNI_ERR;
+    if (!method || method->isStatic) {
+        return JNI_ERR;
+    }
 
     jmethodID cls_methodID = JniGetMethodID(clazz, method->name, method->signature);
-    if (!cls_methodID) return JNI_ERR;
+    if (!cls_methodID) {
+        return JNI_ERR;
+    }
 
     return JniCallCommonMethodA(result, object, cls_methodID, args);
 }

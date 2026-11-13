@@ -23,7 +23,7 @@ MyExtensionInterface ExtensionManager_getExtensonByName(ExtensionManager thiz, J
 }
 
 static JSymbol class_symbols[] = {
-    JSYMBOL_METHOD("getExtensonByName", "(Ljava/lang/String;)Lcom/acrodea/vividruntime/launcher/extension/MyExtensionInterface;", &ExtensionManager_getExtensonByName),
+    JAVA_SYMBOL_METHOD("getExtensonByName", "(Ljava/lang/String;)Lcom/acrodea/vividruntime/launcher/extension/MyExtensionInterface;", &ExtensionManager_getExtensonByName),
 };
 
 static JClassMeta class_meta = {

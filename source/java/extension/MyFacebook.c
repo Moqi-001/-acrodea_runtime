@@ -16,7 +16,7 @@ static void dummy() {
 
 static JSymbol class_symbols[] = {
     // static native
-    JSYMBOL_STATIC_METHOD("dummy", "()V", &dummy),
+    JAVA_SYMBOL_STATIC_METHOD("dummy", "()V", &dummy),
 };
 
 static JClassMeta class_meta = {

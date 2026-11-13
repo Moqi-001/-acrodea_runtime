@@ -1,11 +1,11 @@
 #include "so_jni_internal.h"
 
-#define NEW_ARRAY(_jtype, _length, _jtype_enum)                    \
-    ({                                                             \
-        JObject     arr    = Array_new(_jtype_enum, _length); \
-        _jtype##Array result = JniNewLocalRefFromJava(arr);        \
+#define NEW_ARRAY(_jtype, _length, _jtype_enum)                 \
+    ({                                                          \
+        JObject       arr    = Array_new(_jtype_enum, _length); \
+        _jtype##Array result = JniNewLocalRefFromJava(arr);     \
         Object_release(arr);                                    \
-        result;                                                    \
+        result;                                                 \
     })
 
 #define GET_ARRAY_ELEMENTS(_jtype, _array, _isCopy) \
@@ -57,7 +57,7 @@ jobjectArray JniNewObjectArray(jsize length, jclass elementClass, jobject initia
 
 jobject JniGetObjectArrayElement(jobjectArray array, jsize index) {
     JObject *arr    = JniObjectToJava(array);
-    jsize       length = Array_getLength(arr);
+    jsize    length = Array_getLength(arr);
     if (!arr || index < 0 || index >= length) {
         return NULL;
     }
@@ -67,13 +67,15 @@ jobject JniGetObjectArrayElement(jobjectArray array, jsize index) {
 
 void JniSetObjectArrayElement(jobjectArray array, jsize index, jobject value) {
     JObject *arr    = JniObjectToJava(array);
-    jsize       length = Array_getLength(arr);
+    jsize    length = Array_getLength(arr);
     if (!arr || index < 0 || index >= length) {
         return;
     }
 
     JObject val = JniObjectToJava(value);
-    if (arr[index] == val) return;
+    if (arr[index] == val) {
+        return;
+    }
 
     if (arr[index]) {
         Object_release(arr[index]);

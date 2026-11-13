@@ -36,9 +36,9 @@ Surface Surface_new() {
 
 static JSymbol class_symbols[] = {
     // static native
-    JSYMBOL_FIELD("mSurface", "I", offsetof(struct _Surface, mSurface)),
-    JSYMBOL_FIELD("mNativeSurface", "I", offsetof(struct _Surface, mNativeSurface)),
-    JSYMBOL_FIELD("mNativeObject", "I", offsetof(struct _Surface, mNativeObject)),
+    JAVA_SYMBOL_FIELD("mSurface", "I", offsetof(struct _Surface, mSurface)),
+    JAVA_SYMBOL_FIELD("mNativeSurface", "I", offsetof(struct _Surface, mNativeSurface)),
+    JAVA_SYMBOL_FIELD("mNativeObject", "I", offsetof(struct _Surface, mNativeObject)),
 };
 
 static JClassMeta class_meta = {

@@ -336,10 +336,10 @@ jint MyTextInput_destroy(MyTextInput thiz) {
 
 static JSymbol class_symbols[] = {
     // instance methods
-    JSYMBOL_METHOD("setPropertycv", "(ILjava/lang/String;)I", &MyTextInput_setPropertycv),
-    JSYMBOL_METHOD("doModal", "()I", &MyTextInput_doModal),
-    JSYMBOL_METHOD("getText", "()Ljava/lang/String;", &MyTextInput_getText),
-    JSYMBOL_METHOD("destroy", "()I", &MyTextInput_destroy),
+    JAVA_SYMBOL_METHOD("setPropertycv", "(ILjava/lang/String;)I", &MyTextInput_setPropertycv),
+    JAVA_SYMBOL_METHOD("doModal", "()I", &MyTextInput_doModal),
+    JAVA_SYMBOL_METHOD("getText", "()Ljava/lang/String;", &MyTextInput_getText),
+    JAVA_SYMBOL_METHOD("destroy", "()I", &MyTextInput_destroy),
 };
 
 static JClassMeta class_meta = {

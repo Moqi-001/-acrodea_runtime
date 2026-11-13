@@ -28,7 +28,7 @@ typedef struct so_symbol {
 #define SO_SYMBOL_FUNC(name, p_func) \
     {name, (uintptr_t)(p_func), 0, ELF32_ST_INFO(STB_GLOBAL, STT_FUNC)}
 // 声明一个变量类型的符号表条目
-#define SO_SYMBOL_OBJ(name, p_obj, size) \
+#define SO_SYMBOL_OBJECT(name, p_obj, size) \
     {name, (uintptr_t)(p_obj), size, ELF32_ST_INFO(STB_GLOBAL, STT_OBJECT)}
 
 typedef struct so_library {
@@ -55,11 +55,10 @@ void *so_mmap(size_t length);
 void  so_munmap(void *addr);
 int   so_mprotect(void *addr, size_t length, int prot);
 
-int so_hook_function_safe(void *target, void *boundary, void *replacement, so_hook_ref *p_hook);  // Thumb 函数需传入 (实际地址 | 1)
-int so_hook_function(void *target, void *replacement, so_hook_ref *p_hook);                       // Thumb 函数需传入 (实际地址 | 1)
+int so_hook(void *target, void *repl, so_hook_ref *p_hook);    // Thumb 函数需传入 (实际地址 | 1)
+int so_hook_got(void *slot, void *repl, so_hook_ref *p_hook);  // 只改 slot 内的值，不修改其指向的函数
 int so_unhook(so_hook_ref *p_hook);
 
-int so_inject_data_safe(void *target, void *boundary, const void *data, size_t len);
 int so_inject_data(void *target, const void *data, size_t len);
 
 // hook 调用原函数
@@ -85,9 +84,9 @@ void so_module_release(so_module *mod);
 void *so_module_find_export(so_module *mod, const char *sym_name);
 void *so_module_find_import(so_module *mod, const char *sym_name);
 
-int so_module_hook_function(so_module *mod, ptrdiff_t vaddr, void *replacement, so_hook_ref *p_hook);  // Thumb 函数需传入"地址 | 1"
-int so_module_hook_export(so_module *mod, const char *sym_name, void *replacement, so_hook_ref *p_hook);
-int so_module_hook_import(so_module *mod, const char *sym_name, void *replacement, so_hook_ref *p_hook);
+int so_module_hook_address(so_module *mod, ptrdiff_t vaddr, void *repl, so_hook_ref *p_hook);  // Thumb 函数需传入"地址 | 1"
+int so_module_hook_export(so_module *mod, const char *sym_name, void *repl, so_hook_ref *p_hook);
+int so_module_hook_import(so_module *mod, const char *sym_name, void *repl, so_hook_ref *p_hook);
 
 int so_module_inject_data(so_module *mod, ptrdiff_t vaddr, const void *data, size_t len);
 

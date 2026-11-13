@@ -19,7 +19,7 @@ jint MyGgee_commonIsSLESCompatibility() {
 
 static JSymbol class_symbols[] = {
     // JAVA
-    JSYMBOL_METHOD("commonIsSLESCompatibility", "()I", &MyGgee_commonIsSLESCompatibility),
+    JAVA_SYMBOL_METHOD("commonIsSLESCompatibility", "()I", &MyGgee_commonIsSLESCompatibility),
 };
 
 static JClassMeta class_meta = {

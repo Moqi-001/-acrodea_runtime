@@ -78,15 +78,15 @@ static so_symbol libstdcxx_symbols[] = {
     SO_SYMBOL_FUNC("_ZdaPv", &_ZdaPv),
 
     // ===== C++ RTTI =====
-    SO_SYMBOL_OBJ("_ZTISt8bad_cast", &_ZTISt8bad_cast, 8),
-    SO_SYMBOL_OBJ("_ZTISt9exception", &_ZTISt9exception, 8),
+    SO_SYMBOL_OBJECT("_ZTISt8bad_cast", &_ZTISt8bad_cast, 8),
+    SO_SYMBOL_OBJECT("_ZTISt9exception", &_ZTISt9exception, 8),
     SO_SYMBOL_FUNC("_ZNSt8bad_castD1Ev", &_ZNSt8bad_castD1Ev),
     SO_SYMBOL_FUNC("_ZNSt9exceptionD2Ev", &_ZNSt9exceptionD2Ev),
 
     // ===== C++ RTTI vtables =====
-    SO_SYMBOL_OBJ("_ZTVN10__cxxabiv117__class_type_infoE", &_ZTVN10__cxxabiv117__class_type_infoE, 4),
-    SO_SYMBOL_OBJ("_ZTVN10__cxxabiv120__si_class_type_infoE", &_ZTVN10__cxxabiv120__si_class_type_infoE, 4),
-    SO_SYMBOL_OBJ("_ZTVN10__cxxabiv121__vmi_class_type_infoE", &_ZTVN10__cxxabiv121__vmi_class_type_infoE, 4),
+    SO_SYMBOL_OBJECT("_ZTVN10__cxxabiv117__class_type_infoE", &_ZTVN10__cxxabiv117__class_type_infoE, 4),
+    SO_SYMBOL_OBJECT("_ZTVN10__cxxabiv120__si_class_type_infoE", &_ZTVN10__cxxabiv120__si_class_type_infoE, 4),
+    SO_SYMBOL_OBJECT("_ZTVN10__cxxabiv121__vmi_class_type_infoE", &_ZTVN10__cxxabiv121__vmi_class_type_infoE, 4),
 
     // ===== C++ runtime =====
     SO_SYMBOL_FUNC("_ZSt9terminatev", &_ZSt9terminatev),

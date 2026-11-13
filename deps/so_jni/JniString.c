@@ -2,7 +2,9 @@
 
 jstring JniNewString(const jchar *utf16, jsize len) {
     JString str = String_new(utf16, len);
-    if (!str) return NULL;
+    if (!str) {
+        return NULL;
+    }
 
     jstring result = JniNewLocalRefFromJava(str);
     Object_release(str);  // 由 LocalRef 托管
@@ -16,7 +18,9 @@ jsize JniGetStringLength(jstring string) {
 
 const jchar *JniGetStringChars(jstring string, jboolean *isCopy) {
     const jchar *result = String_getChars(JniObjectToJava(string));
-    if (isCopy) *isCopy = JNI_FALSE;
+    if (isCopy) {
+        *isCopy = JNI_FALSE;
+    }
 
     return result;
 }
@@ -31,7 +35,9 @@ jint JniGetStringRegion(jstring string, jsize start, jsize length, jchar *buf) {
 
 jstring JniNewStringUTF(const char *utf8) {
     JString str = String_newUTF(utf8);
-    if (!str) return NULL;
+    if (!str) {
+        return NULL;
+    }
 
     jstring result = JniNewLocalRefFromJava(str);
     Object_release(str);  // 由 LocalRef 托管
@@ -45,7 +51,9 @@ jsize JniGetStringUTFLength(jstring string) {
 
 const char *JniGetStringUTFChars(jstring string, jboolean *isCopy) {
     const char *result = String_getUTFChars(JniObjectToJava(string));
-    if (isCopy) *isCopy = JNI_FALSE;
+    if (isCopy) {
+        *isCopy = JNI_FALSE;
+    }
 
     return result;
 }

@@ -5,14 +5,18 @@
 static jint parse_signature(JniMethod *method) {
     const char *sig = method->signature;
 
-    if (!sig || sig[0] != '(') return JNI_ERR;
+    if (!sig || sig[0] != '(') {
+        return JNI_ERR;
+    }
 
     jint        capacity = 32;
     jint        count    = 0;
     const char *p        = sig + 1;
 
     JniArgParam *params = (JniArgParam *)malloc(capacity * sizeof(JniArgParam));
-    if (!params) return JNI_ERR;
+    if (!params) {
+        return JNI_ERR;
+    }
 
     while (*p && *p != ')') {
         JniArgParam *param = &params[count];
@@ -61,18 +65,28 @@ static jint parse_signature(JniMethod *method) {
                 param->type = JNI_TYPE_OBJECT;
                 count++;
                 p++;
-                while (*p && *p != ';') p++;
-                if (*p == ';') p++;
+                while (*p && *p != ';') {
+                    p++;
+                }
+                if (*p == ';') {
+                    p++;
+                }
                 break;
             case '[':
                 param->type = JNI_TYPE_ARRAY;
                 count++;
                 p++;
-                while (*p && *p == '[') p++;
+                while (*p && *p == '[') {
+                    p++;
+                }
                 if (*p == 'L') {
                     p++;
-                    while (*p && *p != ';') p++;
-                    if (*p == ';') p++;
+                    while (*p && *p != ';') {
+                        p++;
+                    }
+                    if (*p == ';') {
+                        p++;
+                    }
                 }
                 break;
             default:
@@ -181,7 +195,9 @@ static jint compute_layout(JniMethod *method) {
                 // 寄存器 S0~S3
                 if (JNI_TYPE_IS_WIDE(type)) {
                     int aligned_idx = float_idx;
-                    if (aligned_idx & 1) aligned_idx++;
+                    if (aligned_idx & 1) {
+                        aligned_idx++;
+                    }
                     if (aligned_idx <= 2) {
                         float_idx       = aligned_idx + 2;
                         param->stackOff = -1;
@@ -199,7 +215,9 @@ static jint compute_layout(JniMethod *method) {
                 // 寄存器 R0~R3
                 if (JNI_TYPE_IS_WIDE(type)) {
                     int aligned_idx = int_idx;
-                    if (aligned_idx & 1) aligned_idx++;
+                    if (aligned_idx & 1) {
+                        aligned_idx++;
+                    }
                     if (aligned_idx <= 2) {
                         int_idx         = aligned_idx + 2;
                         param->stackOff = -1;
@@ -233,12 +251,14 @@ static jint compute_layout(JniMethod *method) {
 
 JniMethod *JniCreateMethod(JSymbol *symbol) {
     JniMethod *method = malloc(sizeof(JniMethod));
-    if (!method) return NULL;
+    if (!method) {
+        return NULL;
+    }
 
     method->name      = symbol->name;
     method->signature = symbol->signature;
     method->fnPtr     = (void *)symbol->addr;
-    method->isStatic  = ((symbol->flags & JSYMBOL_FLAGS_STATIC) == JSYMBOL_FLAGS_STATIC);
+    method->isStatic  = ((symbol->flags & JAVA_SYMBOL_FLAGS_STATIC) == JAVA_SYMBOL_FLAGS_STATIC);
 
     // 解析签名
     if (parse_signature(method) != JNI_OK) {
@@ -258,12 +278,18 @@ JniMethod *JniCreateMethod(JSymbol *symbol) {
 
 jmethodID JniGetMethodID(const jclass clazz, const char *name, const char *sig) {
     JSymbol *symbol = (JSymbol *)Class_findMethodSymbol(JniObjectToJava(clazz), name, sig, JNI_FALSE);
-    if (!symbol) return NULL;
+    if (!symbol) {
+        return NULL;
+    }
 
-    if (symbol->method) return (jmethodID)symbol->method;
+    if (symbol->method) {
+        return (jmethodID)symbol->method;
+    }
 
     JniMethod *method = JniCreateMethod(symbol);
-    if (!method) return NULL;
+    if (!method) {
+        return NULL;
+    }
 
     symbol->method = (JMethod)method;
 
@@ -272,12 +298,18 @@ jmethodID JniGetMethodID(const jclass clazz, const char *name, const char *sig) 
 
 jmethodID JniGetStaticMethodID(const jclass clazz, const char *name, const char *sig) {
     JSymbol *symbol = (JSymbol *)Class_findMethodSymbol(JniObjectToJava(clazz), name, sig, JNI_TRUE);
-    if (!symbol) return NULL;
+    if (!symbol) {
+        return NULL;
+    }
 
-    if (symbol->method) return (jmethodID)symbol->method;
+    if (symbol->method) {
+        return (jmethodID)symbol->method;
+    }
 
     JniMethod *method = JniCreateMethod(symbol);
-    if (!method) return NULL;
+    if (!method) {
+        return NULL;
+    }
 
     symbol->method = (JMethod)method;
 

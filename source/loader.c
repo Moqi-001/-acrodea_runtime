@@ -89,7 +89,7 @@ static int init_opengl() {
     return 0;
 }
 
-static int soloader_create_modules() {
+static int soloader_setup_modules() {
     so_module_create(&libnativehelper_so);
     so_module_create(&liblog_so);
     so_module_create(&libcutils_so);
@@ -123,22 +123,18 @@ so_module *soloader_load_library(const char *soname) {
 }
 
 int soloader_jni_onload(so_module *mod) {
-    jint result = 0;
-
-    ENTER_JNI_CALL(0)
-    jint (*JNI_OnLoad)(JavaVM *, void *) = so_module_find_export(mod, "JNI_OnLoad");
-    if (JNI_OnLoad) {
-        result = JNI_OnLoad(&_java_vm, NULL);
+    int (*JNI_OnLoad)(JavaVM *, void *) = so_module_find_export(mod, "JNI_OnLoad");
+    if (!JNI_OnLoad) {
+        return 0;
     }
+
+    int result;
+    ENTER_JNI_CALL(0)
+    result = JNI_OnLoad(&_java_vm, NULL);
     EXIT_JNI_CALL(NULL)
 
-    if (result < 0) {
-        fatal_error("JNI_OnLoad: error!");
-        return -1;
-    }
-
-    so_logd("[LOADER] JNI_OnLoad success! ('%s')", so_module_get_name(mod));
-    return 0;
+    so_logd("[LOADER] JNI_OnLoad: %d ('%s')", result, so_module_get_name(mod));
+    return result;
 }
 
 int soloader_init() {
@@ -148,7 +144,7 @@ int soloader_init() {
     check_opengl();
     so_linker_init();
     so_jni_init();
-    soloader_create_modules();
+    soloader_setup_modules();
     soloader_setup_java();
     soloader_init_controls();
 

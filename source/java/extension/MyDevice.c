@@ -57,13 +57,13 @@ jint MyDevice_getMutedState() {
 
 static JSymbol class_symbols[] = {
     // JAVA
-    JSYMBOL_METHOD("getImei", "()Ljava/lang/String;", &MyDevice_getImei),
-    JSYMBOL_METHOD("getImsi", "()Ljava/lang/String;", &MyDevice_getImsi),
-    JSYMBOL_METHOD("setNavigationHiddenEnable", "(I)I", &MyDevice_setNavigationHiddenEnable),
-    JSYMBOL_METHOD("getNavigationHiddenState", "()I", &MyDevice_getNavigationHiddenState),
-    JSYMBOL_METHOD("getPlatformInfo", "()Ljava/lang/String;", &MyDevice_getPlatformInfo),
-    JSYMBOL_METHOD("setMutedEnable", "(I)I", &MyDevice_setMutedEnable),
-    JSYMBOL_METHOD("getMutedState", "()I", &MyDevice_getMutedState),
+    JAVA_SYMBOL_METHOD("getImei", "()Ljava/lang/String;", &MyDevice_getImei),
+    JAVA_SYMBOL_METHOD("getImsi", "()Ljava/lang/String;", &MyDevice_getImsi),
+    JAVA_SYMBOL_METHOD("setNavigationHiddenEnable", "(I)I", &MyDevice_setNavigationHiddenEnable),
+    JAVA_SYMBOL_METHOD("getNavigationHiddenState", "()I", &MyDevice_getNavigationHiddenState),
+    JAVA_SYMBOL_METHOD("getPlatformInfo", "()Ljava/lang/String;", &MyDevice_getPlatformInfo),
+    JAVA_SYMBOL_METHOD("setMutedEnable", "(I)I", &MyDevice_setMutedEnable),
+    JAVA_SYMBOL_METHOD("getMutedState", "()I", &MyDevice_getMutedState),
 };
 
 static JClassMeta class_meta = {

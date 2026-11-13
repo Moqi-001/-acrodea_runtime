@@ -13,7 +13,7 @@ JInt android_os_Build_VERSION_SDK_INT = 19;  // Android 4.4 / KitKat
 static JClass sVersionClass = NULL;
 
 static JSymbol VersionClass_symbols[] = {
-    JSYMBOL_STATIC_FIELD("SDK_INT", "I", &android_os_Build_VERSION_SDK_INT),
+    JAVA_SYMBOL_STATIC_FIELD("SDK_INT", "I", &android_os_Build_VERSION_SDK_INT),
 };
 
 static JClassMeta VersionClass_meta = {
