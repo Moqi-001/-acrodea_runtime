@@ -44,7 +44,15 @@ jobject JniNewObjectA(jclass clazz, jmethodID methodID, const jvalue *args) {
 }
 
 jclass JniGetObjectClass(jobject object) {
-    return JniNewLocalRefFromJava(Object_getClass(JniObjectToJava(object)));
+    JObject obj = JniObjectToJava(object);
+    if (!obj) {
+        return NULL;
+    }
+    JClass clazz = Object_getClass(obj);
+    if (!clazz) {
+        return NULL;
+    }
+    return JniNewLocalRefFromJava(clazz);
 }
 
 jboolean JniIsSameObject(jobject ref1, jobject ref2) {
@@ -54,6 +62,6 @@ jboolean JniIsSameObject(jobject ref1, jobject ref2) {
     return (obj1 == obj2) ? JNI_TRUE : JNI_FALSE;
 }
 
-jboolean JniIsInstanceOf(jobject obj, jclass clazz) {
-    return Object_isInstanceOf(JniObjectToJava(obj), JniObjectToJava(clazz));
+jboolean JniIsInstanceOf(jobject object, jclass clazz) {
+    return Object_isInstanceOf(JniObjectToJava(object), JniObjectToJava(clazz));
 }

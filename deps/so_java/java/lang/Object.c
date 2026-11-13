@@ -179,7 +179,7 @@ void Object_releaseWeak(JObject object, JObject *ref_ptr) {
 
 JClass Object_getClass(JObject object) {
     if (!object) {
-        return 0;
+        return NULL;
     }
 
     JavaObjectHeader *header = headerFromObject(object);

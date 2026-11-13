@@ -183,6 +183,7 @@ jint JniCallCommonMethodV(void *result, jobject object, jmethodID methodID, va_l
 
     JniForwardMethod(&frame, result);
 
+    // 对象交由jni托管，java端若要保持对对象的持有则需在java端增加引用。
     if (result && JNI_TYPE_IS_OBJECT(method->retType)) {
         JObject obj        = *(JObject *)result;
         *(jobject *)result = JniNewLocalRefFromJava(obj);

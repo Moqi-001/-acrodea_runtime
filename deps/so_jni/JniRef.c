@@ -2,7 +2,6 @@
 #include <string.h>
 
 #include <pthread.h>
-
 #include <so_common/so_logger.h>
 
 #include "so_jni_internal.h"
@@ -378,8 +377,10 @@ jobject JniPopLocalFrame(jobject result) {
     JniRefFrame *frame = ctx->frame;
     ctx->frame         = frame->prev;
 
-    if (result) {
-        result = JniNewLocalRef(result);
+    // 需对 Java 对象进行引用保护以防止弹帧时被释放
+    JObject obj = JniObjectToJava(result);
+    if (obj) {
+        Object_retain(obj);
     }
 
     for (jint i = frame->start; i < ctx->count; i++) {
@@ -390,7 +391,16 @@ jobject JniPopLocalFrame(jobject result) {
     }
 
     ctx->count = frame->start;  // 回退 index
-    free(frame);                // 释放 frame
+
+    // 切回上一帧且必须在释放当前帧后，才能将 result 注册到上一帧
+    if (obj) {
+        result = JniNewLocalRefFromJava(obj);
+        Object_release(obj);
+    } else {
+        result = NULL;
+    }
+
+    free(frame);  // 释放 frame
 
     return result;
 }
