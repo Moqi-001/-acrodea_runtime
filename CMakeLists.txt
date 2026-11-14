@@ -7,37 +7,40 @@ endif ()
 set(CMAKE_TOOLCHAIN_FILE "$ENV{VITASDK}/share/vita.toolchain.cmake" CACHE PATH "Toolchain file")
 include("$ENV{VITASDK}/share/vita.cmake" REQUIRED)
 
-if(RUNTIME_APP_ID EQUAL 705)
-  project(MugenmakaiDisgaea C CXX)
-  set(VITA_APP_NAME "Disgaea Disgaea")
-  set(VITA_TITLEID  "GGEE00705")
-  set(VITA_VPKNAME  "MugenmakaiDisgaea")
+# ---------------------------------------------------------------------------
+# 游戏清单：不指定 RUNTIME_APP_ID 时构建下面全部 4 个游戏；
+# 指定 -DRUNTIME_APP_ID=<id> 时只构建对应游戏（旧行为，产物命名不变）。
+# ---------------------------------------------------------------------------
+set(RUNTIME_GAMES "705;1277;1760;1761")
 
-elseif(RUNTIME_APP_ID EQUAL 1277)
+set(GAME_705_NAME    "MugenmakaiDisgaea")
+set(GAME_705_TITLE   "Disgaea Disgaea")
+set(GAME_705_TITLEID "GGEE00705")
+
+set(GAME_1277_NAME    "ShantaeRiskysRevenge")
+set(GAME_1277_TITLE   "Shantae Risky's Revenge")
+set(GAME_1277_TITLEID "GGEE01277")
+
+set(GAME_1760_NAME    "DevilMayCry4refrain")
+set(GAME_1760_TITLE   "Devil May Cry 4 refrain")
+set(GAME_1760_TITLEID "GGEE01760")
+
+set(GAME_1761_NAME    "GhostTrick")
+set(GAME_1761_TITLE   "Ghost Trick")
+set(GAME_1761_TITLEID "GGEE01761")
+
+if (NOT DEFINED RUNTIME_APP_ID OR "${RUNTIME_APP_ID}" STREQUAL "")
+  set(GAMES "${RUNTIME_GAMES}")
+  set(_multi TRUE)
   project(AcrodeaRuntime C CXX)
-  set(VITA_APP_NAME "Shantae Risky's Revenge")
-  set(VITA_TITLEID  "GGEE01277")
-  set(VITA_VPKNAME  "ShantaeRiskysRevenge")
-
-elseif(RUNTIME_APP_ID EQUAL 1760)
-  project(DevilMayCry4refrain C CXX)
-  set(VITA_APP_NAME "Devil May Cry 4 refrain")
-  set(VITA_TITLEID  "GGEE01760")
-  set(VITA_VPKNAME  "DevilMayCry4refrain")
-
-elseif(RUNTIME_APP_ID EQUAL 1761)
-  project(GhostTrick C CXX)
-  set(VITA_APP_NAME "Ghost Trick")
-  set(VITA_TITLEID  "GGEE01761")
-  set(VITA_VPKNAME  "GhostTrick")
-
 else()
-  set(RUNTIME_APP_ID 1760)
-  project(AcrodeaRuntime C CXX)
-  set(VITA_APP_NAME "AcrodeaRuntime")
-  set(VITA_TITLEID  "ACRODEA00")
-  set(VITA_VPKNAME  "AcrodeaRuntime")
-
+  list(FIND RUNTIME_GAMES "${RUNTIME_APP_ID}" _game_idx)
+  if (_game_idx EQUAL -1)
+    message(FATAL_ERROR "RUNTIME_APP_ID must be one of: ${RUNTIME_GAMES} (got '${RUNTIME_APP_ID}')")
+  endif()
+  set(GAMES "${RUNTIME_APP_ID}")
+  set(_multi FALSE)
+  project(${GAME_${RUNTIME_APP_ID}_NAME} C CXX)
 endif()
 
 # Vita application configuration
@@ -54,7 +57,6 @@ set(LOG_PATH "${DATA_PATH}log.txt" CACHE STRING "Path to log.txt")
 add_definitions(
   -DDATA_PATH="${DATA_PATH}" 
   -DLOG_PATH="${LOG_PATH}"
-  -DRUNTIME_APP_ID=${RUNTIME_APP_ID}
 )
 
 # Unique debug definition for loader's logging to not interfere with anything
@@ -109,7 +111,7 @@ file(GLOB_RECURSE SO_LIBM_SRC            deps/so_libs/libm/*.c)
 file(GLOB_RECURSE JAVA_SRC    source/java/*.c)
 file(GLOB_RECURSE PATCH_SRC   source/patch/*.c)
 
-add_executable(${CMAKE_PROJECT_NAME}
+set(RUNTIME_SOURCES
   ${SO_COMMON_SRC}
   ${SO_LINKER_SRC}
   ${SO_JAVA_SRC}
@@ -144,77 +146,110 @@ add_executable(${CMAKE_PROJECT_NAME}
   source/patch.c
 )
 
-target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM
-  PUBLIC ${CMAKE_SOURCE_DIR}/libs/include
-  PUBLIC ${CMAKE_SOURCE_DIR}/deps
-)
+foreach(_id IN LISTS GAMES)
+  set(_name  "${GAME_${_id}_NAME}")
+  set(_title "${GAME_${_id}_TITLE}")
+  set(_tid   "${GAME_${_id}_TITLEID}")
 
-target_include_directories(${CMAKE_PROJECT_NAME}
-  PUBLIC ${CMAKE_SOURCE_DIR}/source
-)
+  add_executable(${_name} ${RUNTIME_SOURCES})
 
-target_link_directories (${CMAKE_PROJECT_NAME}
-  PUBLIC ${CMAKE_SOURCE_DIR}/libs/lib
-)
+  target_compile_definitions(${_name} PRIVATE RUNTIME_APP_ID=${_id})
 
-target_link_libraries(${CMAKE_PROJECT_NAME}
-  -Wl,--whole-archive pthread -Wl,--no-whole-archive
-  speexdsp
-  mpg123
-  vitaGL
-  vitashark
-  SceShaccCgExt
-  taihen_stub
-  SceShaccCg_stub
-  kubridge_stub
-  mathneon
-  sqlite3
-  png
-  z
-  m
-  stdc++
-  SceHid_stub
-  SceCtrl_stub
-  SceTouch_stub
-  SceMotion_stub
-  SceAppMgr_stub
-  SceAppUtil_stub
-  SceAudio_stub
-  SceAudioIn_stub
-  SceCommonDialog_stub
-  SceDisplay_stub
-  SceKernelDmacMgr_stub
-  SceGxm_stub
-  ScePower_stub
-  SceVshBridge_stub
-  SceAvPlayer_stub
-)
+  target_include_directories(${_name} SYSTEM
+    PUBLIC ${CMAKE_SOURCE_DIR}/libs/include
+    PUBLIC ${CMAKE_SOURCE_DIR}/deps
+  )
 
-vita_create_self(eboot.bin ${CMAKE_PROJECT_NAME} UNSAFE NOASLR)
-vita_create_vpk(${VITA_VPKNAME}.vpk ${VITA_TITLEID} eboot.bin
-  VERSION ${VITA_VERSION}
-  NAME ${VITA_APP_NAME}
-  FILE ${CMAKE_SOURCE_DIR}/resources/cpuinfo cpuinfo
-  FILE ${CMAKE_SOURCE_DIR}/resources/meminfo meminfo
-  FILE ${CMAKE_SOURCE_DIR}/resources/urandom urandom
-  FILE ${CMAKE_SOURCE_DIR}/resources/livearea/${VITA_VPKNAME}/icon0.png sce_sys/icon0.png
-  FILE ${CMAKE_SOURCE_DIR}/resources/livearea/${VITA_VPKNAME}/pic0.png sce_sys/pic0.png
-  FILE ${CMAKE_SOURCE_DIR}/resources/livearea/${VITA_VPKNAME}/startup.png sce_sys/livearea/contents/startup.png
-  FILE ${CMAKE_SOURCE_DIR}/resources/livearea/${VITA_VPKNAME}/bg0.png sce_sys/livearea/contents/bg0.png
-  FILE ${CMAKE_SOURCE_DIR}/resources/livearea/${VITA_VPKNAME}/template.xml sce_sys/livearea/contents/template.xml
-)
+  target_include_directories(${_name}
+    PUBLIC ${CMAKE_SOURCE_DIR}/source
+  )
 
-add_custom_target(send
-  COMMAND echo destroy | nc ${PSVITAIP} 1338
-  COMMAND echo destroy | nc ${PSVITAIP} 1338
-  COMMAND curl -T eboot.bin ftp://${PSVITAIP}:1337/ux0:/app/${VITA_TITLEID}/
-  COMMAND echo launch ${VITA_TITLEID} | nc ${PSVITAIP} 1338
-  DEPENDS ${VITA_VPKNAME}.vpk-vpk
-)
+  target_link_directories (${_name}
+    PUBLIC ${CMAKE_SOURCE_DIR}/libs/lib
+  )
 
-add_custom_target(send_kvdb
-  COMMAND echo destroy | nc ${PSVITAIP} 1338
-  COMMAND curl -T eboot.bin ftp://${PSVITAIP}:1337/ux0:/app/${VITA_TITLEID}/
-  COMMAND echo launch ux0:/app/${VITA_TITLEID}/eboot.bin | nc ${PSVITAIP} 1338
-  DEPENDS ${VITA_VPKNAME}.vpk-vpk
-)
+  target_link_libraries(${_name}
+    -Wl,--whole-archive pthread -Wl,--no-whole-archive
+    speexdsp
+    mpg123
+    vitaGL
+    vitashark
+    SceShaccCgExt
+    taihen_stub
+    SceShaccCg_stub
+    kubridge_stub
+    mathneon
+    sqlite3
+    png
+    z
+    m
+    stdc++
+    SceHid_stub
+    SceCtrl_stub
+    SceTouch_stub
+    SceMotion_stub
+    SceAppMgr_stub
+    SceAppUtil_stub
+    SceAudio_stub
+    SceAudioIn_stub
+    SceCommonDialog_stub
+    SceDisplay_stub
+    SceKernelDmacMgr_stub
+    SceGxm_stub
+    ScePower_stub
+    SceVshBridge_stub
+    SceAvPlayer_stub
+  )
+
+  if (_multi)
+    set(_self "${_name}_eboot.bin")
+  else()
+    set(_self "eboot.bin")
+  endif()
+
+  # vita_create_self 是宏（无作用域），内部会把 -c/-na 追加到普通变量
+  # VITA_MAKE_FSELF_FLAGS / VITA_ELF_CREATE_FLAGS 上并在多次调用间累积
+  # （表现为 make-fself 重复 flag 报 usage / -na: command not found），
+  # 每次调用前重置，保证命令行始终是干净的 -c -na
+  set(VITA_MAKE_FSELF_FLAGS "")
+  set(VITA_ELF_CREATE_FLAGS "")
+
+  vita_create_self(${_self} ${_name} UNSAFE NOASLR)
+  vita_create_vpk(${_name}.vpk ${_tid} ${_self}
+    VERSION ${VITA_VERSION}
+    NAME ${_title}
+    FILE ${CMAKE_SOURCE_DIR}/resources/cpuinfo cpuinfo
+    FILE ${CMAKE_SOURCE_DIR}/resources/meminfo meminfo
+    FILE ${CMAKE_SOURCE_DIR}/resources/urandom urandom
+    FILE ${CMAKE_SOURCE_DIR}/resources/livearea/${_name}/icon0.png sce_sys/icon0.png
+    FILE ${CMAKE_SOURCE_DIR}/resources/livearea/${_name}/pic0.png sce_sys/pic0.png
+    FILE ${CMAKE_SOURCE_DIR}/resources/livearea/${_name}/startup.png sce_sys/livearea/contents/startup.png
+    FILE ${CMAKE_SOURCE_DIR}/resources/livearea/${_name}/bg0.png sce_sys/livearea/contents/bg0.png
+    FILE ${CMAKE_SOURCE_DIR}/resources/livearea/${_name}/template.xml sce_sys/livearea/contents/template.xml
+  )
+
+  if (NOT _multi)
+    add_custom_target(send
+      COMMAND echo destroy | nc ${PSVITAIP} 1338
+      COMMAND echo destroy | nc ${PSVITAIP} 1338
+      COMMAND curl -T eboot.bin ftp://${PSVITAIP}:1337/ux0:/app/${_tid}/
+      COMMAND echo launch ${_tid} | nc ${PSVITAIP} 1338
+      DEPENDS ${_name}.vpk-vpk
+    )
+
+    add_custom_target(send_kvdb
+      COMMAND echo destroy | nc ${PSVITAIP} 1338
+      COMMAND curl -T eboot.bin ftp://${PSVITAIP}:1337/ux0:/app/${_tid}/
+      COMMAND echo launch ux0:/app/${_tid}/eboot.bin | nc ${PSVITAIP} 1338
+      DEPENDS ${_name}.vpk-vpk
+    )
+  else()
+    add_custom_target(send_${_id}
+      COMMAND echo destroy | nc ${PSVITAIP} 1338
+      COMMAND echo destroy | nc ${PSVITAIP} 1338
+      COMMAND curl -T ${_self} ftp://${PSVITAIP}:1337/ux0:/app/${_tid}/
+      COMMAND echo launch ${_tid} | nc ${PSVITAIP} 1338
+      DEPENDS ${_name}.vpk-vpk
+    )
+  endif()
+endforeach()
