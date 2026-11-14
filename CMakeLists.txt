@@ -213,6 +213,9 @@ foreach(_id IN LISTS GAMES)
   # 每次调用前重置，保证命令行始终是干净的 -c -na
   set(VITA_MAKE_FSELF_FLAGS "")
   set(VITA_ELF_CREATE_FLAGS "")
+  set(VITA_PACK_VPK_FLAGS "")
+  set(VITA_MKSFOEX_FLAGS "-d ATTRIBUTE2=12")
+  unset(resources)
 
   vita_create_self(${_self} ${_name} UNSAFE NOASLR)
   vita_create_vpk(${_name}.vpk ${_tid} ${_self}
