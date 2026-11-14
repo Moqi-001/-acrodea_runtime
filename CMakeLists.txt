@@ -7,9 +7,11 @@ endif ()
 set(CMAKE_TOOLCHAIN_FILE "$ENV{VITASDK}/share/vita.toolchain.cmake" CACHE PATH "Toolchain file")
 include("$ENV{VITASDK}/share/vita.cmake" REQUIRED)
 
+project(AcrodeaRuntime C CXX)
+
 # ---------------------------------------------------------------------------
-# 游戏清单：不指定 RUNTIME_APP_ID 时构建下面全部 4 个游戏；
-# 指定 -DRUNTIME_APP_ID=<id> 时只构建对应游戏（旧行为，产物命名不变）。
+# 游戏清单：不指定 RUNTIME_APP_ID 时构建下面全部游戏；
+# 指定 -DRUNTIME_APP_ID=<id> 时只构建对应游戏。
 # ---------------------------------------------------------------------------
 set(RUNTIME_GAMES "705;1277;1760;1761")
 
@@ -29,18 +31,22 @@ set(GAME_1761_NAME    "GhostTrick")
 set(GAME_1761_TITLE   "Ghost Trick")
 set(GAME_1761_TITLEID "GGEE01761")
 
-if (NOT DEFINED RUNTIME_APP_ID OR "${RUNTIME_APP_ID}" STREQUAL "")
+set(_app_id "")
+if(DEFINED RUNTIME_APP_ID)
+  set(_app_id "${RUNTIME_APP_ID}")
+  unset(RUNTIME_APP_ID CACHE) # 移除缓存
+endif()
+
+if (NOT "${_app_id}" STREQUAL "")
+  list(FIND RUNTIME_GAMES "${_app_id}" _game_idx)
+  if (_game_idx EQUAL -1)
+    message(FATAL_ERROR "RUNTIME_APP_ID must be one of: ${RUNTIME_GAMES} (got '${_app_id}')")
+  endif()
+  set(GAMES "${_app_id}")
+  set(_multi FALSE)
+else()
   set(GAMES "${RUNTIME_GAMES}")
   set(_multi TRUE)
-  project(AcrodeaRuntime C CXX)
-else()
-  list(FIND RUNTIME_GAMES "${RUNTIME_APP_ID}" _game_idx)
-  if (_game_idx EQUAL -1)
-    message(FATAL_ERROR "RUNTIME_APP_ID must be one of: ${RUNTIME_GAMES} (got '${RUNTIME_APP_ID}')")
-  endif()
-  set(GAMES "${RUNTIME_APP_ID}")
-  set(_multi FALSE)
-  project(${GAME_${RUNTIME_APP_ID}_NAME} C CXX)
 endif()
 
 # Vita application configuration
@@ -146,10 +152,10 @@ set(RUNTIME_SOURCES
   source/patch.c
 )
 
-# 每个游戏一个函数作用域：vita_create_self / vita_create_vpk 是宏（无作用域），
-# 内部会把 -c/-na、-a src=dst 等追加到 VITA_*_FLAGS 普通变量上，多次调用相互
-# 累积。放进 function 展开，这些 set 的污染随函数返回一起销毁，每次调用天然
-# 拿到干净状态，也不需要触碰 vita.cmake 的内部变量约定
+# vita_create_self / vita_create_vpk 内部会把 -c/-na、-a src=dst 等
+# 追加到 VITA_*_FLAGS 普通变量上，多次调用相互累积。
+# 放进 function 展开，这些 set 的污染随函数返回一起销毁，如此每次调用
+# 便能拿到干净状态，也不需要触碰 vita.cmake 的内部变量约定。
 function(add_runtime_game _id)
   set(_name  "${GAME_${_id}_NAME}")
   set(_title "${GAME_${_id}_TITLE}")
@@ -205,14 +211,8 @@ function(add_runtime_game _id)
     SceAvPlayer_stub
   )
 
-  if (_multi)
-    set(_self "${_name}_eboot.bin")
-  else()
-    set(_self "eboot.bin")
-  endif()
-
-  vita_create_self(${_self} ${_name} UNSAFE NOASLR)
-  vita_create_vpk(${_name}.vpk ${_tid} ${_self}
+  vita_create_self(${_name}.self ${_name} UNSAFE NOASLR)
+  vita_create_vpk(${_name}.vpk ${_tid} ${_name}.self
     VERSION ${VITA_VERSION}
     NAME ${_title}
     FILE ${CMAKE_SOURCE_DIR}/resources/cpuinfo cpuinfo
