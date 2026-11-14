@@ -146,7 +146,11 @@ set(RUNTIME_SOURCES
   source/patch.c
 )
 
-foreach(_id IN LISTS GAMES)
+# 每个游戏一个函数作用域：vita_create_self / vita_create_vpk 是宏（无作用域），
+# 内部会把 -c/-na、-a src=dst 等追加到 VITA_*_FLAGS 普通变量上，多次调用相互
+# 累积。放进 function 展开，这些 set 的污染随函数返回一起销毁，每次调用天然
+# 拿到干净状态，也不需要触碰 vita.cmake 的内部变量约定
+function(add_runtime_game _id)
   set(_name  "${GAME_${_id}_NAME}")
   set(_title "${GAME_${_id}_TITLE}")
   set(_tid   "${GAME_${_id}_TITLEID}")
@@ -207,16 +211,6 @@ foreach(_id IN LISTS GAMES)
     set(_self "eboot.bin")
   endif()
 
-  # vita_create_self 是宏（无作用域），内部会把 -c/-na 追加到普通变量
-  # VITA_MAKE_FSELF_FLAGS / VITA_ELF_CREATE_FLAGS 上并在多次调用间累积
-  # （表现为 make-fself 重复 flag 报 usage / -na: command not found），
-  # 每次调用前重置，保证命令行始终是干净的 -c -na
-  set(VITA_MAKE_FSELF_FLAGS "")
-  set(VITA_ELF_CREATE_FLAGS "")
-  set(VITA_PACK_VPK_FLAGS "")
-  set(VITA_MKSFOEX_FLAGS "-d ATTRIBUTE2=12")
-  unset(resources)
-
   vita_create_self(${_self} ${_name} UNSAFE NOASLR)
   vita_create_vpk(${_name}.vpk ${_tid} ${_self}
     VERSION ${VITA_VERSION}
@@ -255,4 +249,8 @@ foreach(_id IN LISTS GAMES)
       DEPENDS ${_name}.vpk-vpk
     )
   endif()
+endfunction()
+
+foreach(_id IN LISTS GAMES)
+  add_runtime_game(${_id})
 endforeach()
